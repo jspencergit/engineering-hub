@@ -18,6 +18,10 @@
             background-color: #1a73e8;
             color: white;
         }
+        nav {
+            text-align: center;
+            margin: 10px 0;
+        }
         section {
             max-width: 800px;
             margin: 20px auto;
@@ -44,6 +48,10 @@
         <p>Resources, Tools, and Consulting by [Your Name]</p>
     </header>
 
+    <nav>
+        <a href="https://jspencergit.github.io/engineering-hub/tools.html">Tools</a>
+    </nav>
+
     <section id="resources">
         <h2>Resources</h2>
         <article>
@@ -53,24 +61,6 @@
         <p><strong>Useful Links:</strong> <a href="https://example.com">Great Article on Signal Chains</a></p>
     </section>
 
-    <section id="tools">
-        <h2>Tools</h2>
-        <h3>Power Calculator</h3>
-        <label>Voltage (V): <input type="number" id="voltage" step="0.1"></label><br><br>
-        <label>Current (A): <input type="number" id="current" step="0.01"></label><br><br>
-        <button onclick="calculatePower()">Calculate Power</button>
-        <p>Power: <span id="power-output">0</span> W</p>
-    
-        <script>
-            function calculatePower() {
-                let voltage = document.getElementById("voltage").value;
-                let current = document.getElementById("current").value;
-                let power = voltage * current;
-                document.getElementById("power-output").textContent = power.toFixed(2);
-            }
-        </script>
-    </section>
-    
     <section id="consulting">
         <h2>Consulting</h2>
         <p>Need help with analog design or power electronics? Email me at <a href="mailto:your.email@example.com">your.email@example.com</a>.</p>
