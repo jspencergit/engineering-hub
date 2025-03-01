@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analog Engineering Hub</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1a73e8;
+            color: white;
+        }
+        section {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #1a73e8;
+        }
+        a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Analog Engineering Hub</h1>
+        <p>Resources, Tools, and Consulting by [Your Name]</p>
+    </header>
+
+    <section id="resources">
+        <h2>Resources</h2>
+        <article>
+            <h3>Intro to Power Electronics</h3>
+            <p>A beginner’s guide to designing efficient power systems. [Full article coming soon]</p>
+        </article>
+        <p><strong>Useful Links:</strong> <a href="https://example.com">Great Article on Signal Chains</a></p>
+    </section>
+
+    <section id="tools">
+        <h2>Tools</h2>
+        <h3>Power Calculator</h3>
+        <label>Voltage (V): <input type="number" id="voltage" step="0.1"></label><br><br>
+        <label>Current (A): <input type="number" id="current" step="0.01"></label><br><br>
+        <button onclick="calculatePower()">Calculate Power</button>
+        <p>Power: <span id="power-output">0</span> W</p>
+    
+        <script>
+            function calculatePower() {
+                let voltage = document.getElementById("voltage").value;
+                let current = document.getElementById("current").value;
+                let power = voltage * current;
+                document.getElementById("power-output").textContent = power.toFixed(2);
+            }
+        </script>
+    </section>
+    
+    <section id="consulting">
+        <h2>Consulting</h2>
+        <p>Need help with analog design or power electronics? Email me at <a href="mailto:your.email@example.com">your.email@example.com</a>.</p>
+    </section>
+</body>
+</html>
