@@ -36,6 +36,48 @@
         a:hover {
             text-decoration: underline;
         }
+        /* Fancy Calculator Styles */
+        .calculator {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .calculator label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        .calculator input {
+            width: 100%;
+            max-width: 200px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .calculator input:focus {
+            border-color: #1a73e8;
+            outline: none;
+            box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+        }
+        .calculator .output {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #1a73e8;
+        }
+        .calculator button {
+            background-color: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .calculator button:hover {
+            background-color: #1557b0;
+        }
     </style>
 </head>
 <body>
@@ -46,18 +88,31 @@
 
     <section id="tools">
         <h2>Tools</h2>
-        <h3>Power Calculator</h3>
-        <label>Voltage (V): <input type="number" id="voltage" step="0.1"></label><br><br>
-        <label>Current (A): <input type="number" id="current" step="0.01"></label><br><br>
-        <button onclick="calculatePower()">Calculate Power</button>
-        <p>Power: <span id="power-output">0</span> W</p>
+        <div class="calculator">
+            <h3>Power Calculator</h3>
+            <label for="voltage">Voltage (V):</label>
+            <input type="number" id="voltage" step="0.1" placeholder="Enter voltage" oninput="calculatePower()">
+            
+            <label for="current">Current (A):</label>
+            <input type="number" id="current" step="0.01" placeholder="Enter current" oninput="calculatePower()">
+            
+            <div class="output">Power: <span id="power-output">0</span> W</div>
+            
+            <button onclick="resetCalculator()">Reset</button>
+        </div>
 
         <script>
             function calculatePower() {
-                let voltage = document.getElementById("voltage").value;
-                let current = document.getElementById("current").value;
+                let voltage = document.getElementById("voltage").value || 0;
+                let current = document.getElementById("current").value || 0;
                 let power = voltage * current;
                 document.getElementById("power-output").textContent = power.toFixed(2);
+            }
+
+            function resetCalculator() {
+                document.getElementById("voltage").value = "";
+                document.getElementById("current").value = "";
+                document.getElementById("power-output").textContent = "0";
             }
         </script>
     </section>
