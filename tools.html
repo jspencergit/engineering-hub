@@ -48,7 +48,7 @@
             margin: 10px 0 5px;
             font-weight: bold;
         }
-        .calculator input {
+        .calculator input[type="number"] {
             width: 100%;
             max-width: 200px;
             padding: 8px;
@@ -56,10 +56,31 @@
             border-radius: 4px;
             font-size: 16px;
         }
-        .calculator input:focus {
+        .calculator input[type="number"]:focus {
             border-color: #1a73e8;
             outline: none;
             box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+        }
+        .calculator input[type="range"] {
+            width: 100%;
+            max-width: 200px;
+            margin: 5px 0;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            outline: none;
+        }
+        .calculator input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #1a73e8;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .calculator input[type="range"]::-webkit-slider-thumb:hover {
+            background: #1557b0;
         }
         .calculator .output {
             margin-top: 20px;
@@ -91,10 +112,12 @@
         <div class="calculator">
             <h3>Power Calculator</h3>
             <label for="voltage">Voltage (V):</label>
-            <input type="number" id="voltage" step="0.1" placeholder="Enter voltage" oninput="calculatePower()">
+            <input type="number" id="voltage" step="0.1" placeholder="Enter voltage" oninput="updateFromNumber('voltage')">
+            <input type="range" id="voltage-slider" min="0" max="100" step="0.1" value="0" oninput="updateFromSlider('voltage')">
             
             <label for="current">Current (A):</label>
-            <input type="number" id="current" step="0.01" placeholder="Enter current" oninput="calculatePower()">
+            <input type="number" id="current" step="0.01" placeholder="Enter current" oninput="updateFromNumber('current')">
+            <input type="range" id="current-slider" min="0" max="10" step="0.01" value="0" oninput="updateFromSlider('current')">
             
             <div class="output">Power: <span id="power-output">0</span> W</div>
             
@@ -103,15 +126,29 @@
 
         <script>
             function calculatePower() {
-                let voltage = document.getElementById("voltage").value || 0;
-                let current = document.getElementById("current").value || 0;
+                let voltage = parseFloat(document.getElementById("voltage").value) || 0;
+                let current = parseFloat(document.getElementById("current").value) || 0;
                 let power = voltage * current;
                 document.getElementById("power-output").textContent = power.toFixed(2);
             }
 
+            function updateFromNumber(type) {
+                let value = parseFloat(document.getElementById(type).value) || 0;
+                document.getElementById(type + "-slider").value = value;
+                calculatePower();
+            }
+
+            function updateFromSlider(type) {
+                let value = parseFloat(document.getElementById(type + "-slider").value);
+                document.getElementById(type).value = value;
+                calculatePower();
+            }
+
             function resetCalculator() {
                 document.getElementById("voltage").value = "";
+                document.getElementById("voltage-slider").value = 0;
                 document.getElementById("current").value = "";
+                document.getElementById("current-slider").value = 0;
                 document.getElementById("power-output").textContent = "0";
             }
         </script>
