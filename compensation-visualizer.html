@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compensation Visualizer - Analog Engineering Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -98,6 +99,10 @@
         .calculator button:hover {
             background-color: #1557b0;
         }
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -127,30 +132,106 @@
             <div class="output">Gain K: <span id="gain-output">0</span></div>
             
             <button onclick="resetCompensator()">Reset</button>
+            
+            <canvas id="bodeChart"></canvas>
         </div>
 
         <script>
+            // Chart.js setup
+            const ctx = document.getElementById("bodeChart").getContext("2d");
+            let bodeChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Magnitude (dB)",
+                        data: [],
+                        borderColor: "#1a73e8",
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: "logarithmic",
+                            title: { display: true, text: "Frequency (Hz)" }
+                        },
+                        y: {
+                            title: { display: true, text: "Magnitude (dB)" }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let freq = context.parsed.x;
+                                    let db = context.parsed.y.toFixed(2);
+                                    return `Freq: ${freq} Hz, Gain: ${db} dB`;
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                poleLine: {
+                                    type: "line",
+                                    xMin: 100,
+                                    xMax: 100,
+                                    borderColor: "red",
+                                    borderWidth: 2,
+                                    label: { content: "Pole", enabled: true, position: "top" }
+                                },
+                                zeroLine: {
+                                    type: "line",
+                                    xMin: 1000,
+                                    xMax: 1000,
+                                    borderColor: "green",
+                                    borderWidth: 2,
+                                    label: { content: "Zero", enabled: true, position: "top" }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
             function updateCompensator() {
                 let fp = parseFloat(document.getElementById("pole-freq").value) || 100;
                 let fz = parseFloat(document.getElementById("zero-freq").value) || 1000;
                 let gainDb = parseFloat(document.getElementById("gain-db").value) || 0;
-                let f = parseFloat(document.getElementById("gain-freq").value) || 100000; // Default 100kHz
+                let fGain = parseFloat(document.getElementById("gain-freq").value) || 100000;
 
-                // Convert to angular frequencies (rad/s)
                 let wp = 2 * Math.PI * fp;
                 let wz = 2 * Math.PI * fz;
-                let w = 2 * Math.PI * f;
+                let wGain = 2 * Math.PI * fGain;
 
-                // Magnitude of H(jw) without K
-                let zeroTerm = Math.sqrt(1 + Math.pow(w / wz, 2));
-                let poleTerm = w * Math.sqrt(1 + Math.pow(w / wp, 2));
+                // Calculate K
+                let zeroTerm = Math.sqrt(1 + Math.pow(wGain / wz, 2));
+                let poleTerm = wGain * Math.sqrt(1 + Math.pow(wGain / wp, 2));
                 let mag = zeroTerm / poleTerm;
-
-                // Solve for K: gainDb = 20 * log10(K * mag)
                 let gainLinear = Math.pow(10, gainDb / 20);
                 let K = gainLinear / mag;
-
                 document.getElementById("gain-output").textContent = K.toFixed(2);
+
+                // Generate Bode plot data
+                let freqs = [];
+                let mags = [];
+                for (let logF = 0; logF <= 6; logF += 0.1) { // 1 Hz to 1 MHz
+                    let f = Math.pow(10, logF);
+                    let w = 2 * Math.PI * f;
+                    let mag = K * Math.sqrt(1 + Math.pow(w / wz, 2)) / (w * Math.sqrt(1 + Math.pow(w / wp, 2)));
+                    let db = 20 * Math.log10(mag);
+                    freqs.push(f);
+                    mags.push(db);
+                }
+
+                // Update chart
+                bodeChart.data.labels = freqs;
+                bodeChart.data.datasets[0].data = mags;
+                bodeChart.options.plugins.annotation.annotations.poleLine.xMin = fp;
+                bodeChart.options.plugins.annotation.annotations.poleLine.xMax = fp;
+                bodeChart.options.plugins.annotation.annotations.zeroLine.xMin = fz;
+                bodeChart.options.plugins.annotation.annotations.zeroLine.xMax = fz;
+                bodeChart.update();
             }
 
             function updateFromSlider(type) {
@@ -169,18 +250,16 @@
                 document.getElementById("gain-db").value = "";
                 document.getElementById("gain-freq").value = "";
                 document.getElementById("gain-output").textContent = "0";
+                updateCompensator();
             }
 
             // Mousewheel functionality
             document.getElementById("pole-freq").addEventListener("wheel", function(event) {
                 event.preventDefault();
                 let value = parseFloat(this.value) || 100;
-                let step = 10; // Larger step for Hz
-                if (event.deltaY < 0) {
-                    this.value = value + step;
-                } else if (value > step) {
-                    this.value = value - step;
-                }
+                let step = 10;
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
                 updateCompensator();
             });
 
@@ -188,11 +267,8 @@
                 event.preventDefault();
                 let value = parseFloat(this.value) || 1000;
                 let step = 10;
-                if (event.deltaY < 0) {
-                    this.value = value + step;
-                } else if (value > step) {
-                    this.value = value - step;
-                }
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
                 updateCompensator();
             });
 
@@ -200,27 +276,21 @@
                 event.preventDefault();
                 let value = parseFloat(this.value) || 0;
                 let step = 1;
-                if (event.deltaY < 0) {
-                    this.value = value + step;
-                } else {
-                    this.value = value - step;
-                }
+                if (event.deltaY < 0) this.value = value + step;
+                else this.value = value - step;
                 updateCompensator();
             });
 
             document.getElementById("gain-freq").addEventListener("wheel", function(event) {
                 event.preventDefault();
                 let value = parseFloat(this.value) || 100000;
-                let step = 1000; // Larger step for Hz
-                if (event.deltaY < 0) {
-                    this.value = value + step;
-                } else if (value > step) {
-                    this.value = value - step;
-                }
+                let step = 1000;
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
                 updateCompensator();
             });
 
-            // Initial calculation
+            // Initial update
             updateCompensator();
         </script>
     </section>
