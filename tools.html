@@ -36,68 +36,26 @@
         a:hover {
             text-decoration: underline;
         }
-        /* Fancy Calculator Styles */
-        .calculator {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+        .tool-list {
+            list-style: none;
+            padding: 0;
         }
-        .calculator label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
+        .tool-list li {
+            margin: 15px 0;
         }
-        .calculator input[type="number"] {
-            width: 100%;
-            max-width: 200px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        .calculator input[type="number"]:focus {
-            border-color: #1a73e8;
-            outline: none;
-            box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-        }
-        .calculator input[type="range"] {
-            width: 100%;
-            max-width: 200px;
-            margin: 5px 0;
-            -webkit-appearance: none;
-            height: 8px;
-            background: #ddd;
-            border-radius: 4px;
-            outline: none;
-        }
-        .calculator input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #1a73e8;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        .calculator input[type="range"]::-webkit-slider-thumb:hover {
-            background: #1557b0;
-        }
-        .calculator .output {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #1a73e8;
-        }
-        .calculator button {
+        .tool-link {
+            display: inline-block;
+            padding: 10px 20px;
             background-color: #1a73e8;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
         }
-        .calculator button:hover {
+        .tool-link:hover {
             background-color: #1557b0;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -109,74 +67,10 @@
 
     <section id="tools">
         <h2>Tools</h2>
-        <div class="calculator">
-            <h3>Power Calculator</h3>
-            <label for="voltage">Voltage (V):</label>
-            <input type="number" id="voltage" step="0.1" placeholder="Enter voltage" oninput="updateFromNumber('voltage')">
-            <input type="range" id="voltage-slider" min="0" max="100" step="0.1" value="0" oninput="updateFromSlider('voltage')">
-            
-            <label for="current">Current (A):</label>
-            <input type="number" id="current" step="0.01" placeholder="Enter current" oninput="updateFromNumber('current')">
-            <input type="range" id="current-slider" min="0" max="10" step="0.01" value="0" oninput="updateFromSlider('current')">
-            
-            <div class="output">Power: <span id="power-output">0</span> W</div>
-            
-            <button onclick="resetCalculator()">Reset</button>
-        </div>
-
-        <script>
-            function calculatePower() {
-                let voltage = parseFloat(document.getElementById("voltage").value) || 0;
-                let current = parseFloat(document.getElementById("current").value) || 0;
-                let power = voltage * current;
-                document.getElementById("power-output").textContent = power.toFixed(2);
-            }
-
-            function updateFromNumber(type) {
-                let value = parseFloat(document.getElementById(type).value) || 0;
-                document.getElementById(type + "-slider").value = value;
-                calculatePower();
-            }
-
-            function updateFromSlider(type) {
-                let value = parseFloat(document.getElementById(type + "-slider").value);
-                document.getElementById(type).value = value;
-                calculatePower();
-            }
-
-            function resetCalculator() {
-                document.getElementById("voltage").value = "";
-                document.getElementById("voltage-slider").value = 0;
-                document.getElementById("current").value = "";
-                document.getElementById("current-slider").value = 0;
-                document.getElementById("power-output").textContent = "0";
-            }
-
-            // Mousewheel functionality
-            document.getElementById("voltage").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 0;
-                let step = parseFloat(this.step) || 0.1;
-                if (event.deltaY < 0) {
-                    this.value = (value + step).toFixed(1);
-                } else {
-                    this.value = (value - step).toFixed(1);
-                }
-                updateFromNumber("voltage");
-            });
-
-            document.getElementById("current").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 0;
-                let step = parseFloat(this.step) || 0.01;
-                if (event.deltaY < 0) {
-                    this.value = (value + step).toFixed(2);
-                } else {
-                    this.value = (value - step).toFixed(2);
-                }
-                updateFromNumber("current");
-            });
-        </script>
+        <ul class="tool-list">
+            <li><a href="https://jspencergit.github.io/engineering-hub/power-calculator.html" class="tool-link">Power Calculator</a> - Calculate power from voltage and current.</li>
+            <li><a href="https://jspencergit.github.io/engineering-hub/compensation-visualizer.html" class="tool-link">Compensation Visualizer</a> - Visualize compensation networks (coming soon).</li>
+        </ul>
     </section>
 </body>
 </html>
