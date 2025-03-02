@@ -151,6 +151,31 @@
                 document.getElementById("current-slider").value = 0;
                 document.getElementById("power-output").textContent = "0";
             }
+
+            // Mousewheel functionality
+            document.getElementById("voltage").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || 0;
+                let step = parseFloat(this.step) || 0.1;
+                if (event.deltaY < 0) {
+                    this.value = (value + step).toFixed(1);
+                } else {
+                    this.value = (value - step).toFixed(1);
+                }
+                updateFromNumber("voltage");
+            });
+
+            document.getElementById("current").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || 0;
+                let step = parseFloat(this.step) || 0.01;
+                if (event.deltaY < 0) {
+                    this.value = (value + step).toFixed(2);
+                } else {
+                    this.value = (value - step).toFixed(2);
+                }
+                updateFromNumber("current");
+            });
         </script>
     </section>
 </body>
