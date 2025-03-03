@@ -78,7 +78,7 @@
         .calculator input[type="range"]::-webkit-slider-thumb:hover {
             background: #1557b0;
         }
-        .calculator .output, .calculator .transfer, .calculator .phase-boost {
+        .calculator .output, .charts .transfer, .charts .phase-boost {
             margin-top: 20px;
             font-size: 18px;
             color: #1a73e8;
@@ -161,14 +161,14 @@
             <input type="number" id="y-phase-max" step="1" value="0" oninput="updateCompensator()">
             
             <div class="output">Gain K: <span id="gain-output">0</span></div>
-            <div class="transfer">Transfer Function: <span id="transfer-output">H(s) = </span></div>
-            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span>°</div>
             
             <button onclick="resetCompensator()">Reset</button>
         </div>
         <div class="charts">
             <canvas id="bodeMagChart"></canvas>
             <canvas id="bodePhaseChart"></canvas>
+            <div class="transfer">Transfer Function: <span id="transfer-output">H(s) = </span></div>
+            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span>°</div>
         </div>
     </section>
 
@@ -249,10 +249,10 @@
             let K = Math.pow(10, gainDb / 20) / mag;
             document.getElementById("gain-output").textContent = K.toFixed(2);
 
-            // Transfer Function (Gain in dB, poles/zeros in kHz)
+            // Transfer Function
             let transferText = includeOrigin
                 ? `${gainDb.toFixed(1)} dB · (1 + s/${(fz).toFixed(0)}k) / (s · (1 + s/${(fp).toFixed(0)}k))`
-                : `${gainDb.toFixed(1)} dB · (1 + s/${(fz).toFixed(0)}k) / (1 + s/${(fp).toFixed(0)}k)`;
+                : `${gainDb.toFixed(1)} dB · (1 + s/${(fz).toFixed(0)}k) / (1 + s/${(fp).toFixed(0)}k))`;
             document.getElementById("transfer-output").textContent = transferText;
 
             // Generate Bode plot data
@@ -283,12 +283,11 @@
             let zeroDb = 20 * Math.log10(zeroMag);
             let zeroPhase = 45 - Math.atan(wz / wp) * 180 / Math.PI + (includeOrigin ? -90 : 0);
 
-            // Phase Boost at geometric mean
+            // Phase Boost (corrected)
             let fBoost = Math.sqrt(fp * fz);
             let wBoost = 2 * Math.PI * fBoost;
             let phaseBoost = Math.atan(wBoost / wz) * 180 / Math.PI - Math.atan(wBoost / wp) * 180 / Math.PI;
-            let baseline = includeOrigin ? -90 : 0;
-            let boost = (phaseBoost - baseline).toFixed(1);
+            let boost = phaseBoost.toFixed(1); // Just the pole-zero contribution
             document.getElementById("phase-boost-output").textContent = boost;
 
             // Update magnitude chart
