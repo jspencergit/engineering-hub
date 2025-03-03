@@ -20,28 +20,24 @@
             color: white;
         }
         section {
-            max-width: 800px;
+            max-width: 1200px; /* Wider tool */
             margin: 20px auto;
             padding: 20px;
             background-color: white;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            color: #1a73e8;
-        }
-        a {
-            color: #1a73e8;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+            display: flex; /* Flexbox for side-by-side layout */
         }
         .calculator {
             background-color: #f9f9f9;
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #ddd;
+            width: 50%; /* Left half for inputs */
+        }
+        .charts {
+            width: 50%; /* Right half for charts */
+            padding-left: 20px;
         }
         .calculator label {
             display: block;
@@ -103,6 +99,14 @@
             max-width: 100%;
             margin-top: 20px;
         }
+        .checkbox-label {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -112,16 +116,18 @@
     </header>
 
     <section id="tools">
-        <h2>Compensation Visualizer</h2>
         <div class="calculator">
             <h3>Origin Pole + Pole-Zero Pair</h3>
+            <label class="checkbox-label">
+                <input type="checkbox" id="origin-pole" checked onchange="updateCompensator()"> Include Origin Pole
+            </label>
             <label for="pole-freq">Pole Frequency (Hz):</label>
-            <input type="number" id="pole-freq" step="1" min="1" placeholder="Enter pole freq" oninput="updateCompensator()">
-            <input type="range" id="pole-slider" min="1" max="10000" step="1" value="100" oninput="updateFromSlider('pole')">
+            <input type="number" id="pole-freq" step="1" min="1" value="100000" placeholder="Enter pole freq" oninput="updateCompensator()">
+            <input type="range" id="pole-slider" min="1000" max="1000000" step="100" value="100000" oninput="updateFromSlider('pole')">
             
             <label for="zero-freq">Zero Frequency (Hz):</label>
-            <input type="number" id="zero-freq" step="1" min="1" placeholder="Enter zero freq" oninput="updateCompensator()">
-            <input type="range" id="zero-slider" min="1" max="10000" step="1" value="1000" oninput="updateFromSlider('zero')">
+            <input type="number" id="zero-freq" step="1" min="1" value="10000" placeholder="Enter zero freq" oninput="updateCompensator()">
+            <input type="range" id="zero-slider" min="100" max="100000" step="100" value="10000" oninput="updateFromSlider('zero')">
             
             <label for="gain-db">Desired Gain (dB):</label>
             <input type="number" id="gain-db" step="1" placeholder="Enter gain in dB" oninput="updateCompensator()">
@@ -144,282 +150,271 @@
             <div class="output">Gain K: <span id="gain-output">0</span></div>
             
             <button onclick="resetCompensator()">Reset</button>
-            
+        </div>
+        <div class="charts">
             <canvas id="bodeMagChart"></canvas>
             <canvas id="bodePhaseChart"></canvas>
         </div>
-
-        <script>
-            // Magnitude Chart
-            const magCtx = document.getElementById("bodeMagChart").getContext("2d");
-            let magChart = new Chart(magCtx, {
-                type: "line",
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: "Magnitude (dB)",
-                        data: [],
-                        borderColor: "#1a73e8",
-                        fill: false,
-                        pointRadius: 0 // No circles
-                    }]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            type: "logarithmic",
-                            title: { display: true, text: "Frequency (kHz)" },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000).toFixed(1); // Convert Hz to kHz
-                                }
-                            }
-                        },
-                        y: {
-                            title: { display: true, text: "Magnitude (dB)" }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let freq = (context.parsed.x / 1000).toFixed(1); // Hz to kHz
-                                    let db = context.parsed.y.toFixed(1);
-                                    return `${freq} kHz, ${db} dB`;
-                                }
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                poleLine: {
-                                    type: "line",
-                                    xMin: 100,
-                                    xMax: 100,
-                                    borderColor: "red",
-                                    borderWidth: 2,
-                                    label: { content: "Pole", enabled: true, position: "center" }
-                                },
-                                zeroLine: {
-                                    type: "line",
-                                    xMin: 1000,
-                                    xMax: 1000,
-                                    borderColor: "green",
-                                    borderWidth: 2,
-                                    label: { content: "Zero", enabled: true, position: "center" }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Phase Chart
-            const phaseCtx = document.getElementById("bodePhaseChart").getContext("2d");
-            let phaseChart = new Chart(phaseCtx, {
-                type: "line",
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: "Phase (degrees)",
-                        data: [],
-                        borderColor: "#1a73e8",
-                        fill: false,
-                        pointRadius: 0 // No circles
-                    }]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            type: "logarithmic",
-                            title: { display: true, text: "Frequency (kHz)" },
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000).toFixed(1); // Convert Hz to kHz
-                                }
-                            }
-                        },
-                        y: {
-                            title: { display: true, text: "Phase (degrees)" }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let freq = (context.parsed.x / 1000).toFixed(1); // Hz to kHz
-                                    let deg = context.parsed.y.toFixed(1);
-                                    return `${freq} kHz, ${deg}°`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            function updateCompensator() {
-                let fp = parseFloat(document.getElementById("pole-freq").value) || 100;
-                let fz = parseFloat(document.getElementById("zero-freq").value) || 1000;
-                let gainDb = parseFloat(document.getElementById("gain-db").value) || 0;
-                let fGain = parseFloat(document.getElementById("gain-freq").value) || 100000;
-                let xMin = parseFloat(document.getElementById("x-min").value) || 100;
-                let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
-                let yMin = parseFloat(document.getElementById("y-min").value) || -20;
-                let yMax = parseFloat(document.getElementById("y-max").value) || 80;
-
-                let wp = 2 * Math.PI * fp;
-                let wz = 2 * Math.PI * fz;
-                let wGain = 2 * Math.PI * fGain;
-
-                // Calculate K
-                let zeroTerm = Math.sqrt(1 + Math.pow(wGain / wz, 2));
-                let poleTerm = wGain * Math.sqrt(1 + Math.pow(wGain / wp, 2));
-                let mag = zeroTerm / poleTerm;
-                let gainLinear = Math.pow(10, gainDb / 20);
-                let K = gainLinear / mag;
-                document.getElementById("gain-output").textContent = K.toFixed(2);
-
-                // Generate Bode plot data
-                let freqs = [];
-                let mags = [];
-                let phases = [];
-                let logMin = Math.log10(xMin);
-                let logMax = Math.log10(xMax);
-                for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
-                    let f = Math.pow(10, logF);
-                    let w = 2 * Math.PI * f;
-                    let mag = K * Math.sqrt(1 + Math.pow(w / wz, 2)) / (w * Math.sqrt(1 + Math.pow(w / wp, 2)));
-                    let db = 20 * Math.log10(mag);
-                    let phaseZero = Math.atan(w / wz) * 180 / Math.PI;
-                    let phasePole = -Math.atan(w / wp) * 180 / Math.PI;
-                    let phaseOrigin = -90; // Origin pole at s=0
-                    let phase = phaseZero + phasePole + phaseOrigin;
-                    freqs.push(f);
-                    mags.push(db);
-                    phases.push(phase);
-                }
-
-                // Update magnitude chart
-                magChart.data.labels = freqs;
-                magChart.data.datasets[0].data = mags;
-                magChart.options.scales.x.min = xMin;
-                magChart.options.scales.x.max = xMax;
-                magChart.options.scales.y.min = yMin;
-                magChart.options.scales.y.max = yMax;
-                magChart.options.plugins.annotation.annotations.poleLine.xMin = fp;
-                magChart.options.plugins.annotation.annotations.poleLine.xMax = fp;
-                magChart.options.plugins.annotation.annotations.zeroLine.xMin = fz;
-                magChart.options.plugins.annotation.annotations.zeroLine.xMax = fz;
-                magChart.update();
-
-                // Update phase chart
-                phaseChart.data.labels = freqs;
-                phaseChart.data.datasets[0].data = phases;
-                phaseChart.options.scales.x.min = xMin;
-                phaseChart.options.scales.x.max = xMax;
-                phaseChart.options.scales.y.min = -180; // Fixed phase range
-                phaseChart.options.scales.y.max = 0;
-                phaseChart.update();
-            }
-
-            function updateFromSlider(type) {
-                let freqId = type + "-freq";
-                let sliderId = type + "-slider";
-                let value = parseFloat(document.getElementById(sliderId).value);
-                document.getElementById(freqId).value = value;
-                updateCompensator();
-            }
-
-            function resetCompensator() {
-                document.getElementById("pole-freq").value = "";
-                document.getElementById("pole-slider").value = 100;
-                document.getElementById("zero-freq").value = "";
-                document.getElementById("zero-slider").value = 1000;
-                document.getElementById("gain-db").value = "";
-                document.getElementById("gain-freq").value = "";
-                document.getElementById("x-min").value = 100;
-                document.getElementById("x-max").value = 1000000;
-                document.getElementById("y-min").value = -20;
-                document.getElementById("y-max").value = 80;
-                document.getElementById("gain-output").textContent = "0";
-                updateCompensator();
-            }
-
-            // Mousewheel functionality
-            document.getElementById("pole-freq").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 100;
-                let step = 10;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("zero-freq").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 1000;
-                let step = 10;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("gain-db").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 0;
-                let step = 1;
-                if (event.deltaY < 0) this.value = value + step;
-                else this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("gain-freq").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 100000;
-                let step = 1000;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("x-min").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 100;
-                let step = 100;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("x-max").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 1000000;
-                let step = 10000;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("y-min").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || -20;
-                let step = 10;
-                if (event.deltaY < 0) this.value = value + step;
-                else this.value = value - step;
-                updateCompensator();
-            });
-
-            document.getElementById("y-max").addEventListener("wheel", function(event) {
-                event.preventDefault();
-                let value = parseFloat(this.value) || 80;
-                let step = 10;
-                if (event.deltaY < 0) this.value = value + step;
-                else if (value > step) this.value = value - step;
-                updateCompensator();
-            });
-
-            // Initial update
-            updateCompensator();
-        </script>
     </section>
+
+    <script>
+        const magCtx = document.getElementById("bodeMagChart").getContext("2d");
+        let magChart = new Chart(magCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Magnitude (dB)",
+                    data: [],
+                    borderColor: "#1a73e8",
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: "logarithmic",
+                        title: { display: true, text: "Frequency (kHz)" },
+                        ticks: { callback: value => (value / 1000).toFixed(1) }
+                    },
+                    y: {
+                        title: { display: true, text: "Magnitude (dB)" }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: "nearest",
+                        intersect: false, // Show tooltip anywhere in chart area
+                        callbacks: {
+                            label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)} dB`
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            poleLine: {
+                                type: "line",
+                                xMin: 100000,
+                                xMax: 100000,
+                                borderColor: "red",
+                                borderWidth: 2,
+                                label: { content: "Pole", enabled: true, position: "center", backgroundColor: "rgba(255, 0, 0, 0.7)" }
+                            },
+                            zeroLine: {
+                                type: "line",
+                                xMin: 10000,
+                                xMax: 10000,
+                                borderColor: "green",
+                                borderWidth: 2,
+                                label: { content: "Zero", enabled: true, position: "center", backgroundColor: "rgba(0, 255, 0, 0.7)" }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const phaseCtx = document.getElementById("bodePhaseChart").getContext("2d");
+        let phaseChart = new Chart(phaseCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Phase (degrees)",
+                    data: [],
+                    borderColor: "#1a73e8",
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: "logarithmic",
+                        title: { display: true, text: "Frequency (kHz)" },
+                        ticks: { callback: value => (value / 1000).toFixed(1) }
+                    },
+                    y: {
+                        title: { display: true, text: "Phase (degrees)" }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: "nearest",
+                        intersect: false,
+                        callbacks: {
+                            label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)}°`
+                        }
+                    }
+                }
+            }
+        });
+
+        function updateCompensator() {
+            let includeOrigin = document.getElementById("origin-pole").checked;
+            let fp = parseFloat(document.getElementById("pole-freq").value) || 100000;
+            let fz = parseFloat(document.getElementById("zero-freq").value) || 10000;
+            let gainDb = parseFloat(document.getElementById("gain-db").value) || 0;
+            let fGain = parseFloat(document.getElementById("gain-freq").value) || 100000;
+            let xMin = parseFloat(document.getElementById("x-min").value) || 100;
+            let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
+            let yMin = parseFloat(document.getElementById("y-min").value) || -20;
+            let yMax = parseFloat(document.getElementById("y-max").value) || 80;
+
+            let wp = 2 * Math.PI * fp;
+            let wz = 2 * Math.PI * fz;
+            let wGain = 2 * Math.PI * fGain;
+
+            // Calculate K
+            let zeroTerm = Math.sqrt(1 + Math.pow(wGain / wz, 2));
+            let poleTerm = Math.sqrt(1 + Math.pow(wGain / wp, 2)) * (includeOrigin ? wGain : 1);
+            let mag = zeroTerm / poleTerm;
+            let gainLinear = Math.pow(10, gainDb / 20);
+            let K = gainLinear / mag;
+            document.getElementById("gain-output").textContent = K.toFixed(2);
+
+            // Generate Bode plot data
+            let freqs = [];
+            let mags = [];
+            let phases = [];
+            let logMin = Math.log10(xMin);
+            let logMax = Math.log10(xMax);
+            for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
+                let f = Math.pow(10, logF);
+                let w = 2 * Math.PI * f;
+                let mag = K * Math.sqrt(1 + Math.pow(w / wz, 2)) / (Math.sqrt(1 + Math.pow(w / wp, 2)) * (includeOrigin ? w : 1));
+                let db = 20 * Math.log10(mag);
+                let phaseZero = Math.atan(w / wz) * 180 / Math.PI;
+                let phasePole = -Math.atan(w / wp) * 180 / Math.PI;
+                let phaseOrigin = includeOrigin ? -90 : 0;
+                let phase = phaseZero + phasePole + phaseOrigin;
+                freqs.push(f);
+                mags.push(db);
+                phases.push(phase);
+            }
+
+            // Update magnitude chart
+            magChart.data.labels = freqs;
+            magChart.data.datasets[0].data = mags;
+            magChart.options.scales.x.min = xMin;
+            magChart.options.scales.x.max = xMax;
+            magChart.options.scales.y.min = yMin;
+            magChart.options.scales.y.max = yMax;
+            magChart.options.plugins.annotation.annotations.poleLine.xMin = fp;
+            magChart.options.plugins.annotation.annotations.poleLine.xMax = fp;
+            magChart.options.plugins.annotation.annotations.zeroLine.xMin = fz;
+            magChart.options.plugins.annotation.annotations.zeroLine.xMax = fz;
+            magChart.update();
+
+            // Update phase chart
+            phaseChart.data.labels = freqs;
+            phaseChart.data.datasets[0].data = phases;
+            phaseChart.options.scales.x.min = xMin;
+            phaseChart.options.scales.x.max = xMax;
+            phaseChart.options.scales.y.min = includeOrigin ? -180 : -90; // Adjust phase range
+            phaseChart.options.scales.y.max = 0;
+            phaseChart.update();
+        }
+
+        function updateFromSlider(type) {
+            let freqId = type + "-freq";
+            let sliderId = type + "-slider";
+            let value = parseFloat(document.getElementById(sliderId).value);
+            document.getElementById(freqId).value = value;
+            updateCompensator();
+        }
+
+        function resetCompensator() {
+            document.getElementById("origin-pole").checked = true;
+            document.getElementById("pole-freq").value = 100000;
+            document.getElementById("pole-slider").value = 100000;
+            document.getElementById("zero-freq").value = 10000;
+            document.getElementById("zero-slider").value = 10000;
+            document.getElementById("gain-db").value = "";
+            document.getElementById("gain-freq").value = "";
+            document.getElementById("x-min").value = 100;
+            document.getElementById("x-max").value = 1000000;
+            document.getElementById("y-min").value = -20;
+            document.getElementById("y-max").value = 80;
+            document.getElementById("gain-output").textContent = "0";
+            updateCompensator();
+        }
+
+        // Mousewheel functionality
+        document.getElementById("pole-freq").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 100000;
+            let step = 1000;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("zero-freq").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 10000;
+            let step = 100;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("gain-db").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 0;
+            let step = 1;
+            if (event.deltaY < 0) this.value = value + step;
+            else this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("gain-freq").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 100000;
+            let step = 1000;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("x-min").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 100;
+            let step = 100;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("x-max").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 1000000;
+            let step = 10000;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("y-min").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || -20;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("y-max").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 80;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        // Initial update
+        updateCompensator();
+    </script>
 </body>
 </html>
