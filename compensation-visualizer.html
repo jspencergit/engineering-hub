@@ -78,7 +78,7 @@
         .calculator input[type="range"]::-webkit-slider-thumb:hover {
             background: #1557b0;
         }
-        .calculator .output {
+        .calculator .output, .calculator .transfer, .calculator .phase-boost {
             margin-top: 20px;
             font-size: 18px;
             color: #1a73e8;
@@ -148,6 +148,8 @@
             <input type="number" id="y-max" step="1" value="80" oninput="updateCompensator()">
             
             <div class="output">Gain K: <span id="gain-output">0</span></div>
+            <div class="transfer">Transfer Function: <span id="transfer-output">H(s) = </span></div>
+            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span>°</div>
             
             <button onclick="resetCompensator()">Reset</button>
         </div>
@@ -164,49 +166,21 @@
             data: {
                 labels: [],
                 datasets: [
-                    {
-                        label: "Magnitude (dB)",
-                        data: [],
-                        borderColor: "#1a73e8",
-                        fill: false,
-                        pointRadius: 0
-                    },
-                    {
-                        label: "Pole",
-                        data: [],
-                        pointRadius: 5,
-                        pointStyle: "cross",
-                        borderColor: "red",
-                        showLine: false
-                    },
-                    {
-                        label: "Zero",
-                        data: [],
-                        pointRadius: 5,
-                        pointStyle: "circle",
-                        borderColor: "green",
-                        showLine: false
-                    }
+                    { label: "Magnitude (dB)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
+                    { label: "Pole", data: [], pointRadius: 5, pointStyle: "cross", borderColor: "red", showLine: false },
+                    { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
                 ]
             },
             options: {
                 scales: {
-                    x: {
-                        type: "logarithmic",
-                        title: { display: true, text: "Frequency (kHz)" },
-                        ticks: { callback: value => (value / 1000).toFixed(1) }
-                    },
-                    y: {
-                        title: { display: true, text: "Magnitude (dB)" }
-                    }
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => (value / 1000).toFixed(1) } },
+                    y: { title: { display: true, text: "Magnitude (dB)" } }
                 },
                 plugins: {
                     tooltip: {
                         mode: "nearest",
                         intersect: false,
-                        callbacks: {
-                            label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)} dB`
-                        }
+                        callbacks: { label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)} dB` }
                     }
                 }
             }
@@ -218,49 +192,21 @@
             data: {
                 labels: [],
                 datasets: [
-                    {
-                        label: "Phase (degrees)",
-                        data: [],
-                        borderColor: "#1a73e8",
-                        fill: false,
-                        pointRadius: 0
-                    },
-                    {
-                        label: "Pole",
-                        data: [],
-                        pointRadius: 5,
-                        pointStyle: "cross",
-                        borderColor: "red",
-                        showLine: false
-                    },
-                    {
-                        label: "Zero",
-                        data: [],
-                        pointRadius: 5,
-                        pointStyle: "circle",
-                        borderColor: "green",
-                        showLine: false
-                    }
+                    { label: "Phase (degrees)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
+                    { label: "Pole", data: [], pointRadius: 5, pointStyle: "cross", borderColor: "red", showLine: false },
+                    { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
                 ]
             },
             options: {
                 scales: {
-                    x: {
-                        type: "logarithmic",
-                        title: { display: true, text: "Frequency (kHz)" },
-                        ticks: { callback: value => (value / 1000).toFixed(1) }
-                    },
-                    y: {
-                        title: { display: true, text: "Phase (degrees)" }
-                    }
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => (value / 1000).toFixed(1) } },
+                    y: { title: { display: true, text: "Phase (degrees)" } }
                 },
                 plugins: {
                     tooltip: {
                         mode: "nearest",
                         intersect: false,
-                        callbacks: {
-                            label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)}°`
-                        }
+                        callbacks: { label: context => `${(context.parsed.x / 1000).toFixed(1)} kHz, ${context.parsed.y.toFixed(1)}°` }
                     }
                 }
             }
@@ -268,10 +214,10 @@
 
         function updateCompensator() {
             let includeOrigin = document.getElementById("origin-pole").checked;
-            let fp = (parseFloat(document.getElementById("pole-freq").value) || 100) * 1000; // kHz to Hz
-            let fz = (parseFloat(document.getElementById("zero-freq").value) || 10) * 1000;  // kHz to Hz
+            let fp = (parseFloat(document.getElementById("pole-freq").value) || 100) * 1000;
+            let fz = (parseFloat(document.getElementById("zero-freq").value) || 10) * 1000;
             let gainDb = parseFloat(document.getElementById("gain-db").value) || 60;
-            let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000; // kHz to Hz
+            let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000;
             let xMin = parseFloat(document.getElementById("x-min").value) || 100;
             let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
             let yMin = parseFloat(document.getElementById("y-min").value) || -20;
@@ -288,6 +234,12 @@
             let gainLinear = Math.pow(10, gainDb / 20);
             let K = gainLinear / mag;
             document.getElementById("gain-output").textContent = K.toFixed(2);
+
+            // Transfer Function
+            let transferText = includeOrigin
+                ? `H(s) = ${K.toFixed(2)} · ((s/${wz.toFixed(0)}) + 1) / (s · ((s/${wp.toFixed(0)}) + 1))`
+                : `H(s) = ${K.toFixed(2)} · ((s/${wz.toFixed(0)}) + 1) / ((s/${wp.toFixed(0)}) + 1)`;
+            document.getElementById("transfer-output").textContent = transferText;
 
             // Generate Bode plot data
             let freqs = [];
@@ -317,11 +269,19 @@
             let zeroDb = 20 * Math.log10(zeroMag);
             let zeroPhase = 45 - Math.atan(wz / wp) * 180 / Math.PI + (includeOrigin ? -90 : 0);
 
+            // Phase Boost at geometric mean
+            let fBoost = Math.sqrt(fp * fz); // Geometric mean
+            let wBoost = 2 * Math.PI * fBoost;
+            let phaseBoost = Math.atan(wBoost / wz) * 180 / Math.PI - Math.atan(wBoost / wp) * 180 / Math.PI;
+            let baseline = includeOrigin ? -90 : 0;
+            let boost = (phaseBoost - baseline).toFixed(1);
+            document.getElementById("phase-boost-output").textContent = boost;
+
             // Update magnitude chart
             magChart.data.labels = freqs;
             magChart.data.datasets[0].data = mags;
-            magChart.data.datasets[1].data = [{x: fp, y: poleDb}]; // Pole "X"
-            magChart.data.datasets[2].data = [{x: fz, y: zeroDb}]; // Zero "O"
+            magChart.data.datasets[1].data = [{x: fp, y: poleDb}];
+            magChart.data.datasets[2].data = [{x: fz, y: zeroDb}];
             magChart.options.scales.x.min = xMin;
             magChart.options.scales.x.max = xMax;
             magChart.options.scales.y.min = yMin;
@@ -331,8 +291,8 @@
             // Update phase chart
             phaseChart.data.labels = freqs;
             phaseChart.data.datasets[0].data = phases;
-            phaseChart.data.datasets[1].data = [{x: fp, y: polePhase}]; // Pole "X"
-            phaseChart.data.datasets[2].data = [{x: fz, y: zeroPhase}]; // Zero "O"
+            phaseChart.data.datasets[1].data = [{x: fp, y: polePhase}];
+            phaseChart.data.datasets[2].data = [{x: fz, y: zeroPhase}];
             phaseChart.options.scales.x.min = xMin;
             phaseChart.options.scales.x.max = xMax;
             phaseChart.options.scales.y.min = includeOrigin ? -180 : -90;
@@ -364,11 +324,11 @@
             updateCompensator();
         }
 
-        // Mousewheel functionality (adjusted for kHz)
+        // Mousewheel functionality
         document.getElementById("pole-freq").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 100;
-            let step = 1; // 1 kHz
+            let step = 1;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
@@ -377,7 +337,7 @@
         document.getElementById("zero-freq").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 10;
-            let step = 0.1; // 0.1 kHz
+            let step = 0.1;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
@@ -395,7 +355,7 @@
         document.getElementById("gain-freq").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 0.1;
-            let step = 0.01; // 0.01 kHz
+            let step = 0.01;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
