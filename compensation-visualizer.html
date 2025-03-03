@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compensation Visualizer - Analog Engineering Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -83,15 +85,12 @@
             font-size: 18px;
             color: #1a73e8;
         }
-        .transfer span {
+        .transfer .mathjax-eq {
             display: inline-block;
-            font-family: "Times New Roman", serif;
-            font-style: italic;
-            background-color: #f8f9fa;
             padding: 8px 12px;
+            background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 4px;
-            line-height: 1.5;
         }
         .calculator button {
             background-color: #1a73e8;
@@ -170,8 +169,8 @@
         <div class="charts">
             <canvas id="bodeMagChart"></canvas>
             <canvas id="bodePhaseChart"></canvas>
-            <div class="transfer">Transfer Function: <span id="transfer-output">H(s) = </span></div>
-            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span>°</div>
+            <div class="transfer">Transfer Function: <span class="mathjax-eq" id="transfer-output">\( H(s) = \)</span></div>
+            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span></div>
         </div>
     </section>
 
@@ -183,7 +182,7 @@
                 labels: [],
                 datasets: [
                     { label: "Magnitude (dB)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
-                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false }, // Bigger X
+                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false },
                     { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
                 ]
             },
@@ -209,7 +208,7 @@
                 labels: [],
                 datasets: [
                     { label: "Phase (degrees)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
-                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false }, // Bigger X
+                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false },
                     { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
                 ]
             },
@@ -252,11 +251,11 @@
             let K = Math.pow(10, gainDb / 20) / mag;
             document.getElementById("gain-output").textContent = K.toFixed(2);
 
-            // Transfer Function (prettier, with 2π and kHz)
+            // Transfer Function (LaTeX with MathJax)
             let transferText = includeOrigin
-                ? `H(s) = ${gainDb.toFixed(1)} dB · [1 + s / (2π · ${fz / 1000} kHz)] / {s · [1 + s / (2π · ${fp / 1000} kHz)]}`
-                : `H(s) = ${gainDb.toFixed(1)} dB · [1 + s / (2π · ${fz / 1000} kHz)] / [1 + s / (2π · ${fp / 1000} kHz)]`;
-            document.getElementById("transfer-output").textContent = transferText;
+                ? `\\( H(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz / 1000} \\, \\text{kHz}}}{s \\left(1 + \\frac{s}{2\\pi \\cdot ${fp / 1000} \\, \\text{kHz}}\\right)} \\)`
+                : `\\( H(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz / 1000} \\, \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${fp / 1000} \\, \\text{kHz}}} \\)`;
+            document.getElementById("transfer-output").innerHTML = transferText;
 
             // Generate Bode plot data
             let freqs = [];
@@ -286,12 +285,12 @@
             let zeroDb = 20 * Math.log10(zeroMag);
             let zeroPhase = 45 - Math.atan(wz / wp) * 180 / Math.PI + (includeOrigin ? -90 : 0);
 
-            // Phase Boost
+            // Phase Boost with frequency
             let fBoost = Math.sqrt(fp * fz);
             let wBoost = 2 * Math.PI * fBoost;
             let phaseBoost = Math.atan(wBoost / wz) * 180 / Math.PI - Math.atan(wBoost / wp) * 180 / Math.PI;
-            let boost = phaseBoost.toFixed(1);
-            document.getElementById("phase-boost-output").textContent = boost;
+            let boostText = `${phaseBoost.toFixed(1)}° at ${(fBoost / 1000).toFixed(1)} kHz`;
+            document.getElementById("phase-boost-output").textContent = boostText;
 
             // Update magnitude chart
             magChart.data.labels = freqs;
@@ -314,6 +313,9 @@
             phaseChart.options.scales.y.min = yPhaseMin;
             phaseChart.options.scales.y.max = yPhaseMax;
             phaseChart.update();
+
+            // Re-render MathJax
+            MathJax.typeset();
         }
 
         function updateFromSlider(type) {
