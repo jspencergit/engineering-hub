@@ -7,6 +7,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['\\(', '\\)']]},
+            CommonHTML: {scale: 150} // 150% of base size (~24px from 16px, close to 27px)
+        });
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -91,6 +97,7 @@
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 4px;
+            transform: scale(1.125); /* Further 12.5% boost to reach ~27px */
         }
         .calculator button {
             background-color: #1a73e8;
@@ -251,9 +258,9 @@
             let K = Math.pow(10, gainDb / 20) / mag;
             document.getElementById("gain-output").textContent = K.toFixed(2);
 
-            // Transfer Function (LaTeX with MathJax)
+            // Transfer Function (LaTeX with MathJax, 1/s after gain)
             let transferText = includeOrigin
-                ? `\\( H(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz / 1000} \\, \\text{kHz}}}{s \\left(1 + \\frac{s}{2\\pi \\cdot ${fp / 1000} \\, \\text{kHz}}\\right)} \\)`
+                ? `\\( H(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz / 1000} \\, \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${fp / 1000} \\, \\text{kHz}}} \\)`
                 : `\\( H(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz / 1000} \\, \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${fp / 1000} \\, \\text{kHz}}} \\)`;
             document.getElementById("transfer-output").innerHTML = transferText;
 
