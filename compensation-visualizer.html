@@ -83,6 +83,13 @@
             font-size: 18px;
             color: #1a73e8;
         }
+        .transfer span {
+            display: inline-block;
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
         .calculator button {
             background-color: #1a73e8;
             color: white;
@@ -141,11 +148,17 @@
             <label for="x-max">X-Axis Max (Hz):</label>
             <input type="number" id="x-max" step="1" min="1" value="1000000" oninput="updateCompensator()">
             
-            <label for="y-min">Y-Axis Min (dB):</label>
-            <input type="number" id="y-min" step="1" value="-20" oninput="updateCompensator()">
+            <label for="y-mag-min">Y-Axis Mag Min (dB):</label>
+            <input type="number" id="y-mag-min" step="1" value="-20" oninput="updateCompensator()">
             
-            <label for="y-max">Y-Axis Max (dB):</label>
-            <input type="number" id="y-max" step="1" value="80" oninput="updateCompensator()">
+            <label for="y-mag-max">Y-Axis Mag Max (dB):</label>
+            <input type="number" id="y-mag-max" step="1" value="80" oninput="updateCompensator()">
+            
+            <label for="y-phase-min">Y-Axis Phase Min (°):</label>
+            <input type="number" id="y-phase-min" step="1" value="-180" oninput="updateCompensator()">
+            
+            <label for="y-phase-max">Y-Axis Phase Max (°):</label>
+            <input type="number" id="y-phase-max" step="1" value="0" oninput="updateCompensator()">
             
             <div class="output">Gain K: <span id="gain-output">0</span></div>
             <div class="transfer">Transfer Function: <span id="transfer-output">H(s) = </span></div>
@@ -220,8 +233,10 @@
             let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000;
             let xMin = parseFloat(document.getElementById("x-min").value) || 100;
             let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
-            let yMin = parseFloat(document.getElementById("y-min").value) || -20;
-            let yMax = parseFloat(document.getElementById("y-max").value) || 80;
+            let yMagMin = parseFloat(document.getElementById("y-mag-min").value) || -20;
+            let yMagMax = parseFloat(document.getElementById("y-mag-max").value) || 80;
+            let yPhaseMin = parseFloat(document.getElementById("y-phase-min").value) || (includeOrigin ? -180 : -90);
+            let yPhaseMax = parseFloat(document.getElementById("y-phase-max").value) || (includeOrigin ? 0 : 90);
 
             let wp = 2 * Math.PI * fp;
             let wz = 2 * Math.PI * fz;
@@ -231,14 +246,13 @@
             let zeroTerm = Math.sqrt(1 + Math.pow(wGain / wz, 2));
             let poleTerm = Math.sqrt(1 + Math.pow(wGain / wp, 2)) * (includeOrigin ? wGain : 1);
             let mag = zeroTerm / poleTerm;
-            let gainLinear = Math.pow(10, gainDb / 20);
-            let K = gainLinear / mag;
+            let K = Math.pow(10, gainDb / 20) / mag;
             document.getElementById("gain-output").textContent = K.toFixed(2);
 
-            // Transfer Function
+            // Transfer Function (Gain in dB, poles/zeros in kHz)
             let transferText = includeOrigin
-                ? `H(s) = ${K.toFixed(2)} · ((s/${wz.toFixed(0)}) + 1) / (s · ((s/${wp.toFixed(0)}) + 1))`
-                : `H(s) = ${K.toFixed(2)} · ((s/${wz.toFixed(0)}) + 1) / ((s/${wp.toFixed(0)}) + 1)`;
+                ? `${gainDb.toFixed(1)} dB · (1 + s/${(fz).toFixed(0)}k) / (s · (1 + s/${(fp).toFixed(0)}k))`
+                : `${gainDb.toFixed(1)} dB · (1 + s/${(fz).toFixed(0)}k) / (1 + s/${(fp).toFixed(0)}k)`;
             document.getElementById("transfer-output").textContent = transferText;
 
             // Generate Bode plot data
@@ -270,7 +284,7 @@
             let zeroPhase = 45 - Math.atan(wz / wp) * 180 / Math.PI + (includeOrigin ? -90 : 0);
 
             // Phase Boost at geometric mean
-            let fBoost = Math.sqrt(fp * fz); // Geometric mean
+            let fBoost = Math.sqrt(fp * fz);
             let wBoost = 2 * Math.PI * fBoost;
             let phaseBoost = Math.atan(wBoost / wz) * 180 / Math.PI - Math.atan(wBoost / wp) * 180 / Math.PI;
             let baseline = includeOrigin ? -90 : 0;
@@ -284,8 +298,8 @@
             magChart.data.datasets[2].data = [{x: fz, y: zeroDb}];
             magChart.options.scales.x.min = xMin;
             magChart.options.scales.x.max = xMax;
-            magChart.options.scales.y.min = yMin;
-            magChart.options.scales.y.max = yMax;
+            magChart.options.scales.y.min = yMagMin;
+            magChart.options.scales.y.max = yMagMax;
             magChart.update();
 
             // Update phase chart
@@ -295,8 +309,8 @@
             phaseChart.data.datasets[2].data = [{x: fz, y: zeroPhase}];
             phaseChart.options.scales.x.min = xMin;
             phaseChart.options.scales.x.max = xMax;
-            phaseChart.options.scales.y.min = includeOrigin ? -180 : -90;
-            phaseChart.options.scales.y.max = 0;
+            phaseChart.options.scales.y.min = yPhaseMin;
+            phaseChart.options.scales.y.max = yPhaseMax;
             phaseChart.update();
         }
 
@@ -309,6 +323,7 @@
         }
 
         function resetCompensator() {
+            let includeOrigin = document.getElementById("origin-pole").checked;
             document.getElementById("origin-pole").checked = true;
             document.getElementById("pole-freq").value = 100;
             document.getElementById("pole-slider").value = 100;
@@ -318,8 +333,10 @@
             document.getElementById("gain-freq").value = 0.1;
             document.getElementById("x-min").value = 100;
             document.getElementById("x-max").value = 1000000;
-            document.getElementById("y-min").value = -20;
-            document.getElementById("y-max").value = 80;
+            document.getElementById("y-mag-min").value = -20;
+            document.getElementById("y-mag-max").value = 80;
+            document.getElementById("y-phase-min").value = includeOrigin ? -180 : -90;
+            document.getElementById("y-phase-max").value = includeOrigin ? 0 : 90;
             document.getElementById("gain-output").textContent = "0";
             updateCompensator();
         }
@@ -379,7 +396,7 @@
             updateCompensator();
         });
 
-        document.getElementById("y-min").addEventListener("wheel", function(event) {
+        document.getElementById("y-mag-min").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || -20;
             let step = 10;
@@ -388,9 +405,27 @@
             updateCompensator();
         });
 
-        document.getElementById("y-max").addEventListener("wheel", function(event) {
+        document.getElementById("y-mag-max").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 80;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("y-phase-min").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || -180;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("y-phase-max").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 0;
             let step = 10;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
