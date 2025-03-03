@@ -129,17 +129,30 @@
             <label for="gain-freq">at Frequency (Hz):</label>
             <input type="number" id="gain-freq" step="1" min="1" placeholder="Enter freq" oninput="updateCompensator()">
             
+            <label for="x-min">X-Axis Min (Hz):</label>
+            <input type="number" id="x-min" step="1" min="1" value="100" oninput="updateCompensator()">
+            
+            <label for="x-max">X-Axis Max (Hz):</label>
+            <input type="number" id="x-max" step="1" min="1" value="1000000" oninput="updateCompensator()">
+            
+            <label for="y-min">Y-Axis Min (dB):</label>
+            <input type="number" id="y-min" step="1" value="-20" oninput="updateCompensator()">
+            
+            <label for="y-max">Y-Axis Max (dB):</label>
+            <input type="number" id="y-max" step="1" value="80" oninput="updateCompensator()">
+            
             <div class="output">Gain K: <span id="gain-output">0</span></div>
             
             <button onclick="resetCompensator()">Reset</button>
             
-            <canvas id="bodeChart"></canvas>
+            <canvas id="bodeMagChart"></canvas>
+            <canvas id="bodePhaseChart"></canvas>
         </div>
 
         <script>
-            // Chart.js setup
-            const ctx = document.getElementById("bodeChart").getContext("2d");
-            let bodeChart = new Chart(ctx, {
+            // Magnitude Chart
+            const magCtx = document.getElementById("bodeMagChart").getContext("2d");
+            let magChart = new Chart(magCtx, {
                 type: "line",
                 data: {
                     labels: [],
@@ -147,14 +160,20 @@
                         label: "Magnitude (dB)",
                         data: [],
                         borderColor: "#1a73e8",
-                        fill: false
+                        fill: false,
+                        pointRadius: 0 // No circles
                     }]
                 },
                 options: {
                     scales: {
                         x: {
                             type: "logarithmic",
-                            title: { display: true, text: "Frequency (Hz)" }
+                            title: { display: true, text: "Frequency (kHz)" },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000).toFixed(1); // Convert Hz to kHz
+                                }
+                            }
                         },
                         y: {
                             title: { display: true, text: "Magnitude (dB)" }
@@ -164,9 +183,9 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    let freq = context.parsed.x;
-                                    let db = context.parsed.y.toFixed(2);
-                                    return `Freq: ${freq} Hz, Gain: ${db} dB`;
+                                    let freq = (context.parsed.x / 1000).toFixed(1); // Hz to kHz
+                                    let db = context.parsed.y.toFixed(1);
+                                    return `${freq} kHz, ${db} dB`;
                                 }
                             }
                         },
@@ -178,7 +197,7 @@
                                     xMax: 100,
                                     borderColor: "red",
                                     borderWidth: 2,
-                                    label: { content: "Pole", enabled: true, position: "top" }
+                                    label: { content: "Pole", enabled: true, position: "center" }
                                 },
                                 zeroLine: {
                                     type: "line",
@@ -186,7 +205,50 @@
                                     xMax: 1000,
                                     borderColor: "green",
                                     borderWidth: 2,
-                                    label: { content: "Zero", enabled: true, position: "top" }
+                                    label: { content: "Zero", enabled: true, position: "center" }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Phase Chart
+            const phaseCtx = document.getElementById("bodePhaseChart").getContext("2d");
+            let phaseChart = new Chart(phaseCtx, {
+                type: "line",
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Phase (degrees)",
+                        data: [],
+                        borderColor: "#1a73e8",
+                        fill: false,
+                        pointRadius: 0 // No circles
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: "logarithmic",
+                            title: { display: true, text: "Frequency (kHz)" },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000).toFixed(1); // Convert Hz to kHz
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: "Phase (degrees)" }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let freq = (context.parsed.x / 1000).toFixed(1); // Hz to kHz
+                                    let deg = context.parsed.y.toFixed(1);
+                                    return `${freq} kHz, ${deg}°`;
                                 }
                             }
                         }
@@ -199,6 +261,10 @@
                 let fz = parseFloat(document.getElementById("zero-freq").value) || 1000;
                 let gainDb = parseFloat(document.getElementById("gain-db").value) || 0;
                 let fGain = parseFloat(document.getElementById("gain-freq").value) || 100000;
+                let xMin = parseFloat(document.getElementById("x-min").value) || 100;
+                let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
+                let yMin = parseFloat(document.getElementById("y-min").value) || -20;
+                let yMax = parseFloat(document.getElementById("y-max").value) || 80;
 
                 let wp = 2 * Math.PI * fp;
                 let wz = 2 * Math.PI * fz;
@@ -215,23 +281,44 @@
                 // Generate Bode plot data
                 let freqs = [];
                 let mags = [];
-                for (let logF = 0; logF <= 6; logF += 0.1) { // 1 Hz to 1 MHz
+                let phases = [];
+                let logMin = Math.log10(xMin);
+                let logMax = Math.log10(xMax);
+                for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
                     let f = Math.pow(10, logF);
                     let w = 2 * Math.PI * f;
                     let mag = K * Math.sqrt(1 + Math.pow(w / wz, 2)) / (w * Math.sqrt(1 + Math.pow(w / wp, 2)));
                     let db = 20 * Math.log10(mag);
+                    let phaseZero = Math.atan(w / wz) * 180 / Math.PI;
+                    let phasePole = -Math.atan(w / wp) * 180 / Math.PI;
+                    let phaseOrigin = -90; // Origin pole at s=0
+                    let phase = phaseZero + phasePole + phaseOrigin;
                     freqs.push(f);
                     mags.push(db);
+                    phases.push(phase);
                 }
 
-                // Update chart
-                bodeChart.data.labels = freqs;
-                bodeChart.data.datasets[0].data = mags;
-                bodeChart.options.plugins.annotation.annotations.poleLine.xMin = fp;
-                bodeChart.options.plugins.annotation.annotations.poleLine.xMax = fp;
-                bodeChart.options.plugins.annotation.annotations.zeroLine.xMin = fz;
-                bodeChart.options.plugins.annotation.annotations.zeroLine.xMax = fz;
-                bodeChart.update();
+                // Update magnitude chart
+                magChart.data.labels = freqs;
+                magChart.data.datasets[0].data = mags;
+                magChart.options.scales.x.min = xMin;
+                magChart.options.scales.x.max = xMax;
+                magChart.options.scales.y.min = yMin;
+                magChart.options.scales.y.max = yMax;
+                magChart.options.plugins.annotation.annotations.poleLine.xMin = fp;
+                magChart.options.plugins.annotation.annotations.poleLine.xMax = fp;
+                magChart.options.plugins.annotation.annotations.zeroLine.xMin = fz;
+                magChart.options.plugins.annotation.annotations.zeroLine.xMax = fz;
+                magChart.update();
+
+                // Update phase chart
+                phaseChart.data.labels = freqs;
+                phaseChart.data.datasets[0].data = phases;
+                phaseChart.options.scales.x.min = xMin;
+                phaseChart.options.scales.x.max = xMax;
+                phaseChart.options.scales.y.min = -180; // Fixed phase range
+                phaseChart.options.scales.y.max = 0;
+                phaseChart.update();
             }
 
             function updateFromSlider(type) {
@@ -249,6 +336,10 @@
                 document.getElementById("zero-slider").value = 1000;
                 document.getElementById("gain-db").value = "";
                 document.getElementById("gain-freq").value = "";
+                document.getElementById("x-min").value = 100;
+                document.getElementById("x-max").value = 1000000;
+                document.getElementById("y-min").value = -20;
+                document.getElementById("y-max").value = 80;
                 document.getElementById("gain-output").textContent = "0";
                 updateCompensator();
             }
@@ -285,6 +376,42 @@
                 event.preventDefault();
                 let value = parseFloat(this.value) || 100000;
                 let step = 1000;
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
+                updateCompensator();
+            });
+
+            document.getElementById("x-min").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || 100;
+                let step = 100;
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
+                updateCompensator();
+            });
+
+            document.getElementById("x-max").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || 1000000;
+                let step = 10000;
+                if (event.deltaY < 0) this.value = value + step;
+                else if (value > step) this.value = value - step;
+                updateCompensator();
+            });
+
+            document.getElementById("y-min").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || -20;
+                let step = 10;
+                if (event.deltaY < 0) this.value = value + step;
+                else this.value = value - step;
+                updateCompensator();
+            });
+
+            document.getElementById("y-max").addEventListener("wheel", function(event) {
+                event.preventDefault();
+                let value = parseFloat(this.value) || 80;
+                let step = 10;
                 if (event.deltaY < 0) this.value = value + step;
                 else if (value > step) this.value = value - step;
                 updateCompensator();
