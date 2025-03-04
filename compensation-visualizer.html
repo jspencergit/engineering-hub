@@ -10,7 +10,7 @@
     <script type="text/x-mathjax-config">
         MathJax.Hub.Config({
             tex2jax: {inlineMath: [['\\(', '\\)']]},
-            CommonHTML: {scale: 150} // 150% of base size (~24px from 16px, close to 27px)
+            CommonHTML: {scale: 150}
         });
     </script>
     <style>
@@ -91,13 +91,18 @@
             font-size: 18px;
             color: #1a73e8;
         }
+        .transfer {
+            display: flex;
+            align-items: center;
+        }
         .transfer .mathjax-eq {
+            margin-left: 10px; /* Space to the right of "Transfer Function" */
             display: inline-block;
             padding: 8px 12px;
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 4px;
-            transform: scale(1.125); /* Further 12.5% boost to reach ~27px */
+            transform: scale(1.125);
         }
         .calculator button {
             background-color: #1a73e8;
@@ -151,11 +156,11 @@
             <label for="gain-freq">at Frequency (kHz):</label>
             <input type="number" id="gain-freq" step="0.1" min="0.001" value="0.1" placeholder="Enter freq" oninput="updateCompensator()">
             
-            <label for="x-min">X-Axis Min (Hz):</label>
-            <input type="number" id="x-min" step="1" min="1" value="100" oninput="updateCompensator()">
+            <label for="x-min">X-Axis Min (kHz):</label>
+            <input type="number" id="x-min" step="0.1" min="0.001" value="0.1" placeholder="Enter min freq" oninput="updateCompensator()">
             
-            <label for="x-max">X-Axis Max (Hz):</label>
-            <input type="number" id="x-max" step="1" min="1" value="1000000" oninput="updateCompensator()">
+            <label for="x-max">X-Axis Max (kHz):</label>
+            <input type="number" id="x-max" step="1" min="0.001" value="1000" placeholder="Enter max freq" oninput="updateCompensator()">
             
             <label for="y-mag-min">Y-Axis Mag Min (dB):</label>
             <input type="number" id="y-mag-min" step="1" value="-20" oninput="updateCompensator()">
@@ -240,8 +245,8 @@
             let fz = (parseFloat(document.getElementById("zero-freq").value) || 10) * 1000;
             let gainDb = parseFloat(document.getElementById("gain-db").value) || 60;
             let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000;
-            let xMin = parseFloat(document.getElementById("x-min").value) || 100;
-            let xMax = parseFloat(document.getElementById("x-max").value) || 1000000;
+            let xMin = (parseFloat(document.getElementById("x-min").value) || 0.1) * 1000; // Now in kHz
+            let xMax = (parseFloat(document.getElementById("x-max").value) || 1000) * 1000; // Now in kHz
             let yMagMin = parseFloat(document.getElementById("y-mag-min").value) || -20;
             let yMagMax = parseFloat(document.getElementById("y-mag-max").value) || 80;
             let yPhaseMin = parseFloat(document.getElementById("y-phase-min").value) || (includeOrigin ? -180 : -90);
@@ -342,8 +347,8 @@
             document.getElementById("zero-slider").value = 10;
             document.getElementById("gain-db").value = 60;
             document.getElementById("gain-freq").value = 0.1;
-            document.getElementById("x-min").value = 100;
-            document.getElementById("x-max").value = 1000000;
+            document.getElementById("x-min").value = 0.1; // Now in kHz
+            document.getElementById("x-max").value = 1000; // Now in kHz
             document.getElementById("y-mag-min").value = -20;
             document.getElementById("y-mag-max").value = 80;
             document.getElementById("y-phase-min").value = includeOrigin ? -180 : -90;
@@ -391,8 +396,8 @@
 
         document.getElementById("x-min").addEventListener("wheel", function(event) {
             event.preventDefault();
-            let value = parseFloat(this.value) || 100;
-            let step = 100;
+            let value = parseFloat(this.value) || 0.1;
+            let step = 0.1; // Adjusted for kHz
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
@@ -400,8 +405,8 @@
 
         document.getElementById("x-max").addEventListener("wheel", function(event) {
             event.preventDefault();
-            let value = parseFloat(this.value) || 1000000;
-            let step = 10000;
+            let value = parseFloat(this.value) || 1000;
+            let step = 10; // Adjusted for kHz
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
