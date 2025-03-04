@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Language" content="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Type II Compensator - Analog Engineering Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -43,9 +44,6 @@
             border-radius: 8px;
             border: 1px solid #ddd;
             width: 50%;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
         }
         .charts {
             width: 50%;
@@ -58,7 +56,6 @@
         }
         .calculator .param-group {
             margin-bottom: 15px;
-            flex: 1 1 45%; /* Allows inputs to share space, but wrap if needed */
         }
         .calculator input[type="number"] {
             width: 100%;
@@ -76,7 +73,7 @@
         .calculator input[type="range"] {
             width: 100%;
             max-width: 200px;
-            margin: 5px 0 0 0;
+            margin: 5px 0;
             -webkit-appearance: none;
             height: 8px;
             background: #ddd;
@@ -118,12 +115,12 @@
             transform: scale(1.125);
         }
         .schematic {
-            max-width: 300px;
-            margin: 0 20px 20px 0;
+            display: block;
+            max-width: 150px; /* 50% of original width, assuming original was ~300px */
+            margin: 20px auto;
             border: 1px solid #ddd;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            flex: 1 1 45%; /* Matches param-group for side-by-side layout */
         }
         .calculator button {
             background-color: #1a73e8;
@@ -133,7 +130,6 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 10px;
-            width: 100%; /* Ensure button spans full width */
         }
         .calculator button:hover {
             background-color: #1557b0;
@@ -153,41 +149,41 @@
     <section id="tools">
         <div class="calculator">
             <h3>Type II Compensator</h3>
+            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
+            
             <div class="param-group">
                 <label for="rth">R_TH (kΩ):</label>
                 <input type="number" id="rth" step="0.1" min="0.1" value="10" oninput="updateCompensator()">
-                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
                 <input type="range" id="rth-slider" min="0.1" max="100" step="0.1" value="10" oninput="updateFromSlider('rth')">
+                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
             </div>
-            
-            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
             
             <div class="param-group">
                 <label for="cth">C_TH (pF):</label>
                 <input type="number" id="cth" step="1" min="1" value="1000" oninput="updateCompensator()">
-                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p0} = \frac{1}{2\pi R_o C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
                 <input type="range" id="cth-slider" min="100" max="10000" step="100" value="1000" oninput="updateFromSlider('cth')">
+                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p0} = \frac{1}{2\pi R_o C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
             </div>
             
             <div class="param-group">
                 <label for="cthp">C_THP (pF):</label>
                 <input type="number" id="cthp" step="1" min="1" value="100" oninput="updateCompensator()">
-                <div class="equation">\( f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
                 <input type="range" id="cthp-slider" min="10" max="1000" step="10" value="100" oninput="updateFromSlider('cthp')">
+                <div class="equation">\( f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
             </div>
             
             <div class="param-group">
                 <label for="gm">gm (mS):</label>
                 <input type="number" id="gm" step="0.1" min="0.1" value="2" oninput="updateCompensator()">
-                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o) \)</div>
                 <input type="range" id="gm-slider" min="0.1" max="10" step="0.1" value="2" oninput="updateFromSlider('gm')">
+                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o) \)</div>
             </div>
             
             <div class="param-group">
                 <label for="ro">R_o (kΩ):</label>
                 <input type="number" id="ro" step="1" min="1" value="500" oninput="updateCompensator()">
-                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o), f_{p0} = \frac{1}{2\pi R_o C_{TH}} \)</div>
                 <input type="range" id="ro-slider" min="100" max="1000" step="10" value="500" oninput="updateFromSlider('ro')">
+                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o), f_{p0} = \frac{1}{2\pi R_o C_{TH}} \)</div>
             </div>
             
             <div class="param-group">
@@ -207,7 +203,7 @@
         <div class="charts">
             <canvas id="bodeMagChart"></canvas>
             <canvas id="bodePhaseChart"></canvas>
-            <div class="transfer">Transfer Function: <span class="mathjax-eq" id="transfer-output"></span></div>
+            <div class="transfer">Transfer Function: <span class="mathjax-eq" id="transfer-output">\( A(s) = \)</span></div>
             <div class="poles-zeros">Zero: <span id="zero-output">0</span> kHz, Pole: <span id="pole-output">0</span> kHz</div>
             <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span></div>
         </div>
@@ -277,7 +273,7 @@
             document.getElementById("pole-output").textContent = fp2.toFixed(1);
 
             // Update transfer function as pure LaTeX
-            document.getElementById("transfer-output").innerHTML = `\\( A(s) = ${gainDb.toFixed(1)} \\, \\mathrm{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz1.toFixed(1)} \\, \\mathrm{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${fp0.toFixed(1)} \\, \\mathrm{kHz}}\\right) \\cdot \\left(1 + \\frac{s}{2\\pi \\cdot ${fp2.toFixed(1)} \\, \\mathrm{kHz}}\\right)} \\)`;
+            document.getElementById("transfer-output").innerHTML = `\\( A(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz1.toFixed(1)} \\, \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${fp0.toFixed(1)} \\, \\text{kHz}}\\right) \\cdot \\left(1 + \\frac{s}{2\\pi \\cdot ${fp2.toFixed(1)} \\, \\text{kHz}}\\right)} \\)`;
 
             // Phase Boost
             let fBoost = Math.sqrt(fz1 * fp2 * 1e6) / 1000; // Geometric mean in kHz
