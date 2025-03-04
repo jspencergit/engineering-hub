@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Language" content="en">
     <title>Type II Compensator - Analog Engineering Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -42,6 +43,9 @@
             border-radius: 8px;
             border: 1px solid #ddd;
             width: 50%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         .charts {
             width: 50%;
@@ -54,6 +58,7 @@
         }
         .calculator .param-group {
             margin-bottom: 15px;
+            flex: 1 1 45%; /* Allows inputs to share space, but wrap if needed */
         }
         .calculator input[type="number"] {
             width: 100%;
@@ -113,12 +118,12 @@
             transform: scale(1.125);
         }
         .schematic {
-            display: block;
             max-width: 300px;
-            margin: 20px auto;
+            margin: 0 20px 20px 0;
             border: 1px solid #ddd;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            flex: 1 1 45%; /* Matches param-group for side-by-side layout */
         }
         .calculator button {
             background-color: #1a73e8;
@@ -128,6 +133,7 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 10px;
+            width: 100%; /* Ensure button spans full width */
         }
         .calculator button:hover {
             background-color: #1557b0;
@@ -153,6 +159,8 @@
                 <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
                 <input type="range" id="rth-slider" min="0.1" max="100" step="0.1" value="10" oninput="updateFromSlider('rth')">
             </div>
+            
+            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
             
             <div class="param-group">
                 <label for="cth">C_TH (pF):</label>
@@ -193,8 +201,6 @@
                 <input type="number" id="x-max" step="1" min="0.001" value="1000" oninput="updateCompensator()">
                 <input type="range" id="x-max-slider" min="100" max="2000" step="10" value="1000" oninput="updateFromSlider('x-max')">
             </div>
-            
-            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
             
             <button onclick="resetCompensator()">Reset</button>
         </div>
