@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Type II Compensator - Analog Engineering Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['\\(', '\\)']]},
+            CommonHTML: {scale: 150}
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1a73e8;
+            color: white;
+        }
+        section {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+        }
+        .calculator {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            width: 50%;
+        }
+        .charts {
+            width: 50%;
+            padding-left: 20px;
+        }
+        .calculator label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        .calculator .param-group {
+            margin-bottom: 15px;
+        }
+        .calculator input[type="number"] {
+            width: 100%;
+            max-width: 200px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .calculator input[type="number"]:focus {
+            border-color: #1a73e8;
+            outline: none;
+            box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+        }
+        .calculator input[type="range"] {
+            width: 100%;
+            max-width: 200px;
+            margin: 5px 0 0 0;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            outline: none;
+        }
+        .calculator input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #1a73e8;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .calculator input[type="range"]::-webkit-slider-thumb:hover {
+            background: #1557b0;
+        }
+        .calculator .equation {
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .calculator .output, .charts .transfer, .charts .phase-boost, .charts .poles-zeros {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #1a73e8;
+        }
+        .transfer {
+            display: flex;
+            align-items: center;
+        }
+        .transfer .mathjax-eq {
+            margin-left: 20px;
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            transform: scale(1.125);
+        }
+        .calculator button {
+            background-color: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .calculator button:hover {
+            background-color: #1557b0;
+        }
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Analog Engineering Hub</h1>
+        <p><a href="https://jspencergit.github.io/engineering-hub/tools.html">Back to Tools</a></p>
+    </header>
+
+    <section id="tools">
+        <div class="calculator">
+            <h3>Type II Compensator</h3>
+            <div class="param-group">
+                <label for="rth">R_TH (kΩ):</label>
+                <input type="number" id="rth" step="0.1" min="0.1" value="10" oninput="updateCompensator()">
+                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <input type="range" id="rth-slider" min="0.1" max="100" step="0.1" value="10" oninput="updateFromSlider('rth')">
+            </div>
+            
+            <div class="param-group">
+                <label for="cth">C_TH (pF):</label>
+                <input type="number" id="cth" step="1" min="1" value="1000" oninput="updateCompensator()">
+                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p0} = \frac{1}{2\pi R_o C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <input type="range" id="cth-slider" min="100" max="10000" step="100" value="1000" oninput="updateFromSlider('cth')">
+            </div>
+            
+            <div class="param-group">
+                <label for="cthp">C_THP (pF):</label>
+                <input type="number" id="cthp" step="1" min="1" value="100" oninput="updateCompensator()">
+                <div class="equation">\( f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <input type="range" id="cthp-slider" min="10" max="1000" step="10" value="100" oninput="updateFromSlider('cthp')">
+            </div>
+            
+            <div class="param-group">
+                <label for="gm">gm (mS):</label>
+                <input type="number" id="gm" step="0.1" min="0.1" value="2" oninput="updateCompensator()">
+                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o) \)</div>
+                <input type="range" id="gm-slider" min="0.1" max="10" step="0.1" value="2" oninput="updateFromSlider('gm')">
+            </div>
+            
+            <div class="param-group">
+                <label for="ro">R_o (kΩ):</label>
+                <input type="number" id="ro" step="1" min="1" value="500" oninput="updateCompensator()">
+                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o), f_{p0} = \frac{1}{2\pi R_o C_{TH}} \)</div>
+                <input type="range" id="ro-slider" min="100" max="1000" step="10" value="500" oninput="updateFromSlider('ro')">
+            </div>
+            
+            <div class="param-group">
+                <label for="x-min">X-Axis Min (kHz):</label>
+                <input type="number" id="x-min" step="0.1" min="0.001" value="0.1" oninput="updateCompensator()">
+                <input type="range" id="x-min-slider" min="0.001" max="10" step="0.1" value="0.1" oninput="updateFromSlider('x-min')">
+            </div>
+            
+            <div class="param-group">
+                <label for="x-max">X-Axis Max (kHz):</label>
+                <input type="number" id="x-max" step="1" min="0.001" value="1000" oninput="updateCompensator()">
+                <input type="range" id="x-max-slider" min="100" max="2000" step="10" value="1000" oninput="updateFromSlider('x-max')">
+            </div>
+            
+            <button onclick="resetCompensator()">Reset</button>
+        </div>
+        <div class="charts">
+            <canvas id="bodeMagChart"></canvas>
+            <canvas id="bodePhaseChart"></canvas>
+            <div class="transfer">Transfer Function: <span class="mathjax-eq" id="transfer-output"></span></div>
+            <div class="poles-zeros">Zero: <span id="zero-output">0</span> kHz, Pole: <span id="pole-output">0</span> kHz</div>
+            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span></div>
+        </div>
+    </section>
+
+    <script>
+        const magCtx = document.getElementById("bodeMagChart").getContext("2d");
+        let magChart = new Chart(magCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    { label: "Magnitude (dB)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
+                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false },
+                    { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+                    y: { title: { display: true, text: "Magnitude (dB)" }, min: -20, max: 100 }
+                },
+                plugins: { tooltip: { mode: "nearest", intersect: false, callbacks: { label: context => `${context.parsed.x.toFixed(1)} kHz, ${context.parsed.y.toFixed(1)} dB` } } }
+            }
+        });
+
+        const phaseCtx = document.getElementById("bodePhaseChart").getContext("2d");
+        let phaseChart = new Chart(phaseCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    { label: "Phase (degrees)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0 },
+                    { label: "Pole", data: [], pointRadius: 8, pointStyle: "cross", borderColor: "red", showLine: false },
+                    { label: "Zero", data: [], pointRadius: 5, pointStyle: "circle", borderColor: "green", showLine: false }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+                    y: { title: { display: true, text: "Phase (degrees)" }, min: -90, max: 90 }
+                },
+                plugins: { tooltip: { mode: "nearest", intersect: false, callbacks: { label: context => `${context.parsed.x.toFixed(1)} kHz, ${context.parsed.y.toFixed(1)}°` } } }
+            }
+        });
+
+        function updateCompensator() {
+            let rth = parseFloat(document.getElementById("rth").value) * 1000; // kΩ to Ω
+            let cth = parseFloat(document.getElementById("cth").value) * 1e-12; // pF to F
+            let cthp = parseFloat(document.getElementById("cthp").value) * 1e-12; // pF to F
+            let gm = parseFloat(document.getElementById("gm").value) * 1e-3; // mS to S
+            let ro = parseFloat(document.getElementById("ro").value) * 1000; // kΩ to Ω
+            let xMin = parseFloat(document.getElementById("x-min").value) * 1000; // kHz to Hz
+            let xMax = parseFloat(document.getElementById("x-max").value) * 1000; // kHz to Hz
+
+            // Calculate poles and zeros (in kHz)
+            let fz1 = 1 / (2 * Math.PI * rth * cth) / 1000; // Zero in kHz
+            let fp2 = (cth + cthp) / (2 * Math.PI * rth * cth * cthp) / 1000; // High-frequency pole in kHz
+            let fp0 = 1 / (2 * Math.PI * ro * cth) / 1000; // Low-frequency pole in kHz
+
+            // Low-frequency gain in dB
+            let lowFreqGain = gm * ro; // Gain in linear scale
+            let gainDb = 20 * Math.log10(lowFreqGain); // Convert to dB
+
+            // Update poles and zeros output
+            document.getElementById("zero-output").textContent = fz1.toFixed(1);
+            document.getElementById("pole-output").textContent = fp2.toFixed(1);
+
+            // Update transfer function as pure LaTeX
+            document.getElementById("transfer-output").innerHTML = `\\( A(s) = ${gainDb.toFixed(1)} \\, \\mathrm{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${fz1.toFixed(1)} \\, \\mathrm{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${fp0.toFixed(1)} \\, \\mathrm{kHz}}\\right) \\cdot \\left(1 + \\frac{s}{2\\pi \\cdot ${fp2.toFixed(1)} \\, \\mathrm{kHz}}\\right)} \\)`;
+
+            // Phase Boost
+            let fBoost = Math.sqrt(fz1 * fp2 * 1e6) / 1000; // Geometric mean in kHz
+            let wBoost = 2 * Math.PI * fBoost * 1000;
+            let phaseBoost = Math.atan(wBoost / (2 * Math.PI * fz1 * 1000)) * 180 / Math.PI - Math.atan(wBoost / (2 * Math.PI * fp2 * 1000)) * 180 / Math.PI;
+            let boostText = `${phaseBoost.toFixed(1)}° at ${fBoost.toFixed(1)} kHz`;
+            document.getElementById("phase-boost-output").textContent = boostText;
+
+            // Generate Bode plot data
+            let freqs = [];
+            let mags = [];
+            let phases = [];
+            let logMin = Math.log10(xMin);
+            let logMax = Math.log10(xMax);
+            for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
+                let f = Math.pow(10, logF);
+                let w = 2 * Math.PI * f;
+                let numMag = Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fz1 * 1000), 2));
+                let denMag = Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fp0 * 1000), 2)) * Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fp2 * 1000), 2));
+                let mag = lowFreqGain * numMag / denMag;
+                let db = 20 * Math.log10(mag);
+                let phaseZero = Math.atan(w / (2 * Math.PI * fz1 * 1000)) * 180 / Math.PI;
+                let phasePole0 = -Math.atan(w / (2 * Math.PI * fp0 * 1000)) * 180 / Math.PI;
+                let phasePole2 = -Math.atan(w / (2 * Math.PI * fp2 * 1000)) * 180 / Math.PI;
+                let phase = phaseZero + phasePole0 + phasePole2;
+                freqs.push(f / 1000); // Hz to kHz
+                mags.push(db);
+                phases.push(phase);
+            }
+
+            // Marker data
+            let wPole = 2 * Math.PI * fp2 * 1000;
+            let magPole = lowFreqGain * Math.sqrt(1 + Math.pow(wPole / (2 * Math.PI * fz1 * 1000), 2)) / (Math.sqrt(1 + Math.pow(wPole / (2 * Math.PI * fp0 * 1000), 2)) * Math.sqrt(1 + Math.pow(wPole / (2 * Math.PI * fp2 * 1000), 2)));
+            let dbPole = 20 * Math.log10(magPole);
+            let phasePoleMarker = Math.atan(wPole / (2 * Math.PI * fz1 * 1000)) * 180 / Math.PI - Math.atan(wPole / (2 * Math.PI * fp0 * 1000)) * 180 / Math.PI - 45;
+
+            let wZero = 2 * Math.PI * fz1 * 1000;
+            let magZero = lowFreqGain * Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * fz1 * 1000), 2)) / (Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * fp0 * 1000), 2)) * Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * fp2 * 1000), 2)));
+            let dbZero = 20 * Math.log10(magZero);
+            let phaseZeroMarker = 45 - Math.atan(wZero / (2 * Math.PI * fp0 * 1000)) * 180 / Math.PI - Math.atan(wZero / (2 * Math.PI * fp2 * 1000)) * 180 / Math.PI;
+
+            // Update magnitude chart
+            magChart.data.labels = freqs;
+            magChart.data.datasets[0].data = mags;
+            magChart.data.datasets[1].data = [{x: fp2, y: dbPole}];
+            magChart.data.datasets[2].data = [{x: fz1, y: dbZero}];
+            magChart.options.scales.x.min = xMin / 1000;
+            magChart.options.scales.x.max = xMax / 1000;
+            magChart.update();
+
+            // Update phase chart
+            phaseChart.data.labels = freqs;
+            phaseChart.data.datasets[0].data = phases;
+            phaseChart.data.datasets[1].data = [{x: fp2, y: phasePoleMarker}];
+            phaseChart.data.datasets[2].data = [{x: fz1, y: phaseZeroMarker}];
+            phaseChart.options.scales.x.min = xMin / 1000;
+            phaseChart.options.scales.x.max = xMax / 1000;
+            phaseChart.update();
+
+            // Re-render MathJax
+            MathJax.typeset();
+        }
+
+        function updateFromSlider(type) {
+            let freqId = type;
+            let sliderId = type + "-slider";
+            let value = parseFloat(document.getElementById(sliderId).value);
+            document.getElementById(freqId).value = value;
+            updateCompensator();
+        }
+
+        function resetCompensator() {
+            document.getElementById("rth").value = 10;
+            document.getElementById("rth-slider").value = 10;
+            document.getElementById("cth").value = 1000;
+            document.getElementById("cth-slider").value = 1000;
+            document.getElementById("cthp").value = 100;
+            document.getElementById("cthp-slider").value = 100;
+            document.getElementById("gm").value = 2;
+            document.getElementById("gm-slider").value = 2;
+            document.getElementById("ro").value = 500;
+            document.getElementById("ro-slider").value = 500;
+            document.getElementById("x-min").value = 0.1;
+            document.getElementById("x-min-slider").value = 0.1;
+            document.getElementById("x-max").value = 1000;
+            document.getElementById("x-max-slider").value = 1000;
+            updateCompensator();
+        }
+
+        // Mousewheel functionality
+        document.getElementById("rth").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 10;
+            let step = 0.1;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("cth").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 1000;
+            let step = 100;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("cthp").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 100;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("gm").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 2;
+            let step = 0.1;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("ro").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 500;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("x-min").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 0.1;
+            let step = 0.1;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        document.getElementById("x-max").addEventListener("wheel", function(event) {
+            event.preventDefault();
+            let value = parseFloat(this.value) || 1000;
+            let step = 10;
+            if (event.deltaY < 0) this.value = value + step;
+            else if (value > step) this.value = value - step;
+            updateCompensator();
+        });
+
+        // Initial update
+        updateCompensator();
+    </script>
+</body>
+</html>
