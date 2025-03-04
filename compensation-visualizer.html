@@ -96,7 +96,7 @@
             align-items: center;
         }
         .transfer .mathjax-eq {
-            margin-left: 10px; /* Space to the right of "Transfer Function" */
+            margin-left: 20px; /* Increased from 10px to 20px for more spacing */
             display: inline-block;
             padding: 8px 12px;
             background-color: #f8f9fa;
@@ -245,8 +245,8 @@
             let fz = (parseFloat(document.getElementById("zero-freq").value) || 10) * 1000;
             let gainDb = parseFloat(document.getElementById("gain-db").value) || 60;
             let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000;
-            let xMin = (parseFloat(document.getElementById("x-min").value) || 0.1) * 1000; // Now in kHz
-            let xMax = (parseFloat(document.getElementById("x-max").value) || 1000) * 1000; // Now in kHz
+            let xMin = (parseFloat(document.getElementById("x-min").value) || 0.1) * 1000;
+            let xMax = (parseFloat(document.getElementById("x-max").value) || 1000) * 1000;
             let yMagMin = parseFloat(document.getElementById("y-mag-min").value) || -20;
             let yMagMax = parseFloat(document.getElementById("y-mag-max").value) || 80;
             let yPhaseMin = parseFloat(document.getElementById("y-phase-min").value) || (includeOrigin ? -180 : -90);
@@ -347,8 +347,8 @@
             document.getElementById("zero-slider").value = 10;
             document.getElementById("gain-db").value = 60;
             document.getElementById("gain-freq").value = 0.1;
-            document.getElementById("x-min").value = 0.1; // Now in kHz
-            document.getElementById("x-max").value = 1000; // Now in kHz
+            document.getElementById("x-min").value = 0.1;
+            document.getElementById("x-max").value = 1000;
             document.getElementById("y-mag-min").value = -20;
             document.getElementById("y-mag-max").value = 80;
             document.getElementById("y-phase-min").value = includeOrigin ? -180 : -90;
@@ -397,7 +397,7 @@
         document.getElementById("x-min").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 0.1;
-            let step = 0.1; // Adjusted for kHz
+            let step = 0.1;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
@@ -406,7 +406,7 @@
         document.getElementById("x-max").addEventListener("wheel", function(event) {
             event.preventDefault();
             let value = parseFloat(this.value) || 1000;
-            let step = 10; // Adjusted for kHz
+            let step = 10;
             if (event.deltaY < 0) this.value = value + step;
             else if (value > step) this.value = value - step;
             updateCompensator();
