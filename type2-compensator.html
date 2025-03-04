@@ -112,6 +112,14 @@
             border-radius: 4px;
             transform: scale(1.125);
         }
+        .schematic {
+            display: block;
+            max-width: 300px;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
         .calculator button {
             background-color: #1a73e8;
             color: white;
@@ -185,6 +193,8 @@
                 <input type="number" id="x-max" step="1" min="0.001" value="1000" oninput="updateCompensator()">
                 <input type="range" id="x-max-slider" min="100" max="2000" step="10" value="1000" oninput="updateFromSlider('x-max')">
             </div>
+            
+            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
             
             <button onclick="resetCompensator()">Reset</button>
         </div>
