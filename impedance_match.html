@@ -32,17 +32,19 @@
             align-items: center;
             background-color: white;
             padding: 20px;
+            position: relative;
         }
         .chart-container {
             display: flex;
-            align-items: flex-start;
-            gap: 20px;
+            justify-content: center;
+            align-items: center;
             width: 100%;
+            height: 100%;
             max-width: 1200px;
         }
         .smith-chart {
-            width: 80vh;
-            height: 80vh;
+            width: 90vh;
+            height: 90vh;
             max-width: 1000px;
             max-height: 1000px;
             flex-shrink: 0;
@@ -51,12 +53,25 @@
             width: 100% !important;
             height: 100% !important;
         }
-        .right-panel {
+        .controls-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            z-index: 10;
+        }
+        .components-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 250px;
+            z-index: 10;
+        }
+        .right-panel, .left-panel {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            width: 250px;
-            flex-shrink: 0;
+            width: 100%;
         }
         #mouseImpedance {
             padding: 10px;
@@ -67,7 +82,7 @@
             text-align: center;
         }
         .coordinates {
-            max-height: 50vh;
+            max-height: 30vh;
             overflow-y: auto;
             padding: 10px;
             background-color: #f9f9f9;
@@ -86,6 +101,28 @@
             border-radius: 50%;
             margin-right: 5px;
         }
+        .elements-list {
+            max-height: 30vh;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .element-item {
+            margin-bottom: 10px;
+        }
+        .element-item label {
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .element-item input {
+            width: 60px;
+            padding: 3px;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
         button {
             background-color: #1a73e8;
             color: white;
@@ -98,7 +135,7 @@
         button:hover {
             background-color: #1557b0;
         }
-        .impedance-input, .reflection-control {
+        .impedance-input, .reflection-control, .component-input {
             padding: 10px;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
@@ -107,19 +144,25 @@
             flex-direction: column;
             gap: 10px;
         }
-        .impedance-input label, .reflection-control label {
+        .impedance-input label, .reflection-control label, .component-input label {
             font-size: 14px;
         }
-        .impedance-input input, .reflection-control input[type="number"] {
+        .impedance-input input, .reflection-control input[type="number"], .component-input input {
             width: 80px;
             padding: 5px;
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        .impedance-input button {
+        .impedance-input button, .component-input button {
             padding: 8px;
             font-size: 14px;
+        }
+        .component-input select {
+            padding: 5px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         .reflection-control input[type="range"] {
             width: 100%;
@@ -138,10 +181,38 @@
     </header>
 
     <section id="tools">
-        <div class="chart-container">
-            <div class="smith-chart">
-                <canvas id="smithChart" width="800" height="800"></canvas>
+        <div class="components-container">
+            <div class="left-panel">
+                <div class="component-input">
+                    <h3>Black Box</h3>
+                    <label>Real (Ω): <input type="number" id="blackBoxReal" value="75" step="any"></label>
+                    <label>Imag (Ω): <input type="number" id="blackBoxImag" value="75" step="any"></label>
+                    <button onclick="placeBlackBox()">Place Black Box</button>
+                </div>
+                <div class="component-input">
+                    <h3>Matching Element</h3>
+                    <select id="elementType">
+                        <option value="0">Select Element</option>
+                        <option value="1">Series Capacitor</option>
+                        <option value="2">Parallel Capacitor</option>
+                        <option value="3">Series Inductor</option>
+                        <option value="4">Parallel Inductor</option>
+                        <option value="5">Series Resistor</option>
+                        <option value="6">Parallel Resistor</option>
+                        <option value="7">Transmission Line</option>
+                        <option value="8">Open Stub</option>
+                        <option value="9">Shorted Stub</option>
+                        <option value="10">Capacitor with ESR</option>
+                        <option value="11">Inductor with ESR</option>
+                        <option value="12">Series RLC</option>
+                        <option value="13">Parallel RLC</option>
+                    </select>
+                    <button onclick="placeElement()">Place</button>
+                </div>
+                <div class="elements-list" id="elementsList"></div>
             </div>
+        </div>
+        <div class="controls-container">
             <div class="right-panel">
                 <div class="impedance-input">
                     <label>Real Impedance (Ω): <input type="number" id="realImpedance" value="50" step="any"></label>
@@ -158,9 +229,14 @@
                 </div>
                 <div id="mouseImpedance">Move mouse over chart</div>
                 <div class="coordinates" id="coordinates"></div>
+                <button onclick="clearDots()">Clear Dots</button>
             </div>
         </div>
-        <button onclick="clearDots()">Clear Dots</button>
+        <div class="chart-container">
+            <div class="smith-chart">
+                <canvas id="smithChart" width="800" height="800"></canvas>
+            </div>
+        </div>
     </section>
 
     <script>
@@ -169,12 +245,17 @@
         const mouseImpedanceDiv = document.getElementById("mouseImpedance");
         const realImpedanceInput = document.getElementById("realImpedance");
         const imagImpedanceInput = document.getElementById("imagImpedance");
+        const blackBoxRealInput = document.getElementById("blackBoxReal");
+        const blackBoxImagInput = document.getElementById("blackBoxImag");
+        const elementTypeSelect = document.getElementById("elementType");
+        const elementsListDiv = document.getElementById("elementsList");
         const showReflectionCirclesCheckbox = document.getElementById("showReflectionCircles");
         const reflectionValueInput = document.getElementById("reflectionValue");
         const returnLossValueInput = document.getElementById("returnLossValue");
         const reflectionSlider = document.getElementById("reflectionSlider");
         let smithChart;
         let dots = [];
+        let elements = []; // Array to store matching elements
         const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#FFD700", "#8A2BE2", "#00CED1"];
         let lastMouseX = null;
         let lastMouseY = null;
@@ -207,11 +288,11 @@
         }
 
         function gammaToReturnLoss(gamma) {
-            return -20 * Math.log10(gamma); // Negative dB display
+            return -20 * Math.log10(gamma);
         }
 
         function returnLossToGamma(returnLoss) {
-            return Math.pow(10, returnLoss / 20); // Return loss is negative
+            return Math.pow(10, returnLoss / 20);
         }
 
         try {
@@ -219,14 +300,11 @@
                 type: "scatter",
                 data: {
                     datasets: [
-                        // Outer circle (|Γ| = 1)
                         { label: "Outer Circle", data: [], borderColor: "#333", borderWidth: 2, pointRadius: 0, showLine: true, fill: false },
-                        // Constant resistance circles (r = 0, 0.5, 1, 2) - Blue
                         { label: "r=0", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=0.5", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=1", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=2", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
-                        // Constant reactance arcs (x = 0, ±0.5, ±1, ±2) - Green #097969
                         { label: "x=0", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=-0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
@@ -234,38 +312,10 @@
                         { label: "x=-1", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=-2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
-                        // Clicked dots dataset
-                        { 
-                            label: "Dots", 
-                            data: [], 
-                            pointRadius: 5, 
-                            pointStyle: "circle", 
-                            borderWidth: 0, 
-                            showLine: false,
-                            backgroundColor: []
-                        },
-                        // Marker dataset
-                        { 
-                            label: "Marker", 
-                            data: [], 
-                            pointRadius: 10, 
-                            pointStyle: "circle", 
-                            backgroundColor: "#d3d3d3", 
-                            borderColor: "#000000", 
-                            borderWidth: 2, 
-                            showLine: false
-                        },
-                        // Reflection circle dataset
-                        { 
-                            label: "Reflection Circle", 
-                            data: [], 
-                            borderColor: "#FF0000", 
-                            borderWidth: 1, 
-                            pointRadius: 0, 
-                            showLine: true, 
-                            fill: false,
-                            hidden: true
-                        }
+                        { label: "Dots", data: [], pointRadius: 5, pointStyle: "circle", borderWidth: 0, showLine: false, backgroundColor: [] },
+                        { label: "Marker", data: [], pointRadius: 10, pointStyle: "circle", backgroundColor: "#d3d3d3", borderColor: "#000000", borderWidth: 2, showLine: false },
+                        { label: "Reflection Circle", data: [], borderColor: "#FF0000", borderWidth: 1, pointRadius: 0, showLine: true, fill: false, hidden: true },
+                        { label: "Black Box", data: [], pointRadius: 12, pointStyle: "rect", backgroundColor: "#000000", borderColor: "#FFFFFF", borderWidth: 2, showLine: false }
                     ]
                 },
                 options: {
@@ -303,7 +353,6 @@
 
         function generateSmithChart() {
             try {
-                // Outer circle (|Γ| = 1)
                 let outerData = [];
                 for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
                     let x = Math.cos(theta);
@@ -312,7 +361,6 @@
                 }
                 smithChart.data.datasets[0].data = outerData;
 
-                // Constant resistance circles
                 const rValues = [0, 0.5, 1, 2];
                 rValues.forEach((r, index) => {
                     let data = [];
@@ -326,7 +374,6 @@
                     smithChart.data.datasets[index + 1].data = data;
                 });
 
-                // Constant reactance arcs
                 const xValues = [0, 0.5, -0.5, 1, -1, 2, -2];
                 xValues.forEach((x, index) => {
                     let data = [];
@@ -354,7 +401,6 @@
                     smithChart.data.datasets[index + 5].data = data;
                 });
 
-                // Initial reflection circle
                 smithChart.data.datasets[14].data = generateReflectionCircle(0.5);
                 smithChart.update();
                 console.log("Chart updated successfully");
@@ -378,10 +424,13 @@
 
         function clearDots() {
             dots = [];
-            smithChart.data.datasets[13].data = [];
+            elements = []; // Clear matching elements too
+            smithChart.data.datasets[13].data = []; // Clear Marker
+            smithChart.data.datasets[15].data = []; // Clear Black Box
             smithChart.data.datasets[14].data = generateReflectionCircle(parseFloat(reflectionValueInput.value));
             mouseImpedanceDiv.textContent = "Move mouse over chart";
             updateDots();
+            updateElementsList();
         }
 
         function placeMarker() {
@@ -400,6 +449,91 @@
             } else {
                 alert("Impedance results in a reflection coefficient outside the Smith Chart (|Γ| > 1).");
             }
+        }
+
+        function placeBlackBox() {
+            const R = parseFloat(blackBoxRealInput.value);
+            const X = parseFloat(blackBoxImagInput.value);
+            if (isNaN(R) || isNaN(X)) {
+                alert("Please enter valid real and imaginary impedance values for Black Box.");
+                return;
+            }
+            const { x, y } = impedanceToGamma(R, X);
+            const mag = Math.sqrt(x * x + y * y);
+            if (mag <= 1) {
+                smithChart.data.datasets[15].data = [{ x: x, y: y }];
+                smithChart.update();
+                console.log(`Black Box placed at: x=${x.toFixed(2)}, y=${y.toFixed(2)}, Z=${R.toFixed(1)}+j${X.toFixed(1)}`);
+            } else {
+                alert("Black Box impedance results in a reflection coefficient outside the Smith Chart (|Γ| > 1).");
+            }
+        }
+
+        function placeElement() {
+            const type = parseInt(elementTypeSelect.value);
+            if (type === 0) {
+                alert("Please select a matching element.");
+                return;
+            }
+            const elementNames = [
+                "", "Series Capacitor", "Parallel Capacitor", "Series Inductor", "Parallel Inductor",
+                "Series Resistor", "Parallel Resistor", "Transmission Line", "Open Stub", "Shorted Stub",
+                "Capacitor with ESR", "Inductor with ESR", "Series RLC", "Parallel RLC"
+            ];
+            const element = {
+                type: type,
+                name: elementNames[type],
+                values: {}
+            };
+
+            // Define default values and labels based on element type
+            switch (type) {
+                case 1: case 2: // Capacitors
+                    element.values.C = { label: "C (pF)", value: 0 };
+                    break;
+                case 3: case 4: // Inductors
+                    element.values.L = { label: "L (nH)", value: 0 };
+                    break;
+                case 5: case 6: // Resistors
+                    element.values.R = { label: "R (Ω)", value: 0 };
+                    break;
+                case 7: // Transmission Line
+                    element.values.length = { label: "Length (λ)", value: 0 };
+                    element.values.Z0 = { label: "Z₀ (Ω)", value: 50 };
+                    break;
+                case 8: case 9: // Stubs
+                    element.values.length = { label: "Length (λ)", value: 0 };
+                    break;
+                case 10: // Capacitor with ESR
+                    element.values.C = { label: "C (pF)", value: 0 };
+                    element.values.ESR = { label: "ESR (Ω)", value: 0 };
+                    break;
+                case 11: // Inductor with ESR
+                    element.values.L = { label: "L (nH)", value: 0 };
+                    element.values.ESR = { label: "ESR (Ω)", value: 0 };
+                    break;
+                case 12: case 13: // RLC
+                    element.values.R = { label: "R (Ω)", value: 0 };
+                    element.values.L = { label: "L (nH)", value: 0 };
+                    element.values.C = { label: "C (pF)", value: 0 };
+                    break;
+            }
+
+            elements.push(element);
+            updateElementsList();
+            elementTypeSelect.value = "0"; // Reset dropdown
+        }
+
+        function updateElementsList() {
+            elementsListDiv.innerHTML = elements.map((element, index) => {
+                const inputs = Object.keys(element.values).map(key => `
+                    <label>${element.values[key].label}: 
+                        <input type="number" step="any" value="${element.values[key].value}" 
+                               onchange="elements[${index}].values.${key}.value = parseFloat(this.value)">
+                    </label>
+                `).join('');
+                return `<div class="element-item">${element.name}: ${inputs}</div>`;
+            }).join('');
         }
 
         function toggleReflectionCircles() {
@@ -448,7 +582,6 @@
             smithChart.update();
         }
 
-        // Mouse move handler for dynamic impedance display
         smithChart.canvas.addEventListener('mousemove', (event) => {
             const rect = smithChart.canvas.getBoundingClientRect();
             const xPixel = event.x - rect.left;
@@ -468,7 +601,6 @@
             }
         });
 
-        // Mouse wheel handler for reflection coefficient adjustment
         reflectionValueInput.addEventListener('wheel', (event) => {
             event.preventDefault();
             const delta = event.deltaY > 0 ? -0.01 : 0.01;
@@ -481,7 +613,6 @@
             smithChart.update();
         });
 
-        // Mouse wheel handler for return loss adjustment
         returnLossValueInput.addEventListener('wheel', (event) => {
             event.preventDefault();
             const delta = event.deltaY > 0 ? -0.1 : 0.1;
@@ -495,7 +626,6 @@
             smithChart.update();
         });
 
-        // Load math.js dynamically for complex number support
         const script = document.createElement('script');
         script.src = "https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js";
         script.onload = generateSmithChart;
