@@ -58,7 +58,7 @@
             width: 250px;
             flex-shrink: 0;
         }
-        #mouseImpedance {
+        #mouseImpedance, #matchingSolution {
             padding: 10px;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
@@ -67,7 +67,7 @@
             text-align: center;
         }
         .coordinates {
-            max-height: 70vh;
+            max-height: 40vh; /* Adjusted for new controls */
             overflow-y: auto;
             padding: 10px;
             background-color: #f9f9f9;
@@ -98,6 +98,43 @@
         button:hover {
             background-color: #1557b0;
         }
+        .impedance-input, .reflection-control, .frequency-control {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .impedance-input label, .reflection-control label, .frequency-control label {
+            font-size: 14px;
+        }
+        .impedance-input input, .reflection-control input[type="number"], .frequency-control input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .impedance-input button {
+            padding: 8px;
+            font-size: 14px;
+        }
+        .reflection-control input[type="range"], .frequency-control input[type="range"] {
+            width: 100%;
+        }
+        .reflection-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .frequency-control select {
+            padding: 5px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -112,7 +149,38 @@
                 <canvas id="smithChart" width="800" height="800"></canvas>
             </div>
             <div class="right-panel">
+                <div class="impedance-input">
+                    <h3>Start Impedance</h3>
+                    <label>Real (Ω): <input type="number" id="realImpedance" value="50" step="any"></label>
+                    <label>Imaginary (Ω): <input type="number" id="imagImpedance" value="0" step="any"></label>
+                    <button onclick="placeMarker()">Place Marker</button>
+                </div>
+                <div class="impedance-input">
+                    <h3>Target Impedance</h3>
+                    <label>Real (Ω): <input type="number" id="targetRealImpedance" value="50" step="any"></label>
+                    <label>Imaginary (Ω): <input type="number" id="targetImagImpedance" value="0" step="any"></label>
+                    <button onclick="placeTarget()">Place Target</button>
+                </div>
+                <div class="reflection-control">
+                    <label><input type="checkbox" id="showReflectionCircles" onchange="toggleReflectionCircles()"> Show Reflection Circles</label>
+                    <div class="reflection-inputs">
+                        <label>|Γ|: <input type="number" id="reflectionValue" value="0.5" min="0" max="1" step="0.01" oninput="updateReflectionFromMagnitude()"></label>
+                        <label>Return Loss (dB): <input type="number" id="returnLossValue" value="-6" min="-100" max="0" step="0.1" oninput="updateReflectionFromReturnLoss()"></label>
+                    </div>
+                    <input type="range" id="reflectionSlider" value="0.5" min="0" max="1" step="0.01" oninput="updateReflectionFromSlider()">
+                </div>
+                <div class="frequency-control">
+                    <label>Frequency: <input type="number" id="frequencyValue" value="1" min="1" step="1" oninput="updateFrequencyFromInput()"></label>
+                    <select id="frequencyUnit" onchange="updateFrequencyFromUnit()">
+                        <option value="Hz">Hz</option>
+                        <option value="kHz">kHz</option>
+                        <option value="MHz" selected>MHz</option>
+                        <option value="GHz">GHz</option>
+                    </select>
+                    <input type="range" id="frequencySlider" value="6" min="0" max="10" step="0.1" oninput="updateFrequencyFromSlider()">
+                </div>
                 <div id="mouseImpedance">Move mouse over chart</div>
+                <div id="matchingSolution">Matching solution will appear here</div>
                 <div class="coordinates" id="coordinates"></div>
             </div>
         </div>
@@ -123,6 +191,18 @@
         const smithCtx = document.getElementById("smithChart").getContext("2d");
         const coordinatesDiv = document.getElementById("coordinates");
         const mouseImpedanceDiv = document.getElementById("mouseImpedance");
+        const matchingSolutionDiv = document.getElementById("matchingSolution");
+        const realImpedanceInput = document.getElementById("realImpedance");
+        const imagImpedanceInput = document.getElementById("imagImpedance");
+        const targetRealImpedanceInput = document.getElementById("targetRealImpedance");
+        const targetImagImpedanceInput = document.getElementById("targetImagImpedance");
+        const showReflectionCirclesCheckbox = document.getElementById("showReflectionCircles");
+        const reflectionValueInput = document.getElementById("reflectionValue");
+        const returnLossValueInput = document.getElementById("returnLossValue");
+        const reflectionSlider = document.getElementById("reflectionSlider");
+        const frequencyValueInput = document.getElementById("frequencyValue");
+        const frequencyUnitSelect = document.getElementById("frequencyUnit");
+        const frequencySlider = document.getElementById("frequencySlider");
         let smithChart;
         let dots = [];
         const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#FFD700", "#8A2BE2", "#00CED1"];
@@ -139,19 +219,77 @@
             return { impedance: `Z = ${R.toFixed(1)} + j${X.toFixed(1)} Ω`, R: R, X: X };
         }
 
+        function impedanceToGamma(R, X) {
+            const Z0 = 50;
+            const Z = math.complex(R, X);
+            const gamma = math.divide(math.subtract(Z, Z0), math.add(Z, Z0));
+            return { x: gamma.re, y: gamma.im };
+        }
+
+        function generateReflectionCircle(magnitude) {
+            const data = [];
+            for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
+                const x = magnitude * Math.cos(theta);
+                const y = magnitude * Math.sin(theta);
+                data.push({ x: x, y: y });
+            }
+            return data;
+        }
+
+        function gammaToReturnLoss(gamma) {
+            return -20 * Math.log10(gamma);
+        }
+
+        function returnLossToGamma(returnLoss) {
+            return Math.pow(10, returnLoss / 20);
+        }
+
+        function calculateMatchingNetwork(startZ, targetZ, freqHz) {
+            const Z0 = 50;
+            const omega = 2 * Math.PI * freqHz;
+            const startReal = startZ.R, startImag = startZ.X;
+            const targetReal = targetZ.R, targetImag = targetZ.X;
+
+            // Simple L-network (series then shunt to ground)
+            let seriesX, shuntX;
+            if (startReal < targetReal) {
+                // Series inductor, shunt capacitor
+                seriesX = Math.sqrt(targetReal * (Z0 - startReal)) - startImag;
+                shuntX = -targetReal * (startImag + seriesX) / (targetReal - startReal);
+            } else {
+                // Series capacitor, shunt inductor
+                seriesX = -Math.sqrt(targetReal * (startReal - Z0)) - startImag;
+                shuntX = targetReal * (startImag + seriesX) / (startReal - targetReal);
+            }
+
+            let seriesComponent = seriesX > 0 ? `L: ${(seriesX / omega * 1e9).toFixed(2)} nH` : `C: ${(-1 / (seriesX * omega) * 1e12).toFixed(2)} pF`;
+            let shuntComponent = shuntX > 0 ? `L: ${(shuntX / omega * 1e9).toFixed(2)} nH` : `C: ${(-1 / (shuntX * omega) * 1e12).toFixed(2)} pF`;
+
+            return { series: seriesComponent, shunt: shuntComponent };
+        }
+
+        function generateMatchingPath(startGamma, targetGamma) {
+            const path = [];
+            const steps = 50;
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = startGamma.x + (targetGamma.x - startGamma.x) * t;
+                const y = startGamma.y + (targetGamma.y - startGamma.y) * t;
+                path.push({ x: x, y: y });
+            }
+            return path;
+        }
+
         try {
             smithChart = new Chart(smithCtx, {
                 type: "scatter",
                 data: {
                     datasets: [
-                        // Outer circle (|Γ| = 1)
                         { label: "Outer Circle", data: [], borderColor: "#333", borderWidth: 2, pointRadius: 0, showLine: true, fill: false },
-                        // Constant resistance circles (r = 0, 0.5, 1, 2) - Blue
                         { label: "r=0", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=0.5", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=1", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "r=2", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
-                        // Constant reactance arcs (x = 0, ±0.5, ±1, ±2) - Green #097969
                         { label: "x=0", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=-0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
@@ -159,16 +297,11 @@
                         { label: "x=-1", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
                         { label: "x=-2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
-                        // Dots dataset
-                        { 
-                            label: "Dots", 
-                            data: [], 
-                            pointRadius: 5, 
-                            pointStyle: "circle", 
-                            borderWidth: 0, 
-                            showLine: false,
-                            backgroundColor: []
-                        }
+                        { label: "Dots", data: [], pointRadius: 5, pointStyle: "circle", borderWidth: 0, showLine: false, backgroundColor: [] },
+                        { label: "Marker", data: [], pointRadius: 10, pointStyle: "circle", backgroundColor: "#d3d3d3", borderColor: "#000000", borderWidth: 2, showLine: false },
+                        { label: "Reflection Circle", data: [], borderColor: "#FF0000", borderWidth: 1, pointRadius: 0, showLine: true, fill: false, hidden: true },
+                        { label: "Target", data: [], pointRadius: 10, pointStyle: "circle", backgroundColor: "#0000FF", borderColor: "#000000", borderWidth: 2, showLine: false },
+                        { label: "Matching Path", data: [], borderColor: "#00FF00", borderWidth: 2, borderDash: [5, 5], pointRadius: 0, showLine: true, fill: false }
                     ]
                 },
                 options: {
@@ -206,7 +339,6 @@
 
         function generateSmithChart() {
             try {
-                // Outer circle (|Γ| = 1)
                 let outerData = [];
                 for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
                     let x = Math.cos(theta);
@@ -215,7 +347,6 @@
                 }
                 smithChart.data.datasets[0].data = outerData;
 
-                // Constant resistance circles
                 const rValues = [0, 0.5, 1, 2];
                 rValues.forEach((r, index) => {
                     let data = [];
@@ -229,7 +360,6 @@
                     smithChart.data.datasets[index + 1].data = data;
                 });
 
-                // Constant reactance arcs
                 const xValues = [0, 0.5, -0.5, 1, -1, 2, -2];
                 xValues.forEach((x, index) => {
                     let data = [];
@@ -257,6 +387,7 @@
                     smithChart.data.datasets[index + 5].data = data;
                 });
 
+                smithChart.data.datasets[14].data = generateReflectionCircle(0.5);
                 smithChart.update();
                 console.log("Chart updated successfully");
             } catch (error) {
@@ -279,11 +410,148 @@
 
         function clearDots() {
             dots = [];
+            smithChart.data.datasets[13].data = [];
+            smithChart.data.datasets[15].data = [];
+            smithChart.data.datasets[16].data = [];
             mouseImpedanceDiv.textContent = "Move mouse over chart";
+            matchingSolutionDiv.textContent = "Matching solution will appear here";
             updateDots();
         }
 
-        // Mouse move handler for dynamic impedance display
+        function placeMarker() {
+            const R = parseFloat(realImpedanceInput.value);
+            const X = parseFloat(imagImpedanceInput.value);
+            if (isNaN(R) || isNaN(X)) {
+                alert("Please enter valid real and imaginary impedance values.");
+                return;
+            }
+            const { x, y } = impedanceToGamma(R, X);
+            const mag = Math.sqrt(x * x + y * y);
+            if (mag <= 1) {
+                smithChart.data.datasets[13].data = [{ x: x, y: y }];
+                updateMatchingSolution();
+                smithChart.update();
+                console.log(`Marker placed at: x=${x.toFixed(2)}, y=${y.toFixed(2)}, Z=${R.toFixed(1)}+j${X.toFixed(1)}`);
+            } else {
+                alert("Impedance results in a reflection coefficient outside the Smith Chart (|Γ| > 1).");
+            }
+        }
+
+        function placeTarget() {
+            const R = parseFloat(targetRealImpedanceInput.value);
+            const X = parseFloat(targetImagImpedanceInput.value);
+            if (isNaN(R) || isNaN(X)) {
+                alert("Please enter valid real and imaginary impedance values.");
+                return;
+            }
+            const { x, y } = impedanceToGamma(R, X);
+            const mag = Math.sqrt(x * x + y * y);
+            if (mag <= 1) {
+                smithChart.data.datasets[15].data = [{ x: x, y: y }];
+                updateMatchingSolution();
+                smithChart.update();
+                console.log(`Target placed at: x=${x.toFixed(2)}, y=${y.toFixed(2)}, Z=${R.toFixed(1)}+j${X.toFixed(1)}`);
+            } else {
+                alert("Impedance results in a reflection coefficient outside the Smith Chart (|Γ| > 1).");
+            }
+        }
+
+        function updateMatchingSolution() {
+            const startData = smithChart.data.datasets[13].data[0];
+            const targetData = smithChart.data.datasets[15].data[0];
+            if (startData && targetData) {
+                const startZ = calculateImpedance(startData.x, startData.y);
+                const targetZ = calculateImpedance(targetData.x, targetData.y);
+                const freqBase = parseFloat(frequencyValueInput.value);
+                const unit = frequencyUnitSelect.value;
+                const freqHz = freqBase * (unit === "Hz" ? 1 : unit === "kHz" ? 1e3 : unit === "MHz" ? 1e6 : 1e9);
+                const { series, shunt } = calculateMatchingNetwork(startZ, targetZ, freqHz);
+                matchingSolutionDiv.textContent = `Series: ${series}, Shunt: ${shunt}`;
+                smithChart.data.datasets[16].data = generateMatchingPath(startData, targetData);
+            } else {
+                matchingSolutionDiv.textContent = "Place both markers for matching solution";
+                smithChart.data.datasets[16].data = [];
+            }
+            smithChart.update();
+        }
+
+        function toggleReflectionCircles() {
+            const show = showReflectionCirclesCheckbox.checked;
+            smithChart.data.datasets[14].hidden = !show;
+            smithChart.update();
+        }
+
+        function updateReflectionFromMagnitude() {
+            const gamma = parseFloat(reflectionValueInput.value);
+            if (isNaN(gamma) || gamma < 0 || gamma > 1) {
+                alert("Please enter a reflection coefficient between 0 and 1.");
+                reflectionValueInput.value = 0.5;
+                returnLossValueInput.value = -6;
+                reflectionSlider.value = 0.5;
+            } else {
+                const returnLoss = gammaToReturnLoss(gamma);
+                returnLossValueInput.value = returnLoss.toFixed(1);
+                reflectionSlider.value = gamma;
+                smithChart.data.datasets[14].data = generateReflectionCircle(gamma);
+                smithChart.update();
+            }
+        }
+
+        function updateReflectionFromReturnLoss() {
+            const returnLoss = parseFloat(returnLossValueInput.value);
+            if (isNaN(returnLoss) || returnLoss > 0) {
+                alert("Please enter a return loss less than or equal to 0 dB.");
+                reflectionValueInput.value = 0.5;
+                returnLossValueInput.value = -6;
+                reflectionSlider.value = 0.5;
+            } else {
+                const gamma = returnLossToGamma(returnLoss);
+                reflectionValueInput.value = gamma.toFixed(2);
+                reflectionSlider.value = gamma;
+                smithChart.data.datasets[14].data = generateReflectionCircle(gamma);
+                smithChart.update();
+            }
+        }
+
+        function updateReflectionFromSlider() {
+            const gamma = parseFloat(reflectionSlider.value);
+            reflectionValueInput.value = gamma.toFixed(2);
+            returnLossValueInput.value = gammaToReturnLoss(gamma).toFixed(1);
+            smithChart.data.datasets[14].data = generateReflectionCircle(gamma);
+            smithChart.update();
+        }
+
+        function updateFrequencyFromInput() {
+            const freq = parseFloat(frequencyValueInput.value);
+            if (isNaN(freq) || freq < 1) {
+                frequencyValueInput.value = 1;
+            }
+            const unit = frequencyUnitSelect.value;
+            const freqHz = freq * (unit === "Hz" ? 1 : unit === "kHz" ? 1e3 : unit === "MHz" ? 1e6 : 1e9);
+            const logFreq = Math.log10(freqHz);
+            frequencySlider.value = (logFreq / 10) * 10; // Map 0-10 GHz to 0-10
+            updateMatchingSolution();
+        }
+
+        function updateFrequencyFromUnit() {
+            const freq = parseFloat(frequencyValueInput.value);
+            const unit = frequencyUnitSelect.value;
+            const freqHz = freq * (unit === "Hz" ? 1 : unit === "kHz" ? 1e3 : unit === "MHz" ? 1e6 : 1e9);
+            const logFreq = Math.log10(freqHz);
+            frequencySlider.value = (logFreq / 10) * 10;
+            updateMatchingSolution();
+        }
+
+        function updateFrequencyFromSlider() {
+            const sliderVal = parseFloat(frequencySlider.value);
+            const freqHz = Math.pow(10, sliderVal); // 0-10 maps to 1Hz-10GHz
+            const unit = frequencyUnitSelect.value;
+            const freq = freqHz / (unit === "Hz" ? 1 : unit === "kHz" ? 1e3 : unit === "MHz" ? 1e6 : 1e9);
+            frequencyValueInput.value = freq.toFixed(2);
+            updateMatchingSolution();
+        }
+
+        // Mouse move handler
         smithChart.canvas.addEventListener('mousemove', (event) => {
             const rect = smithChart.canvas.getBoundingClientRect();
             const xPixel = event.x - rect.left;
@@ -303,8 +571,37 @@
             }
         });
 
-        // Initial setup
-        generateSmithChart();
+        // Mouse wheel handlers
+        reflectionValueInput.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const delta = event.deltaY > 0 ? -0.01 : 0.01;
+            let gamma = parseFloat(reflectionValueInput.value) + delta;
+            gamma = Math.max(0, Math.min(1, gamma));
+            reflectionValueInput.value = gamma.toFixed(2);
+            returnLossValueInput.value = gammaToReturnLoss(gamma).toFixed(1);
+            reflectionSlider.value = gamma;
+            smithChart.data.datasets[14].data = generateReflectionCircle(gamma);
+            smithChart.update();
+        });
+
+        returnLossValueInput.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const delta = event.deltaY > 0 ? -0.1 : 0.1;
+            let returnLoss = parseFloat(returnLossValueInput.value) + delta;
+            returnLoss = Math.max(-100, Math.min(0, returnLoss));
+            returnLossValueInput.value = returnLoss.toFixed(1);
+            const gamma = returnLossToGamma(returnLoss);
+            reflectionValueInput.value = gamma.toFixed(2);
+            reflectionSlider.value = gamma;
+            smithChart.data.datasets[14].data = generateReflectionCircle(gamma);
+            smithChart.update();
+        });
+
+        // Load math.js
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js";
+        script.onload = generateSmithChart;
+        document.head.appendChild(script);
     </script>
 </body>
 </html>
