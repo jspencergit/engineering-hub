@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Language" content="en">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Impedance Matching - Analog Engineering Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            text-align: center;
+            padding: 10px;
+            background-color: #1a73e8;
+            color: white;
+        }
+        section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+        }
+        .chart-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .smith-chart {
+            width: 80vh;
+            height: 80vh;
+            max-width: 1000px;
+            max-height: 1000px;
+            flex-shrink: 0;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 250px;
+            flex-shrink: 0;
+        }
+        #mouseImpedance {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .coordinates {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .coordinates div {
+            margin: 5px 0;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        .coordinates .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Analog Engineering Hub</h1>
+        <p><a href="https://jspencergit.github.io/engineering-hub/tools.html">Back to Tools</a></p>
+    </header>
+
+    <section id="tools">
+        <div class="chart-container">
+            <div class="smith-chart">
+                <canvas id="smithChart" width="800" height="800"></canvas>
+            </div>
+            <div class="right-panel">
+                <div id="mouseImpedance">Move mouse over chart</div>
+                <div class="coordinates" id="coordinates"></div>
+            </div>
+        </div>
+        <button onclick="clearDots()">Clear Dots</button>
+    </section>
+
+    <script>
+        const smithCtx = document.getElementById("smithChart").getContext("2d");
+        const coordinatesDiv = document.getElementById("coordinates");
+        const mouseImpedanceDiv = document.getElementById("mouseImpedance");
+        let smithChart;
+        let dots = [];
+        const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#FFD700", "#8A2BE2", "#00CED1"];
+        let lastMouseX = null;
+        let lastMouseY = null;
+
+        function calculateImpedance(x, y) {
+            const Z0 = 50;
+            const gammaReal = x;
+            const gammaImag = y;
+            const denom = 1 - gammaReal + (gammaImag * gammaImag) / (1 - gammaReal);
+            const R = Z0 * ((1 - gammaReal * gammaReal - gammaImag * gammaImag) / denom);
+            const X = Z0 * (2 * gammaImag / denom);
+            return { impedance: `Z = ${R.toFixed(1)} + j${X.toFixed(1)} Ω`, R: R, X: X };
+        }
+
+        try {
+            smithChart = new Chart(smithCtx, {
+                type: "scatter",
+                data: {
+                    datasets: [
+                        // Outer circle (|Γ| = 1)
+                        { label: "Outer Circle", data: [], borderColor: "#333", borderWidth: 2, pointRadius: 0, showLine: true, fill: false },
+                        // Constant resistance circles (r = 0, 0.5, 1, 2) - Blue
+                        { label: "r=0", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "r=0.5", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "r=1", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "r=2", data: [], borderColor: "#0000FF", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        // Constant reactance arcs (x = 0, ±0.5, ±1, ±2) - Green #097969
+                        { label: "x=0", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=-0.5", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=1", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=-1", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        { label: "x=-2", data: [], borderColor: "#097969", borderWidth: 1, pointRadius: 0, showLine: true, fill: false },
+                        // Dots dataset
+                        { 
+                            label: "Dots", 
+                            data: [], 
+                            pointRadius: 5, 
+                            pointStyle: "circle", 
+                            borderWidth: 0, 
+                            showLine: false,
+                            backgroundColor: []
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: { min: -1, max: 1, display: false },
+                        y: { min: -1, max: 1, display: false }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    aspectRatio: 1,
+                    maintainAspectRatio: true,
+                    responsive: false,
+                    events: ['mousemove', 'click'],
+                    hover: { mode: null },
+                    onClick: function(event, elements, chart) {
+                        if (lastMouseX !== null && lastMouseY !== null) {
+                            const mag = Math.sqrt(lastMouseX * lastMouseX + lastMouseY * lastMouseY);
+                            if (mag <= 1) {
+                                const color = colors[dots.length % colors.length];
+                                const { impedance, R, X } = calculateImpedance(lastMouseX, lastMouseY);
+                                dots.push({ x: lastMouseX, y: lastMouseY, color: color, R: R, X: X });
+                                console.log(`Clicked at: x=${lastMouseX.toFixed(2)}, y=${lastMouseY.toFixed(2)}, ${impedance}`);
+                                updateDots();
+                            }
+                        }
+                    }
+                }
+            });
+            console.log("Chart initialized successfully");
+        } catch (error) {
+            console.error("Error initializing chart:", error);
+        }
+
+        function generateSmithChart() {
+            try {
+                // Outer circle (|Γ| = 1)
+                let outerData = [];
+                for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
+                    let x = Math.cos(theta);
+                    let y = Math.sin(theta);
+                    outerData.push({ x: x, y: y });
+                }
+                smithChart.data.datasets[0].data = outerData;
+
+                // Constant resistance circles
+                const rValues = [0, 0.5, 1, 2];
+                rValues.forEach((r, index) => {
+                    let data = [];
+                    const centerX = r / (1 + r);
+                    const radius = 1 / (1 + r);
+                    for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
+                        let x = centerX + radius * Math.cos(theta);
+                        let y = radius * Math.sin(theta);
+                        data.push({ x: x, y: y });
+                    }
+                    smithChart.data.datasets[index + 1].data = data;
+                });
+
+                // Constant reactance arcs
+                const xValues = [0, 0.5, -0.5, 1, -1, 2, -2];
+                xValues.forEach((x, index) => {
+                    let data = [];
+                    if (x === 0) {
+                        for (let xCoord = -1; xCoord <= 1; xCoord += 0.05) {
+                            data.push({ x: xCoord, y: 0 });
+                        }
+                    } else {
+                        const centerX = 1;
+                        const centerY = 1 / x;
+                        const radius = Math.abs(1 / x);
+                        for (let theta = 0; theta <= 2 * Math.PI; theta += 0.05) {
+                            let xCoord = centerX + radius * Math.cos(theta);
+                            let yCoord = centerY + radius * Math.sin(theta);
+                            let mag = Math.sqrt(xCoord * xCoord + yCoord * yCoord);
+                            if (mag <= 1 + 0.01) {
+                                if (x > 0 && yCoord >= 0) {
+                                    data.push({ x: xCoord, y: yCoord });
+                                } else if (x < 0 && yCoord <= 0) {
+                                    data.push({ x: xCoord, y: yCoord });
+                                }
+                            }
+                        }
+                    }
+                    smithChart.data.datasets[index + 5].data = data;
+                });
+
+                smithChart.update();
+                console.log("Chart updated successfully");
+            } catch (error) {
+                console.error("Error generating Smith Chart:", error);
+            }
+        }
+
+        function updateDots() {
+            const dotDataset = smithChart.data.datasets[12];
+            dotDataset.data = dots.map(dot => ({ x: dot.x, y: dot.y }));
+            dotDataset.backgroundColor = dots.map(dot => dot.color);
+            coordinatesDiv.innerHTML = dots.map((dot, i) => `
+                <div>
+                    <span class="dot" style="background-color: ${dot.color};"></span>
+                    Dot ${i + 1}: Z = ${dot.R.toFixed(1)} + j${dot.X.toFixed(1)} Ω
+                </div>
+            `).join('');
+            smithChart.update();
+        }
+
+        function clearDots() {
+            dots = [];
+            mouseImpedanceDiv.textContent = "Move mouse over chart";
+            updateDots();
+        }
+
+        // Mouse move handler for dynamic impedance display
+        smithChart.canvas.addEventListener('mousemove', (event) => {
+            const rect = smithChart.canvas.getBoundingClientRect();
+            const xPixel = event.x - rect.left;
+            const yPixel = event.y - rect.top;
+            const x = -1 + (2 * xPixel / rect.width);
+            const y = 1 - (2 * yPixel / rect.height);
+            const mag = Math.sqrt(x * x + y * y);
+            if (mag <= 1) {
+                const { impedance } = calculateImpedance(x, y);
+                mouseImpedanceDiv.textContent = impedance;
+                lastMouseX = x;
+                lastMouseY = y;
+            } else {
+                mouseImpedanceDiv.textContent = "Outside chart";
+                lastMouseX = null;
+                lastMouseY = null;
+            }
+        });
+
+        // Initial setup
+        generateSmithChart();
+    </script>
+</body>
+</html>
