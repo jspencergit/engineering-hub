@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Compensator Visualizer - Analog Engineering Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['\\(', '\\)']]},
+            CommonHTML: {scale: 150}
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #1a73e8;
+            color: white;
+        }
+        .diagram {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .diagram img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        section {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+        }
+        .calculator {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            width: 50%;
+        }
+        .charts {
+            width: 50%;
+            padding-left: 20px;
+        }
+        .calculator label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        .calculator input[type="number"] {
+            width: 100%;
+            max-width: 200px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .checkbox-label {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        canvas {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+        .transfer {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #1a73e8;
+        }
+        .transfer .mathjax-eq {
+            margin-left: 20px;
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            transform: scale(1.125);
+        }
+        .metrics {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Analog Engineering Hub</h1>
+        <p><a href="https://jspencergit.github.io/engineering-hub/tools.html">Back to Tools</a></p>
+    </header>
+
+    <div class="diagram">
+        <img src="images/FeedbackSystem.jpg" alt="Feedback Control System Diagram">
+    </div>
+
+    <section id="tools">
+        <div class="calculator">
+            <h3>Plant + Compensator Control System</h3>
+
+            <h4>Compensator Parameters</h4>
+            <label class="checkbox-label">
+                <input type="checkbox" id="origin-pole" checked onchange="updateControlSystem()"> Include Origin Pole
+            </label>
+            <label for="pole-freq">Pole Frequency (kHz):</label>
+            <input type="number" id="pole-freq" step="0.1" min="0.001" value="100" oninput="updateControlSystem()">
+            <label for="zero-freq">Zero Frequency (kHz):</label>
+            <input type="number" id="zero-freq" step="0.1" min="0.001" value="10" oninput="updateControlSystem()">
+            <label for="gain-db">Desired Gain (dB):</label>
+            <input type="number" id="gain-db" step="1" value="60" oninput="updateControlSystem()">
+            <label for="gain-freq">at Frequency (kHz):</label>
+            <input type="number" id="gain-freq" step="0.1" min="0.001" value="0.1" oninput="updateControlSystem()">
+
+            <h4>Plant Parameters</h4>
+            <label for="plant-gain-db">Desired Gain (dB):</label>
+            <input type="number" id="plant-gain-db" step="1" value="1" oninput="updateControlSystem()">
+            <label for="plant-gain-freq">at Frequency (kHz):</label>
+            <input type="number" id="plant-gain-freq" step="0.1" min="0.001" value="0.1" oninput="updateControlSystem()">
+            <label for="fp1">Low-Frequency Pole (kHz):</label>
+            <input type="number" id="fp1" step="0.1" min="0.001" value="0.1" oninput="updateControlSystem()">
+            <label class="checkbox-label">
+                <input type="checkbox" id="fz1-check" onchange="updateControlSystem()"> Include Mid-Frequency Zero
+            </label>
+            <label for="fz1">Mid-Frequency Zero (kHz):</label>
+            <input type="number" id="fz1" step="0.1" min="0.001" value="10" oninput="updateControlSystem()">
+            <label class="checkbox-label">
+                <input type="checkbox" id="fp2-check" onchange="updateControlSystem()"> Include High-Frequency Pole
+            </label>
+            <label for="fp2">High-Frequency Pole (kHz):</label>
+            <input type="number" id="fp2" step="0.1" min="0.001" value="200" oninput="updateControlSystem()">
+
+            <h4>Feedback Parameters</h4>
+            <label for="feedback-gain">Feedback Gain:</label>
+            <input type="number" id="feedback-gain" step="0.1" min="0" value="1" oninput="updateControlSystem()">
+            <label class="checkbox-label">
+                <input type="checkbox" id="feedback-zero-check" onchange="updateControlSystem()"> Include Zero
+            </label>
+            <label for="feedback-zero-freq">Zero Frequency (kHz):</label>
+            <input type="number" id="feedback-zero-freq" step="0.1" min="0.001" value="10" oninput="updateControlSystem()">
+
+            <h4>Plot Options</h4>
+            <label class="checkbox-label">
+                <input type="checkbox" id="plot-plant" checked onchange="updateControlSystem()"> Plot Plant
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="plot-feedback" checked onchange="updateControlSystem()"> Plot Feedback
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="plot-compensator" checked onchange="updateControlSystem()"> Plot Compensator
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="plot-closed-loop" checked onchange="updateControlSystem()"> Plot Closed-Loop
+            </label>
+
+            <h4>Axis Limits</h4>
+            <label for="x-min">X-Axis Min (kHz):</label>
+            <input type="number" id="x-min" step="0.1" min="0.001" value="0.1" oninput="updateControlSystem()">
+            <label for="x-max">X-Axis Max (kHz):</label>
+            <input type="number" id="x-max" step="1" min="0.001" value="1000" oninput="updateControlSystem()">
+            <label for="y-mag-min">Y-Axis Mag Min (dB):</label>
+            <input type="number" id="y-mag-min" step="1" value="-20" oninput="updateControlSystem()">
+            <label for="y-mag-max">Y-Axis Mag Max (dB):</label>
+            <input type="number" id="y-mag-max" step="1" value="80" oninput="updateControlSystem()">
+            <label for="y-phase-min">Y-Axis Phase Min (°):</label>
+            <input type="number" id="y-phase-min" step="1" value="-180" oninput="updateControlSystem()">
+            <label for="y-phase-max">Y-Axis Phase Max (°):</label>
+            <input type="number" id="y-phase-max" step="1" value="0" oninput="updateControlSystem()">
+        </div>
+        <div class="charts">
+            <canvas id="bodeMagChart"></canvas>
+            <canvas id="bodePhaseChart"></canvas>
+            <div class="transfer">Plant Transfer Function: <span class="mathjax-eq" id="plant-transfer-output">\( P(s) = \)</span></div>
+            <div class="transfer">Compensator Transfer Function: <span class="mathjax-eq" id="compensator-transfer-output">\( C(s) = \)</span></div>
+            <div class="transfer">Feedback Transfer Function: <span class="mathjax-eq" id="feedback-transfer-output">\( F(s) = \)</span></div>
+            <div class="transfer">Closed-Loop Transfer Function: <span class="mathjax-eq" id="closed-loop-transfer-output">\( T(s) = \)</span></div>
+            <div class="metrics">
+                Phase Margin: <span id="phase-margin">N/A</span><br>
+                Gain Margin: <span id="gain-margin">N/A</span>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const magCtx = document.getElementById("bodeMagChart").getContext("2d");
+        let magChart = new Chart(magCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    { label: "Plant Magnitude", data: [], borderColor: "red", borderDash: [5, 5], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Feedback Magnitude", data: [], borderColor: "green", borderDash: [2, 2], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Compensator Magnitude", data: [], borderColor: "blue", borderDash: [10, 5], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Closed-Loop Magnitude", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0, hidden: false }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, min: 100, max: 1000000 },
+                    y: { title: { display: true, text: "Magnitude (dB)" }, min: -20, max: 80 }
+                },
+                plugins: { tooltip: { mode: "nearest", intersect: false } }
+            }
+        });
+
+        const phaseCtx = document.getElementById("bodePhaseChart").getContext("2d");
+        let phaseChart = new Chart(phaseCtx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    { label: "Plant Phase", data: [], borderColor: "red", borderDash: [5, 5], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Feedback Phase", data: [], borderColor: "green", borderDash: [2, 2], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Compensator Phase", data: [], borderColor: "blue", borderDash: [10, 5], fill: false, pointRadius: 0, hidden: false },
+                    { label: "Closed-Loop Phase", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0, hidden: false }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, min: 100, max: 1000000 },
+                    y: { title: { display: true, text: "Phase (degrees)" }, min: -180, max: 0 }
+                },
+                plugins: { tooltip: { mode: "nearest", intersect: false } }
+            }
+        });
+
+        function updateControlSystem() {
+            // Compensator Parameters
+            let includeOrigin = document.getElementById("origin-pole").checked;
+            let fp = (parseFloat(document.getElementById("pole-freq").value) || 100) * 1000;
+            let fz = (parseFloat(document.getElementById("zero-freq").value) || 10) * 1000;
+            let gainDb = parseFloat(document.getElementById("gain-db").value) || 60;
+            let fGain = (parseFloat(document.getElementById("gain-freq").value) || 0.1) * 1000;
+            let wp = 2 * Math.PI * fp;
+            let wz = 2 * Math.PI * fz;
+            let wGain = 2 * Math.PI * fGain;
+            let zeroTerm = Math.sqrt(1 + Math.pow(wGain / wz, 2));
+            let poleTerm = Math.sqrt(1 + Math.pow(wGain / wp, 2)) * (includeOrigin ? wGain : 1);
+            let K = Math.pow(10, gainDb / 20) / (zeroTerm / poleTerm);
+            let compensatorText = includeOrigin
+                ? `\\( C(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{${(fz / 1000).toFixed(1)} \\, \\text{kHz}}}{1 + \\frac{s}{${(fp / 1000).toFixed(1)} \\, \\text{kHz}}} \\)`
+                : `\\( C(s) = ${gainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1 + \\frac{s}{${(fz / 1000).toFixed(1)} \\, \\text{kHz}}}{1 + \\frac{s}{${(fp / 1000).toFixed(1)} \\, \\text{kHz}}} \\)`;
+            document.getElementById("compensator-transfer-output").innerHTML = compensatorText;
+
+            // Plant Parameters
+            let plantGainDb = parseFloat(document.getElementById("plant-gain-db").value) || 1;
+            let plantGainFreq = (parseFloat(document.getElementById("plant-gain-freq").value) || 0.1) * 1000;
+            let fp1 = (parseFloat(document.getElementById("fp1").value) || 0.1) * 1000;
+            let fz1Check = document.getElementById("fz1-check").checked;
+            let fz1 = (parseFloat(document.getElementById("fz1").value) || 10) * 1000;
+            let fp2Check = document.getElementById("fp2-check").checked;
+            let fp2 = (parseFloat(document.getElementById("fp2").value) || 200) * 1000;
+            let wp1 = 2 * Math.PI * fp1;
+            let wz1 = 2 * Math.PI * fz1;
+            let wp2 = 2 * Math.PI * fp2;
+            let wPlantGain = 2 * Math.PI * plantGainFreq;
+            let plantZeroTerm = fz1Check ? Math.sqrt(1 + Math.pow(wPlantGain / wz1, 2)) : 1;
+            let plantPole2Term = fp2Check ? Math.sqrt(1 + Math.pow(wPlantGain / wp2, 2)) : 1;
+            let Kp = Math.pow(10, plantGainDb / 20) / (Math.sqrt(1 + Math.pow(wPlantGain / wp1, 2)) * plantZeroTerm * plantPole2Term);
+            let plantText = `\\( P(s) = ${plantGainDb.toFixed(1)} \\, \\text{dB} \\cdot \\frac{1}{1 + \\frac{s}{${(fp1 / 1000).toFixed(1)} \\, \\text{kHz}}}`
+                + (fz1Check ? ` \\cdot \\left(1 + \\frac{s}{${(fz1 / 1000).toFixed(1)} \\, \\text{kHz}}\\right)` : "")
+                + (fp2Check ? ` \\cdot \\frac{1}{1 + \\frac{s}{${(fp2 / 1000).toFixed(1)} \\, \\text{kHz}}}` : "") + " \\)";
+            document.getElementById("plant-transfer-output").innerHTML = plantText;
+
+            // Feedback Parameters
+            let feedbackGain = parseFloat(document.getElementById("feedback-gain").value) || 1;
+            let feedbackZeroCheck = document.getElementById("feedback-zero-check").checked;
+            let feedbackZeroFreq = (parseFloat(document.getElementById("feedback-zero-freq").value) || 10) * 1000;
+            let wfz = 2 * Math.PI * feedbackZeroFreq;
+            let feedbackText = feedbackZeroCheck
+                ? `\\( F(s) = ${feedbackGain.toFixed(1)} \\cdot \\left(1 + \\frac{s}{${(feedbackZeroFreq / 1000).toFixed(1)} \\, \\text{kHz}}\\right) \\)`
+                : `\\( F(s) = ${feedbackGain.toFixed(1)} \\)`;
+            document.getElementById("feedback-transfer-output").innerHTML = feedbackText;
+
+            // Closed-Loop Transfer Function (Symbolic)
+            let closedLoopText = `\\( T(s) = \\frac{C(s)P(s)}{1 + C(s)P(s)F(s)} \\)`;
+            document.getElementById("closed-loop-transfer-output").innerHTML = closedLoopText;
+
+            // Frequency Response
+            let xMin = (parseFloat(document.getElementById("x-min").value) || 0.1) * 1000;
+            let xMax = (parseFloat(document.getElementById("x-max").value) || 1000) * 1000;
+            let yMagMin = parseFloat(document.getElementById("y-mag-min").value) || -20;
+            let yMagMax = parseFloat(document.getElementById("y-mag-max").value) || 80;
+            let yPhaseMin = parseFloat(document.getElementById("y-phase-min").value) || -180;
+            let yPhaseMax = parseFloat(document.getElementById("y-phase-max").value) || 0;
+
+            let freqs = [];
+            let magsPlant = [];
+            let phasesPlant = [];
+            let magsFeedback = [];
+            let phasesFeedback = [];
+            let magsCompensator = [];
+            let phasesCompensator = [];
+            let magsClosedLoop = [];
+            let phasesClosedLoop = [];
+            let logMin = Math.log10(xMin);
+            let logMax = Math.log10(xMax);
+            for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
+                let f = Math.pow(10, logF);
+                let w = 2 * Math.PI * f;
+
+                // Plant
+                let plantMag = Kp * Math.sqrt(1 + Math.pow(w / wz1, 2)) / (Math.sqrt(1 + Math.pow(w / wp1, 2)) * (fp2Check ? Math.sqrt(1 + Math.pow(w / wp2, 2)) : 1));
+                let plantDb = 20 * Math.log10(plantMag);
+                let plantPhaseZero = fz1Check ? Math.atan(w / wz1) * 180 / Math.PI : 0;
+                let plantPhasePole1 = -Math.atan(w / wp1) * 180 / Math.PI;
+                let plantPhasePole2 = fp2Check ? -Math.atan(w / wp2) * 180 / Math.PI : 0;
+                let plantPhase = plantPhaseZero + plantPhasePole1 + plantPhasePole2;
+
+                // Feedback
+                let feedbackMag = feedbackGain * (feedbackZeroCheck ? Math.sqrt(1 + Math.pow(w / wfz, 2)) : 1);
+                let feedbackDb = 20 * Math.log10(feedbackMag);
+                let feedbackPhase = feedbackZeroCheck ? Math.atan(w / wfz) * 180 / Math.PI : 0;
+
+                // Compensator
+                let compMag = K * Math.sqrt(1 + Math.pow(w / wz, 2)) / (Math.sqrt(1 + Math.pow(w / wp, 2)) * (includeOrigin ? w : 1));
+                let compDb = 20 * Math.log10(compMag);
+                let compPhaseZero = Math.atan(w / wz) * 180 / Math.PI;
+                let compPhasePole = -Math.atan(w / wp) * 180 / Math.PI;
+                let compPhaseOrigin = includeOrigin ? -90 : 0;
+                let compPhase = compPhaseZero + compPhasePole + compPhaseOrigin;
+
+                // Closed-Loop (approximation)
+                let openLoopMag = plantMag * compMag * feedbackMag;
+                let openLoopDb = 20 * Math.log10(openLoopMag);
+                let openLoopPhase = plantPhase + compPhase + feedbackPhase;
+                let closedLoopMag = openLoopMag / Math.sqrt(1 + Math.pow(openLoopMag, 2));
+                let closedLoopDb = 20 * Math.log10(closedLoopMag);
+                let closedLoopPhase = openLoopPhase - Math.atan(1 / openLoopMag) * 180 / Math.PI;
+
+                freqs.push(f);
+                magsPlant.push(plantDb);
+                phasesPlant.push(plantPhase);
+                magsFeedback.push(feedbackDb);
+                phasesFeedback.push(feedbackPhase);
+                magsCompensator.push(compDb);
+                phasesCompensator.push(compPhase);
+                magsClosedLoop.push(closedLoopDb);
+                phasesClosedLoop.push(closedLoopPhase);
+            }
+
+            // Update magnitude chart
+            magChart.data.labels = freqs;
+            magChart.data.datasets[0].data = magsPlant;
+            magChart.data.datasets[1].data = magsFeedback;
+            magChart.data.datasets[2].data = magsCompensator;
+            magChart.data.datasets[3].data = magsClosedLoop;
+            magChart.data.datasets[0].hidden = !document.getElementById("plot-plant").checked;
+            magChart.data.datasets[1].hidden = !document.getElementById("plot-feedback").checked;
+            magChart.data.datasets[2].hidden = !document.getElementById("plot-compensator").checked;
+            magChart.data.datasets[3].hidden = !document.getElementById("plot-closed-loop").checked;
+            magChart.options.scales.y.min = yMagMin;
+            magChart.options.scales.y.max = yMagMax;
+            magChart.update();
+
+            // Update phase chart
+            phaseChart.data.labels = freqs;
+            phaseChart.data.datasets[0].data = phasesPlant;
+            phaseChart.data.datasets[1].data = phasesFeedback;
+            phaseChart.data.datasets[2].data = phasesCompensator;
+            phaseChart.data.datasets[3].data = phasesClosedLoop;
+            phaseChart.data.datasets[0].hidden = !document.getElementById("plot-plant").checked;
+            phaseChart.data.datasets[1].hidden = !document.getElementById("plot-feedback").checked;
+            phaseChart.data.datasets[2].hidden = !document.getElementById("plot-compensator").checked;
+            phaseChart.data.datasets[3].hidden = !document.getElementById("plot-closed-loop").checked;
+            phaseChart.options.scales.y.min = yPhaseMin;
+            phaseChart.options.scales.y.max = yPhaseMax;
+            phaseChart.update();
+
+            // Calculate Phase Margin and Gain Margin (for open-loop)
+            let gainCrossoverIdx = magsCompensator.reduce((minIdx, val, idx, arr) => Math.abs(val) < Math.abs(arr[minIdx]) ? idx : minIdx, 0);
+            let phaseCrossoverIdx = phasesCompensator.reduce((minIdx, val, idx, arr) => Math.abs(val + 180) < Math.abs(arr[minIdx] + 180) ? idx : minIdx, 0);
+            let phaseMargin = phasesCompensator[gainCrossoverIdx] + 180;
+            let gainMarginDb = -magsCompensator[phaseCrossoverIdx];
+            document.getElementById("phase-margin").textContent = phaseMargin.toFixed(1) + "°";
+            document.getElementById("gain-margin").textContent = gainMarginDb.toFixed(1) + " dB";
+
+            // Re-render MathJax
+            MathJax.typeset();
+        }
+
+        // Initial call
+        updateControlSystem();
+    </script>
+</body>
+</html>
