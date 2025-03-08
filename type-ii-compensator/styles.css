@@ -1,0 +1,122 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+header {
+    text-align: center;
+    padding: 20px;
+    background-color: #1a73e8;
+    color: white;
+}
+section {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+}
+.calculator {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 50%;
+}
+.charts {
+    width: 50%;
+    padding-left: 20px;
+}
+.calculator label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+}
+.calculator .param-group {
+    margin-bottom: 15px;
+}
+.calculator input[type="number"] {
+    width: 100%;
+    max-width: 200px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+.calculator input[type="number"]:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+.calculator input[type="range"] {
+    width: 100%;
+    max-width: 200px;
+    margin: 5px 0;
+    -webkit-appearance: none;
+    height: 8px;
+    background: #ddd;
+    border-radius: 4px;
+    outline: none;
+}
+.calculator input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #1a73e8;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.calculator input[type="range"]::-webkit-slider-thumb:hover {
+    background: #1557b0;
+}
+.calculator .equation {
+    font-size: 14px;
+    color: #555;
+    margin-top: 5px;
+}
+.calculator .output, .charts .transfer, .charts .phase-boost, .charts .poles-zeros {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #1a73e8;
+}
+.transfer {
+    display: flex;
+    align-items: center;
+}
+.transfer .mathjax-eq {
+    margin-left: 20px;
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    transform: scale(1.125);
+}
+.schematic {
+    display: block;
+    max-width: 150px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+.calculator button {
+    background-color: #1a73e8;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+.calculator button:hover {
+    background-color: #1557b0;
+}
+canvas {
+    max-width: 100%;
+    margin-top: 20px;
+}
