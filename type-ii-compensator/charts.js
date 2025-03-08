@@ -57,6 +57,9 @@ let phaseChart = new Chart(phaseCtx, {
 
 // Function to update charts with data from calculator.js
 function updateCharts(calcData) {
+    // Calculate linear low-frequency gain (convert gainDb back to linear)
+    let lowFreqGain = Math.pow(10, calcData.gainDb / 20);
+
     // Set dynamic Y-axis max for magnitude plot
     let baseMax = Math.ceil(calcData.gainDb / 10) * 10;
     let yMax = baseMax + 10;
@@ -66,7 +69,7 @@ function updateCharts(calcData) {
 
     // Marker data for fp2
     let wPole2 = 2 * Math.PI * calcData.fp2 * 1000;
-    let magPole2 = calcData.gainDb * Math.sqrt(1 + Math.pow(wPole2 / (2 * Math.PI * calcData.fz1 * 1000), 2)) / 
+    let magPole2 = lowFreqGain * Math.sqrt(1 + Math.pow(wPole2 / (2 * Math.PI * calcData.fz1 * 1000), 2)) / 
                    (Math.sqrt(1 + Math.pow(wPole2 / (2 * Math.PI * calcData.fp0 * 1000), 2)) * Math.sqrt(1 + Math.pow(wPole2 / (2 * Math.PI * calcData.fp2 * 1000), 2)));
     let dbPole2 = 20 * Math.log10(magPole2);
     let phasePole2Marker = Math.atan(wPole2 / (2 * Math.PI * calcData.fz1 * 1000)) * 180 / Math.PI - 
@@ -74,7 +77,7 @@ function updateCharts(calcData) {
 
     // Marker data for fz1
     let wZero = 2 * Math.PI * calcData.fz1 * 1000;
-    let magZero = calcData.gainDb * Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * calcData.fz1 * 1000), 2)) / 
+    let magZero = lowFreqGain * Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * calcData.fz1 * 1000), 2)) / 
                   (Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * calcData.fp0 * 1000), 2)) * Math.sqrt(1 + Math.pow(wZero / (2 * Math.PI * calcData.fp2 * 1000), 2)));
     let dbZero = 20 * Math.log10(magZero);
     let phaseZeroMarker = 45 - Math.atan(wZero / (2 * Math.PI * calcData.fp0 * 1000)) * 180 / Math.PI - 
@@ -82,7 +85,7 @@ function updateCharts(calcData) {
 
     // Marker data for fp0
     let wPole0 = 2 * Math.PI * calcData.fp0 * 1000;
-    let magPole0 = calcData.gainDb / Math.sqrt(1 + Math.pow(wPole0 / (2 * Math.PI * calcData.fp0 * 1000), 2));
+    let magPole0 = lowFreqGain / Math.sqrt(1 + Math.pow(wPole0 / (2 * Math.PI * calcData.fp0 * 1000), 2));
     let dbPole0 = 20 * Math.log10(magPole0);
     let phasePole0Marker = -45;
 
