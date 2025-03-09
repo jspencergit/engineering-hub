@@ -1,57 +1,83 @@
-// calculator.js
-function calculateCompensator() {
-    // Get input values from the DOM and convert units
-    let rth = parseFloat(document.getElementById("rth").value) * 1000; // kΩ to Ω
-    let cth = parseFloat(document.getElementById("cth").value) * 1e-12; // pF to F
-    let cthp = parseFloat(document.getElementById("cthp").value) * 1e-12; // pF to F
-    let gm = parseFloat(document.getElementById("gm").value) * 1e-3; // mS to S
-    let ro = parseFloat(document.getElementById("ro").value) * 1000; // kΩ to Ω
-    let xMin = parseFloat(document.getElementById("x-min").value) * 1000; // kHz to Hz
-    let xMax = parseFloat(document.getElementById("x-max").value) * 1000; // kHz to Hz
+// feedback-network/calculator.js
+function calculateFeedbackNetwork() {
+    // Get input values and convert units
+    let plantGain = Math.pow(10, parseFloat(document.getElementById("plant-gain").value) / 20); // dB to linear
+    let plantPole = parseFloat(document.getElementById("plant-pole").value) * 1000; // kHz to Hz
+    let plantZero = parseFloat(document.getElementById("plant-zero").value) * 1000; // kHz to Hz
 
-    // Calculate poles and zeros (in kHz)
-    let fz1 = 1 / (2 * Math.PI * rth * cth) / 1000; // Zero in kHz
-    let fp2 = (cth + cthp) / (2 * Math.PI * rth * cth * cthp) / 1000; // High-frequency pole in kHz
-    let fp0 = 1 / (2 * Math.PI * ro * cth) / 1000; // Low-frequency pole in kHz
+    let compGain = Math.pow(10, parseFloat(document.getElementById("comp-gain").value) / 20); // dB to linear
+    let compPole = parseFloat(document.getElementById("comp-pole").value) * 1000; // kHz to Hz
+    let compZero = parseFloat(document.getElementById("comp-zero").value) * 1000; // kHz to Hz
 
-    // Calculate low-frequency gain in dB
-    let lowFreqGain = gm * ro; // Linear gain
-    let gainDb = 20 * Math.log10(lowFreqGain); // Convert to dB
+    let fbGain = Math.pow(10, parseFloat(document.getElementById("fb-gain").value) / 20); // dB to linear
 
-    // Calculate phase boost
-    let fBoost = Math.sqrt(fz1 * fp2 * 1e6) / 1000; // Geometric mean in kHz
-    let wBoost = 2 * Math.PI * fBoost * 1000;
-    let phaseBoost = Math.atan(wBoost / (2 * Math.PI * fz1 * 1000)) * 180 / Math.PI - 
-                    Math.atan(wBoost / (2 * Math.PI * fp2 * 1000)) * 180 / Math.PI;
+    // Frequency range (same as before, adjustable via UI later)
+    let xMin = 0.1 * 1000; // 0.1 kHz to Hz
+    let xMax = 1000 * 1000; // 1000 kHz to Hz
 
-    // Generate frequency array and Bode plot data
+    // Generate frequency array
     let freqs = [];
-    let mags = [];
-    let phases = [];
     let logMin = Math.log10(xMin);
     let logMax = Math.log10(xMax);
     for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
-        let f = Math.pow(10, logF);
-        let w = 2 * Math.PI * f;
-        let numMag = Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fz1 * 1000), 2));
-        let denMag = Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fp0 * 1000), 2)) * 
-                     Math.sqrt(1 + Math.pow(w / (2 * Math.PI * fp2 * 1000), 2));
-        let mag = lowFreqGain * numMag / denMag;
-        let db = 20 * Math.log10(mag);
-        let phaseZero = Math.atan(w / (2 * Math.PI * fz1 * 1000)) * 180 / Math.PI;
-        let phasePole0 = -Math.atan(w / (2 * Math.PI * fp0 * 1000)) * 180 / Math.PI;
-        let phasePole2 = -Math.atan(w / (2 * Math.PI * fp2 * 1000)) * 180 / Math.PI;
-        let phase = phaseZero + phasePole0 + phasePole2;
-        freqs.push(f / 1000); // Hz to kHz
-        mags.push(db);
-        phases.push(phase);
+        freqs.push(Math.pow(10, logF) / 1000); // Hz to kHz for labels
     }
 
-    // Return all calculated values
+    // Calculate Bode data for each block
+    let plantMags = freqs.map(f => {
+        let w = 2 * Math.PI * f * 1000; // Hz to rad/s
+        let mag = plantGain * (1 + w / (2 * Math.PI * plantZero)) / (1 + w / (2 * Math.PI * plantPole));
+        return 20 * Math.log10(mag);
+    });
+
+    let compMags = freqs.map(f => {
+        let w = 2 * Math.PI * f * 1000; // Hz to rad/s
+        let mag = compGain * (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
+        return 20 * Math.log10(mag);
+    });
+
+    let fbMags = freqs.map(f => fbGain * 20 * Math.log10(fbGain)); // Constant gain in dB
+
+    // Simplified closed-loop magnitude (approximation)
+    let closedMags = freqs.map(f => {
+        let w = 2 * Math.PI * f * 1000;
+        let openLoop = plantMags[freqs.indexOf(f)] + compMags[freqs.indexOf(f)] - fbMags[freqs.indexOf(f)];
+        let loopGain = Math.pow(10, openLoop / 20); // Convert dB to linear
+        let closedLoopGain = loopGain / (1 + loopGain); // Basic feedback formula
+        return 20 * Math.log10(closedLoopGain > 0 ? closedLoopGain : 0);
+    });
+
+    // Phase calculations (simplified for now)
+    let plantPhases = freqs.map(f => {
+        let w = 2 * Math.PI * f * 1000;
+        let phaseZero = Math.atan(w / (2 * Math.PI * plantZero));
+        let phasePole = -Math.atan(w / (2 * Math.PI * plantPole));
+        return (phaseZero + phasePole) * 180 / Math.PI;
+    });
+
+    let compPhases = freqs.map(f => {
+        let w = 2 * Math.PI * f * 1000;
+        let phaseZero = Math.atan(w / (2 * Math.PI * compZero));
+        let phasePole = -Math.atan(w / (2 * Math.PI * compPole));
+        return (phaseZero + phasePole) * 180 / Math.PI;
+    });
+
+    let fbPhases = freqs.map(f => 0); // Feedback phase is 0 for constant gain
+    let closedPhases = freqs.map(f => {
+        let phase = plantPhases[freqs.indexOf(f)] + compPhases[freqs.indexOf(f)] - fbPhases[freqs.indexOf(f)];
+        return phase; // Adjust for feedback phase later
+    });
+
+    // Bandwidth and Phase Margin (simplified placeholders)
+    let bandwidth = 100; // kHz (to be calculated properly later)
+    let phaseMargin = 45; // degrees (to be calculated properly later)
+
     return {
-        rth, cth, cthp, gm, ro, xMin, xMax,
-        fz1, fp2, fp0, gainDb,
-        phaseBoost, fBoost,
-        freqs, mags, phases
+        freqs,
+        plantMags, plantPhases,
+        compMags, compPhases,
+        fbMags, fbPhases,
+        closedMags, closedPhases,
+        bandwidth, phaseMargin
     };
 }
