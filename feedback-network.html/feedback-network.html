@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Language" content="en">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Type II Compensator - Analog Engineering Hub</title>
+    <title>Feedback Network Analyzer - Analog Engineering Hub</title>
     <!-- External Libraries -->
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script type="text/x-mathjax-config">
@@ -14,9 +14,8 @@
             CommonHTML: {scale: 150}
         });
     </script>
-    <!-- Add Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Link to CSS file -->
+    <!-- Link to CSS and JS files -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -27,64 +26,52 @@
 
     <section id="tools">
         <div class="calculator">
-            <h3>Type II Compensator</h3>
-            <img src="images/CompensationNetwork.jpg" alt="Type II Compensator Schematic" class="schematic">
-            
+            <h3>Feedback Network Analyzer</h3>
+            <img src="images/FeedbackNetworkDiagram.jpg" alt="Feedback Network Diagram" class="schematic">
+
+            <!-- Plant Parameters -->
             <div class="param-group">
-                <label for="rth">R_TH (kΩ):</label>
-                <input type="number" id="rth" step="0.1" min="0.1" value="10">
-                <input type="range" id="rth-slider" min="0.1" max="100" step="0.1" value="10">
-                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <h4>Plant</h4>
+                <label for="plant-gain">Gain (dB):</label>
+                <input type="number" id="plant-gain" step="1" min="-100" value="0">
+                <label for="plant-pole">Pole (kHz):</label>
+                <input type="number" id="plant-pole" step="0.1" min="0.001" value="1">
+                <label for="plant-zero">Zero (kHz):</label>
+                <input type="number" id="plant-zero" step="0.1" min="0.001" value="0.1">
             </div>
-            
+
+            <!-- Compensator Parameters -->
             <div class="param-group">
-                <label for="cth">C_TH (pF):</label>
-                <input type="number" id="cth" step="1" min="1" value="1000">
-                <input type="range" id="cth-slider" min="100" max="10000" step="100" value="1000">
-                <div class="equation">\( f_{z1} = \frac{1}{2\pi R_{TH} C_{TH}}, f_{p0} = \frac{1}{2\pi R_o C_{TH}}, f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <h4>Compensator</h4>
+                <label for="comp-gain">Gain (dB):</label>
+                <input type="number" id="comp-gain" step="1" min="-100" value="0">
+                <label for="comp-pole">Pole (kHz):</label>
+                <input type="number" id="comp-pole" step="0.1" min="0.001" value="1">
+                <label for="comp-zero">Zero (kHz):</label>
+                <input type="number" id="comp-zero" step="0.1" min="0.001" value="0.1">
             </div>
-            
+
+            <!-- Feedback Parameters -->
             <div class="param-group">
-                <label for="cthp">C_THP (pF):</label>
-                <input type="number" id="cthp" step="1" min="1" value="100">
-                <input type="range" id="cthp-slider" min="10" max="1000" step="10" value="100">
-                <div class="equation">\( f_{p2} = \frac{C_{TH} + C_{THP}}{2\pi R_{TH} C_{TH} C_{THP}} \)</div>
+                <h4>Feedback</h4>
+                <label for="fb-gain">Gain (dB):</label>
+                <input type="number" id="fb-gain" step="1" min="-100" value="0">
             </div>
-            
+
+            <!-- Closed-Loop Outputs -->
             <div class="param-group">
-                <label for="gm">gm (mS):</label>
-                <input type="number" id="gm" step="0.1" min="0.1" value="2">
-                <input type="range" id="gm-slider" min="0.1" max="10" step="0.1" value="2">
-                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o) \)</div>
+                <h4>Closed-Loop Results</h4>
+                <div>Bandwidth: <span id="bw-output">0</span> kHz</div>
+                <div>Phase Margin: <span id="pm-output">0</span>°</div>
             </div>
-            
-            <div class="param-group">
-                <label for="ro">R_o (kΩ):</label>
-                <input type="number" id="ro" step="1" min="1" value="500">
-                <input type="range" id="ro-slider" min="100" max="1000" step="10" value="500">
-                <div class="equation">\( \text{Gain} = 20 \log_{10}(g_m R_o), f_{p0} = \frac{1}{2\pi R_o C_{TH}} \)</div>
-            </div>
-            
-            <div class="param-group">
-                <label for="x-min">X-Axis Min (kHz):</label>
-                <input type="number" id="x-min" step="0.1" min="0.001" value="0.1">
-                <input type="range" id="x-min-slider" min="0.001" max="10" step="0.1" value="0.1">
-            </div>
-            
-            <div class="param-group">
-                <label for="x-max">X-Axis Max (kHz):</label>
-                <input type="number" id="x-max" step="1" min="0.001" value="1000">
-                <input type="range" id="x-max-slider" min="100" max="2000" step="10" value="1000">
-            </div>
-            
-            <button id="reset-btn">Reset</button>
+
+            <button id="update-btn">Update Plots</button>
         </div>
         <div class="charts">
-            <canvas id="bodeMagChart"></canvas>
-            <canvas id="bodePhaseChart"></canvas>
-            <div class="transfer">Transfer Function: <span class="mathjax-eq" id="transfer-output">\( A(s) = \)</span></div>
-            <div class="poles-zeros">Zero: <span id="zero-output">0</span> kHz, Pole: <span id="pole-output">0</span> kHz</div>
-            <div class="phase-boost">Phase Boost: <span id="phase-boost-output">0</span></div>
+            <canvas id="plant-bode-chart"></canvas>
+            <canvas id="comp-bode-chart"></canvas>
+            <canvas id="fb-bode-chart"></canvas>
+            <canvas id="closed-bode-chart"></canvas>
         </div>
     </section>
 
