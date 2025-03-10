@@ -1,6 +1,6 @@
 // feedback-network/charts.js
 
-// Initialize Plant Bode Chart (combined magnitude and phase)
+// Initialize Plant Bode Chart
 const plantCtx = document.getElementById("plant-bode-chart").getContext("2d");
 let plantChart = new Chart(plantCtx, {
     type: "line",
@@ -12,6 +12,14 @@ let plantChart = new Chart(plantCtx, {
         ]
     },
     options: {
+        plugins: { 
+            title: { 
+                display: true, 
+                text: "Plant Response", 
+                align: "center", 
+                font: { size: 16 } 
+            } 
+        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -39,6 +47,14 @@ let compChart = new Chart(compCtx, {
         ]
     },
     options: {
+        plugins: { 
+            title: { 
+                display: true, 
+                text: "Compensator Response", 
+                align: "center", 
+                font: { size: 16 } 
+            } 
+        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -66,10 +82,18 @@ let fbChart = new Chart(fbCtx, {
         ]
     },
     options: {
+        plugins: { 
+            title: { 
+                display: true, 
+                text: "Feedback Response", 
+                align: "center", 
+                font: { size: 16 } 
+            } 
+        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -90, max: 90, grid: { drawOnChartArea: false } }
         },
         plugins: { 
             tooltip: { 
@@ -93,6 +117,14 @@ let closedChart = new Chart(closedCtx, {
         ]
     },
     options: {
+        plugins: { 
+            title: { 
+                display: true, 
+                text: "Closed-Loop Response", 
+                align: "center", 
+                font: { size: 16 } 
+            } 
+        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -110,6 +142,9 @@ let closedChart = new Chart(closedCtx, {
 
 // Function to update all charts with data from calculator.js
 function updateCharts(calcData) {
+    console.log("Updating charts with:", { fbMags: calcData.fbMags.slice(0, 5), fbPhases: calcData.fbPhases.slice(0, 5) }); // Debug first 5 values
+    console.log("Compensator data:", { compMags: calcData.compMags.slice(0, 5), compPhases: calcData.compPhases.slice(0, 5) }); // Debug first 5 values
+
     // Update Plant Chart
     plantChart.data.labels = calcData.freqs;
     plantChart.data.datasets[0].data = calcData.plantMags;
