@@ -44,9 +44,12 @@ function calculateFeedbackNetwork() {
     let fbMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000;
         let mag = fbGain; // Apply gain first
+        console.log(`Frequency: ${f} kHz, Initial mag: ${20 * Math.log10(mag)} dB`); // Debug log
         if (fbZero) mag *= (1 + w / (2 * Math.PI * fbZero));
         if (fbPole) mag /= (1 + w / (2 * Math.PI * fbPole));
-        return 20 * Math.log10(mag > 0 ? mag : 0);
+        let finalMag = 20 * Math.log10(mag > 0 ? mag : 0);
+        console.log(`After zero/pole: ${finalMag} dB`); // Debug log
+        return finalMag + 20 * Math.log10(fbGain); // Add initial gain offset
     });
 
     let closedMags = freqs.map(f => {

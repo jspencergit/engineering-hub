@@ -34,19 +34,37 @@ section {
 }
 .calculator label {
     display: block;
-    margin: 10px 0 5px;
+    margin: 5px 0;
     font-weight: bold;
 }
 .calculator .param-group {
     margin-bottom: 15px;
 }
+.calculator .param-group-container {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    position: relative;
+}
+.calculator .input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+.calculator .input-group.checkbox-row {
+    flex-direction: row;
+    align-items: center;
+}
 .calculator input[type="number"] {
     width: 100%;
-    max-width: 200px;
+    max-width: 100px; /* Reduced from 200px to a more appropriate width */
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px;
+    margin-right: 10px; /* Add spacing between inputs */
 }
 .calculator input[type="number"]:focus {
     border-color: #1a73e8;
@@ -76,6 +94,11 @@ section {
 }
 .calculator input[type="checkbox"] {
     margin-right: 10px;
+}
+.calculator .checkbox-label {
+    font-size: 0.9em; /* Slightly smaller font */
+    font-weight: normal; /* Remove bold to differentiate from labels */
+    margin-right: 10px; /* Add spacing between label and checkbox */
 }
 .calculator .equation {
     font-size: 14px;
@@ -107,18 +130,6 @@ section {
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
-}
-.calculator button {
-    background-color: #1a73e8;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-.calculator button:hover {
-    background-color: #1557b0;
 }
 canvas {
     max-width: 100%;

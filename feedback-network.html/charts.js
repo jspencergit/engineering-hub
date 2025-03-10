@@ -19,6 +19,7 @@ let plantChart = new Chart(plantCtx, {
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
+            legend: { display: false }, // Remove legend
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -47,6 +48,7 @@ let compChart = new Chart(compCtx, {
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
+            legend: { display: false }, // Remove legend
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -65,16 +67,57 @@ let fbChart = new Chart(fbCtx, {
         labels: [],
         datasets: [
             { label: "Magnitude (dB)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0, yAxisID: "y-mag" },
-            { label: "Phase (degrees)", data: [], borderColor: "#ff9500", fill: false, pointRadius: 0, yAxisID: "y-phase" }
+            { label: "Phase (degrees)", data: [], borderColor: "#ff9500", fill: false, pointRadius: 0, yAxisID: "y-phase" },
+            { 
+                label: "Zero Marker", 
+                data: [], 
+                pointStyle: "circle", 
+                pointRadius: 5, 
+                pointBackgroundColor: "green", 
+                pointBorderColor: "green", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Pole Marker", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Zero Marker (Phase)", 
+                data: [], 
+                pointStyle: "circle", 
+                pointRadius: 5, 
+                pointBackgroundColor: "green", 
+                pointBorderColor: "green", 
+                showLine: false, 
+                yAxisID: "y-phase" 
+            },
+            { 
+                label: "Pole Marker (Phase)", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-phase" 
+            }
         ]
     },
     options: {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -90, max: 90, grid: { drawOnChartArea: false } }
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
+            legend: { display: false }, // Remove legend
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -103,6 +146,7 @@ let closedChart = new Chart(closedCtx, {
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
+            legend: { display: false }, // Remove legend
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -116,6 +160,7 @@ let closedChart = new Chart(closedCtx, {
 function updateCharts(calcData) {
     console.log("Updating charts with:", { fbMags: calcData.fbMags.slice(0, 5), fbPhases: calcData.fbPhases.slice(0, 5) }); // Debug first 5 values
     console.log("Compensator data:", { compMags: calcData.compMags.slice(0, 5), compPhases: calcData.compPhases.slice(0, 5) }); // Debug first 5 values
+    console.log("Frequencies:", calcData.freqs); // Debug all frequencies
 
     // Update Plant Chart
     plantChart.data.labels = calcData.freqs;
@@ -133,6 +178,46 @@ function updateCharts(calcData) {
     fbChart.data.labels = calcData.freqs;
     fbChart.data.datasets[0].data = calcData.fbMags;
     fbChart.data.datasets[1].data = calcData.fbPhases;
+
+    // Add pole and zero markers for magnitude plot
+    const fbZeroCheck = document.getElementById("fb-zero-check").checked;
+    const fbPoleCheck = document.getElementById("fb-pole-check").checked;
+    const fbZeroValue = fbZeroCheck ? parseFloat(document.getElementById("fb-zero").value) : null;
+    const fbPoleValue = fbPoleCheck ? parseFloat(document.getElementById("fb-pole").value) : null;
+
+    let closestZeroIndex = -1;
+    let closestPoleIndex = -1;
+    if (fbZeroCheck && calcData.freqs.length > 0) {
+        closestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
+            const minDist = Math.abs(arr[minIndex] - fbZeroValue);
+            const currDist = Math.abs(curr - fbZeroValue);
+            return currDist < minDist ? idx : minIndex;
+        }, 0);
+        console.log(`Closest zero index: ${closestZeroIndex}, value: ${calcData.freqs[closestZeroIndex]}, target: ${fbZeroValue}`);
+    }
+    if (fbPoleCheck && calcData.freqs.length > 0) {
+        closestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
+            const minDist = Math.abs(arr[minIndex] - fbPoleValue);
+            const currDist = Math.abs(curr - fbPoleValue);
+            return currDist < minDist ? idx : minIndex;
+        }, 0);
+        console.log(`Closest pole index: ${closestPoleIndex}, value: ${calcData.freqs[closestPoleIndex]}, target: ${fbPoleValue}`);
+    }
+
+    // Set markers using actual data values
+    fbChart.data.datasets[2].data = fbZeroCheck && closestZeroIndex >= 0 && closestZeroIndex < calcData.fbMags.length 
+        ? [{ x: fbZeroValue, y: calcData.fbMags[closestZeroIndex] }] 
+        : [];
+    fbChart.data.datasets[3].data = fbPoleCheck && closestPoleIndex >= 0 && closestPoleIndex < calcData.fbMags.length 
+        ? [{ x: fbPoleValue, y: calcData.fbMags[closestPoleIndex] }] 
+        : [];
+    fbChart.data.datasets[4].data = fbZeroCheck && closestZeroIndex >= 0 && closestZeroIndex < calcData.fbPhases.length 
+        ? [{ x: fbZeroValue, y: calcData.fbPhases[closestZeroIndex] }] 
+        : [];
+    fbChart.data.datasets[5].data = fbPoleCheck && closestPoleIndex >= 0 && closestPoleIndex < calcData.fbPhases.length 
+        ? [{ x: fbPoleValue, y: calcData.fbPhases[closestPoleIndex] }] 
+        : [];
+
     fbChart.update();
 
     // Update Closed-Loop Chart

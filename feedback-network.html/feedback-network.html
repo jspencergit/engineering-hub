@@ -7,21 +7,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Feedback Network Analyzer - Analog Engineering Hub</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['\\(', '\\)']]
-            },
-            chtml: {
-                scale: 1.5
-            }
-        };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Link to CSS and JS files -->
+    <!-- Link to CSS -->
     <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -57,18 +46,32 @@
             </div>
 
             <!-- Feedback Parameters -->
-            <div class="param-group">
-                <h4>Feedback</h4>
-                <label for="fb-gain">Gain (dB):</label>
-                <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="7">
-                <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="7">
-                <label>Zero:</label>
-                <input type="checkbox" id="fb-zero-check">
-                <input type="number" id="fb-zero" step="0.1" min="0.001" value="10" disabled>
-                <label>Pole:</label>
-                <input type="checkbox" id="fb-pole-check">
-                <input type="number" id="fb-pole" step="0.1" min="1" max="1000" value="1000" disabled>
-                <div class="transfer-function" id="fb-tf">\( F(s) = 1 \)</div>
+            <div class="param-group-container">
+                <div class="param-group">
+                    <h4>Feedback</h4>
+                    <div class="input-group">
+                        <label for="fb-gain">Gain (dB):</label>
+                        <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="-12.7">
+                    </div>
+                    <div class="input-group">
+                        <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="-12.7">
+                    </div>
+                    <div class="input-group checkbox-row">
+                        <label><span class="checkbox-label">Enable Feedback Zero</span></label>
+                        <input type="checkbox" id="fb-zero-check">
+                        <label for="fb-zero">Zero (kHz):</label>
+                        <input type="number" id="fb-zero" step="0.1" min="0.001" max="1000" value="10.8" disabled>
+                        <input type="range" id="fb-zero-slider" min="1" max="100" step="0.1" value="10.8" disabled>
+                    </div>
+                    <div class="input-group checkbox-row">
+                        <label><span class="checkbox-label">Enable Feedback Pole</span></label>
+                        <input type="checkbox" id="fb-pole-check">
+                        <label for="fb-pole">Pole (kHz):</label>
+                        <input type="number" id="fb-pole" step="0.1" min="1" max="1000" value="155.7" disabled>
+                        <input type="range" id="fb-pole-slider" min="1" max="1000" step="0.1" value="155.7" disabled>
+                    </div>
+                    <div class="transfer-function" id="fb-tf">\( F(s) = 1 \)</div>
+                </div>
             </div>
 
             <!-- Closed-Loop Outputs -->
@@ -77,8 +80,6 @@
                 <div>Bandwidth: <span id="bw-output">0</span> kHz</div>
                 <div>Phase Margin: <span id="pm-output">0</span>°</div>
             </div>
-
-            <button id="update-btn">Update Plots</button>
         </div>
         <div class="charts">
             <!-- Plant Plot -->
@@ -116,6 +117,29 @@
         </div>
     </section>
 
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']]
+            },
+            chtml: {
+                scale: 1.5
+            },
+            startup: {
+                ready() {
+                    MathJax.startup.defaultReady();
+                    // Trigger initial typesetting after MathJax is ready
+                    setTimeout(() => {
+                        if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                            MathJax.typeset();
+                        }
+                    }, 1000); // Increased delay to 1000ms
+                }
+            }
+        };
+    </script>
     <script src="calculator.js"></script>
     <script src="charts.js"></script>
     <script src="events.js"></script>
