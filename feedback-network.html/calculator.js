@@ -8,13 +8,14 @@ function calculateFeedbackNetwork() {
     let compGain = Math.pow(10, parseFloat(document.getElementById("comp-gain").value) / 20); // dB to linear
     let compPole = parseFloat(document.getElementById("comp-pole").value) * 1000; // kHz to Hz
     let compZero = parseFloat(document.getElementById("comp-zero").value) * 1000; // kHz to Hz
+    let compOriginPole = document.getElementById("comp-origin-pole-check").checked; // Origin pole at 0 Hz
 
     let fbGain = Math.pow(10, parseFloat(document.getElementById("fb-gain").value) / 20); // dB to linear
     let fbZero = document.getElementById("fb-zero-check").checked ? parseFloat(document.getElementById("fb-zero").value) * 1000 : null;
     let fbPole = document.getElementById("fb-pole-check").checked ? parseFloat(document.getElementById("fb-pole").value) * 1000 : null;
 
     console.log("Feedback inputs:", { fbGain, fbZero, fbPole }); // Debug log
-    console.log("Compensator inputs:", { compGain, compZero, compPole }); // Debug log
+    console.log("Compensator inputs:", { compGain, compZero, compPole, compOriginPole }); // Debug log
 
     // Frequency range
     let xMin = 0.1 * 1000; // 0.1 kHz to Hz
@@ -37,8 +38,10 @@ function calculateFeedbackNetwork() {
 
     let compMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // Hz to rad/s
-        let mag = compGain * (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
-        return 20 * Math.log10(mag);
+        let mag = compGain;
+        if (compOriginPole) mag *= (w / (2 * Math.PI * 0.001)) / (1 + w / (2 * Math.PI * 0.001)); // Approximate origin pole with small value
+        mag *= (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
+        return 20 * Math.log10(mag > 0 ? mag : 0);
     });
 
     let fbMags = freqs.map(f => {
@@ -70,9 +73,11 @@ function calculateFeedbackNetwork() {
 
     let compPhases = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000;
-        let phaseZero = Math.atan(w / (2 * Math.PI * compZero));
-        let phasePole = -Math.atan(w / (2 * Math.PI * compPole));
-        return (phaseZero + phasePole) * 180 / Math.PI;
+        let phase = 0;
+        if (compOriginPole) phase -= Math.PI / 2; // Origin pole adds -90 degrees
+        phase += Math.atan(w / (2 * Math.PI * compZero));
+        phase -= Math.atan(w / (2 * Math.PI * compPole));
+        return phase * 180 / Math.PI;
     });
 
     let fbPhases = freqs.map(f => {
@@ -96,6 +101,9 @@ function calculateFeedbackNetwork() {
         freqs,
         plantMags, plantPhases,
         compMags, compPhases,
+        compZero: compZero / 1000, // kHz for charting
+        compPole: compPole / 1000, // kHz for charting
+        compOriginPole,
         fbMags, fbPhases,
         closedMags, closedPhases,
         bandwidth, phaseMargin

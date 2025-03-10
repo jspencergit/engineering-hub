@@ -53,7 +53,48 @@ document.addEventListener("DOMContentLoaded", function() {
                 pmOutput.textContent = "N/A";
             }
 
-            // Update transfer functions
+            // Update Compensator transfer function
+            const compGainInput = document.getElementById("comp-gain");
+            const compGain = parseFloat(compGainInput.value) || parseFloat(compGainInput.getAttribute("value")) || 0;
+            const compZero = parseFloat(document.getElementById("comp-zero").value);
+            const compPole = parseFloat(document.getElementById("comp-pole").value);
+            const compOriginPoleCheck = document.getElementById("comp-origin-pole-check").checked;
+
+            console.log("Compensator checks:", { compGain, compZero, compPole, compOriginPoleCheck }); // Debug log
+
+            let compTf = `C(s) = ${compGain.toFixed(1)}`;
+            if (compOriginPoleCheck) {
+                compTf += ` \\cdot \\frac{1}{s}`;
+            }
+            compTf += ` \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`;
+
+            const compTfElement = document.getElementById("comp-tf");
+            if (compTfElement) {
+                compTfElement.innerHTML = `\\(${compTf}\\)`;
+                console.log("Attempting to typeset comp-tf:", compTfElement.innerHTML);
+                if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                    MathJax.typeset([compTfElement]);
+                } else {
+                    typesetMathJax(compTfElement);
+                }
+            } else {
+                console.error("comp-tf element not found");
+            }
+
+            const compTfChartElement = document.getElementById("comp-tf-chart");
+            if (compTfChartElement) {
+                compTfChartElement.innerHTML = `\\(${compTf}\\)`;
+                console.log("Attempting to typeset comp-tf-chart:", compTfChartElement.innerHTML);
+                if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                    MathJax.typeset([compTfChartElement]);
+                } else {
+                    typesetMathJax(compTfChartElement);
+                }
+            } else {
+                console.error("comp-tf-chart element not found");
+            }
+
+            // Update Feedback transfer function
             const fbGainInput = document.getElementById("fb-gain");
             const fbGain = parseFloat(fbGainInput.value) || parseFloat(fbGainInput.getAttribute("value")) || 0;
             const fbZeroCheck = document.getElementById("fb-zero-check").checked;
@@ -72,7 +113,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 fbTf += ` \\cdot \\frac{1}{1 + \\frac{s}{2\\pi \\cdot ${(fbPole / 1000).toFixed(1)} \\text{kHz}}}`;
             }
 
-            // Update transfer function below feedback inputs
             const fbTfElement = document.getElementById("fb-tf");
             if (fbTfElement) {
                 fbTfElement.innerHTML = `\\(${fbTf}\\)`;
@@ -86,7 +126,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("fb-tf element not found");
             }
 
-            // Update transfer function near the graph
             const fbTfChartElement = document.getElementById("fb-tf-chart");
             if (fbTfChartElement) {
                 fbTfChartElement.innerHTML = `\\(${fbTf}\\)`;
@@ -117,14 +156,83 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listeners for inputs
     const inputs = [
         "plant-gain", "plant-pole", "plant-zero",
-        "comp-gain", "comp-pole", "comp-zero",
+        "comp-gain", "comp-gain-slider", "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
     ];
 
     inputs.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
-            if (id === "fb-gain-slider") {
+            if (id === "comp-gain-slider") {
+                element.addEventListener("input", function() {
+                    console.log(`Slider ${id} changed to ${this.value}`);
+                    document.getElementById("comp-gain").value = this.value;
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-gain") {
+                element.addEventListener("input", function() {
+                    console.log(`Input ${id} changed to ${this.value}`);
+                    document.getElementById("comp-gain-slider").value = this.value;
+                    debouncedUpdate();
+                });
+                element.addEventListener("wheel", function(event) {
+                    event.preventDefault();
+                    let value = parseFloat(this.value) || 0;
+                    let step = 1;
+                    if (event.deltaY < 0) value += step;
+                    else if (value - step >= -100) value -= step;
+                    this.value = value.toFixed(1);
+                    document.getElementById("comp-gain-slider").value = value.toFixed(1);
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-pole-slider") {
+                element.addEventListener("input", function() {
+                    console.log(`Slider ${id} changed to ${this.value}`);
+                    document.getElementById("comp-pole").value = this.value;
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-pole") {
+                element.addEventListener("input", function() {
+                    console.log(`Input ${id} changed to ${this.value}`);
+                    document.getElementById("comp-pole-slider").value = this.value;
+                    debouncedUpdate();
+                });
+                element.addEventListener("wheel", function(event) {
+                    event.preventDefault();
+                    let value = parseFloat(this.value) || 0;
+                    let step = 0.1;
+                    let minValue = parseFloat(this.min) || 0.001;
+                    let maxValue = parseFloat(this.max) || 1000;
+                    if (event.deltaY < 0 && value + step <= maxValue) value += step;
+                    else if (event.deltaY > 0 && value - step >= minValue) value -= step;
+                    this.value = value.toFixed(1);
+                    document.getElementById("comp-pole-slider").value = value.toFixed(1);
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-zero-slider") {
+                element.addEventListener("input", function() {
+                    console.log(`Slider ${id} changed to ${this.value}`);
+                    document.getElementById("comp-zero").value = this.value;
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-zero") {
+                element.addEventListener("input", function() {
+                    console.log(`Input ${id} changed to ${this.value}`);
+                    document.getElementById("comp-zero-slider").value = this.value;
+                    debouncedUpdate();
+                });
+                element.addEventListener("wheel", function(event) {
+                    event.preventDefault();
+                    let value = parseFloat(this.value) || 0;
+                    let step = 0.1;
+                    let minValue = parseFloat(this.min) || 0.001;
+                    if (event.deltaY < 0) value += step;
+                    else if (value - step >= minValue) value -= step;
+                    this.value = value.toFixed(1);
+                    document.getElementById("comp-zero-slider").value = value.toFixed(1);
+                    debouncedUpdate();
+                });
+            } else if (id === "fb-gain-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
                     document.getElementById("fb-gain").value = this.value;
@@ -204,6 +312,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Checkbox event listeners with debounced update
+    const compOriginPoleCheck = document.getElementById("comp-origin-pole-check");
+    if (compOriginPoleCheck) {
+        compOriginPoleCheck.addEventListener("change", function() {
+            console.log(`Comp origin pole check changed to ${this.checked}`);
+            debouncedUpdate();
+        });
+    }
+
     const fbZeroCheck = document.getElementById("fb-zero-check");
     const fbPoleCheck = document.getElementById("fb-pole-check");
     if (fbZeroCheck) {

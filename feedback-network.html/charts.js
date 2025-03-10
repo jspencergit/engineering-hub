@@ -38,7 +38,67 @@ let compChart = new Chart(compCtx, {
         labels: [],
         datasets: [
             { label: "Magnitude (dB)", data: [], borderColor: "#1a73e8", fill: false, pointRadius: 0, yAxisID: "y-mag" },
-            { label: "Phase (degrees)", data: [], borderColor: "#ff9500", fill: false, pointRadius: 0, yAxisID: "y-phase" }
+            { label: "Phase (degrees)", data: [], borderColor: "#ff9500", fill: false, pointRadius: 0, yAxisID: "y-phase" },
+            { 
+                label: "Zero Marker", 
+                data: [], 
+                pointStyle: "circle", 
+                pointRadius: 5, 
+                pointBackgroundColor: "green", 
+                pointBorderColor: "green", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Pole Marker", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Origin Pole Marker", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "purple", 
+                pointBorderColor: "purple", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Zero Marker (Phase)", 
+                data: [], 
+                pointStyle: "circle", 
+                pointRadius: 5, 
+                pointBackgroundColor: "green", 
+                pointBorderColor: "green", 
+                showLine: false, 
+                yAxisID: "y-phase" 
+            },
+            { 
+                label: "Pole Marker (Phase)", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-phase" 
+            },
+            { 
+                label: "Origin Pole Marker (Phase)", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "purple", 
+                pointBorderColor: "purple", 
+                showLine: false, 
+                yAxisID: "y-phase" 
+            }
         ]
     },
     options: {
@@ -160,7 +220,6 @@ let closedChart = new Chart(closedCtx, {
 function updateCharts(calcData) {
     console.log("Updating charts with:", { fbMags: calcData.fbMags.slice(0, 5), fbPhases: calcData.fbPhases.slice(0, 5) }); // Debug first 5 values
     console.log("Compensator data:", { compMags: calcData.compMags.slice(0, 5), compPhases: calcData.compPhases.slice(0, 5) }); // Debug first 5 values
-    console.log("Frequencies:", calcData.freqs); // Debug all frequencies
 
     // Update Plant Chart
     plantChart.data.labels = calcData.freqs;
@@ -172,6 +231,46 @@ function updateCharts(calcData) {
     compChart.data.labels = calcData.freqs;
     compChart.data.datasets[0].data = calcData.compMags;
     compChart.data.datasets[1].data = calcData.compPhases;
+
+    // Add pole and zero markers for Compensator plot
+    const compZeroValue = calcData.compZero; // Already in kHz
+    const compPoleValue = calcData.compPole; // Already in kHz
+    const compOriginPole = calcData.compOriginPole;
+
+    const closestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
+        const minDist = Math.abs(arr[minIndex] - compZeroValue);
+        const currDist = Math.abs(curr - compZeroValue);
+        return currDist < minDist ? idx : minIndex;
+    }, 0);
+    const closestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
+        const minDist = Math.abs(arr[minIndex] - compPoleValue);
+        const currDist = Math.abs(curr - compPoleValue);
+        return currDist < minDist ? idx : minIndex;
+    }, 0);
+    const originFreq = calcData.freqs[0]; // Smallest frequency for origin pole marker
+
+    console.log(`Closest zero index (Comp): ${closestZeroIndex}, value: ${calcData.freqs[closestZeroIndex]}, target: ${compZeroValue}`);
+    console.log(`Closest pole index (Comp): ${closestPoleIndex}, value: ${calcData.freqs[closestPoleIndex]}, target: ${compPoleValue}`);
+
+    compChart.data.datasets[2].data = closestZeroIndex >= 0 && closestZeroIndex < calcData.compMags.length 
+        ? [{ x: compZeroValue, y: calcData.compMags[closestZeroIndex] }] 
+        : [];
+    compChart.data.datasets[3].data = closestPoleIndex >= 0 && closestPoleIndex < calcData.compMags.length 
+        ? [{ x: compPoleValue, y: calcData.compMags[closestPoleIndex] }] 
+        : [];
+    compChart.data.datasets[4].data = compOriginPole && originFreq 
+        ? [{ x: originFreq, y: calcData.compMags[0] }] 
+        : [];
+    compChart.data.datasets[5].data = closestZeroIndex >= 0 && closestZeroIndex < calcData.compPhases.length 
+        ? [{ x: compZeroValue, y: calcData.compPhases[closestZeroIndex] }] 
+        : [];
+    compChart.data.datasets[6].data = closestPoleIndex >= 0 && closestPoleIndex < calcData.compPhases.length 
+        ? [{ x: compPoleValue, y: calcData.compPhases[closestPoleIndex] }] 
+        : [];
+    compChart.data.datasets[7].data = compOriginPole && originFreq 
+        ? [{ x: originFreq, y: calcData.compPhases[0] }] 
+        : [];
+
     compChart.update();
 
     // Update Feedback Chart

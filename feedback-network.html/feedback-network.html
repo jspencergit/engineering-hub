@@ -35,14 +35,36 @@
             </div>
 
             <!-- Compensator Parameters -->
-            <div class="param-group">
-                <h4>Compensator</h4>
-                <label for="comp-gain">Gain (dB):</label>
-                <input type="number" id="comp-gain" step="1" min="-100" value="0">
-                <label for="comp-pole">Pole (kHz):</label>
-                <input type="number" id="comp-pole" step="0.1" min="0.001" value="1">
-                <label for="comp-zero">Zero (kHz):</label>
-                <input type="number" id="comp-zero" step="0.1" min="0.001" value="0.1">
+            <div class="param-group-container">
+                <div class="param-group">
+                    <h4>Compensator</h4>
+                    <div class="input-group">
+                        <label for="comp-gain">Gain (dB):</label>
+                        <input type="number" id="comp-gain" step="1" min="-100" value="0">
+                    </div>
+                    <div class="input-group">
+                        <input type="range" id="comp-gain-slider" min="-100" max="100" step="1" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="comp-pole">Pole (kHz):</label>
+                        <input type="number" id="comp-pole" step="0.1" min="0.001" max="1000" value="1">
+                    </div>
+                    <div class="input-group">
+                        <input type="range" id="comp-pole-slider" min="0.001" max="1000" step="0.1" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="comp-zero">Zero (kHz):</label>
+                        <input type="number" id="comp-zero" step="0.1" min="0.001" max="1000" value="0.1">
+                    </div>
+                    <div class="input-group">
+                        <input type="range" id="comp-zero-slider" min="0.001" max="1000" step="0.1" value="0.1">
+                    </div>
+                    <div class="input-group checkbox-row">
+                        <label><span class="checkbox-label">Enable Origin Pole</span></label>
+                        <input type="checkbox" id="comp-origin-pole-check">
+                    </div>
+                    <div class="transfer-function" id="comp-tf">\( C(s) = 1 \)</div>
+                </div>
             </div>
 
             <!-- Feedback Parameters -->
@@ -61,7 +83,7 @@
                         <input type="checkbox" id="fb-zero-check">
                         <label for="fb-zero">Zero (kHz):</label>
                         <input type="number" id="fb-zero" step="0.1" min="0.001" max="1000" value="10.8" disabled>
-                        <input type="range" id="fb-zero-slider" min="1" max="100" step="0.1" value="10.8" disabled>
+                        <input type="range" id="comp-zero-slider" min="1" max="100" step="0.1" value="10.8" disabled>
                     </div>
                     <div class="input-group checkbox-row">
                         <label><span class="checkbox-label">Enable Feedback Pole</span></label>
@@ -94,6 +116,7 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Compensator Response</h4>
+                    <div class="transfer-function" id="comp-tf-chart">\( C(s) = 1 \)</div>
                 </div>
                 <canvas id="comp-bode-chart"></canvas>
             </div>
