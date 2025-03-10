@@ -25,10 +25,11 @@ section {
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #ddd;
-    width: 50%;
+    width: 40%;
+    margin-right: 20px;
 }
 .charts {
-    width: 50%;
+    width: 60%;
     padding-left: 20px;
 }
 .calculator label {
@@ -73,28 +74,18 @@ section {
 .calculator input[type="range"]::-webkit-slider-thumb:hover {
     background: #1557b0;
 }
+.calculator input[type="checkbox"] {
+    margin-right: 10px;
+}
 .calculator .equation {
     font-size: 14px;
     color: #555;
     margin-top: 5px;
 }
-.calculator .output, .charts .transfer, .charts .phase-boost, .charts .poles-zeros {
+.calculator .output, .charts .transfer, .charts .poles-zeros, .charts .phase-boost {
     margin-top: 20px;
     font-size: 18px;
     color: #1a73e8;
-}
-.transfer {
-    display: flex;
-    align-items: center;
-}
-.transfer .mathjax-eq {
-    margin-left: 20px;
-    display: inline-block;
-    padding: 8px 12px;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    transform: scale(1.125);
 }
 .schematic {
     display: block;
@@ -118,5 +109,31 @@ section {
 }
 canvas {
     max-width: 100%;
-    margin-top: 20px;
+    margin-top: 10px;
+}
+.chart-group {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.chart-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+.transfer-function {
+    font-size: 14px;
+    padding: 5px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
+    max-width: 50%;
 }
