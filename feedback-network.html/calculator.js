@@ -39,20 +39,17 @@ function calculateFeedbackNetwork() {
     let compMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // Hz to rad/s
         let mag = compGain;
-        if (compOriginPole) mag *= (w / (2 * Math.PI * 0.001)) / (1 + w / (2 * Math.PI * 0.001)); // Approximate origin pole with small value
+        if (compOriginPole) mag *= (w / (2 * Math.PI * 0.1)) / (1 + w / (2 * Math.PI * 0.1)); // Adjusted to 0.1 Hz
         mag *= (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
-        return 20 * Math.log10(mag > 0 ? mag : 0);
+        return 20 * Math.log10(mag > 0 ? mag : 0.0001);
     });
 
     let fbMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000;
-        let mag = fbGain; // Apply gain first
-        console.log(`Frequency: ${f} kHz, Initial mag: ${20 * Math.log10(mag)} dB`); // Debug log
+        let mag = fbGain; // Apply gain once
         if (fbZero) mag *= (1 + w / (2 * Math.PI * fbZero));
         if (fbPole) mag /= (1 + w / (2 * Math.PI * fbPole));
-        let finalMag = 20 * Math.log10(mag > 0 ? mag : 0);
-        console.log(`After zero/pole: ${finalMag} dB`); // Debug log
-        return finalMag + 20 * Math.log10(fbGain); // Add initial gain offset
+        return 20 * Math.log10(mag > 0 ? mag : 0.0001); // Fixed: no double fbGain
     });
 
     let closedMags = freqs.map(f => {
@@ -97,7 +94,7 @@ function calculateFeedbackNetwork() {
     let bandwidth = 100; // kHz (to be calculated later)
     let phaseMargin = 45; // degrees (to be calculated later)
 
-    return {
+    let result = {
         freqs,
         plantMags, plantPhases,
         compMags, compPhases,
@@ -108,4 +105,10 @@ function calculateFeedbackNetwork() {
         closedMags, closedPhases,
         bandwidth, phaseMargin
     };
+    console.log("calcData sample:", {
+        freqs: result.freqs.slice(0, 5),
+        fbMags: result.fbMags.slice(0, 5),
+        closedPhases: result.closedPhases.slice(0, 5)
+    });
+    return result;
 }

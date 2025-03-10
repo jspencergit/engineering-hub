@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Update charts
             if (typeof updateCharts === "function") {
+                console.log("Calling updateCharts with calcData:", calcData);
                 updateCharts(calcData); // From charts.js
             } else {
                 console.error("updateCharts is not a function");
@@ -326,21 +327,41 @@ document.addEventListener("DOMContentLoaded", function() {
         fbZeroCheck.addEventListener("change", function() {
             const fbZero = document.getElementById("fb-zero");
             const fbZeroSlider = document.getElementById("fb-zero-slider");
-            fbZero.disabled = !this.checked;
-            fbZeroSlider.disabled = !this.checked;
-            debouncedUpdate();
+            if (fbZero && fbZeroSlider) {
+                fbZero.disabled = !this.checked;
+                fbZeroSlider.disabled = !this.checked;
+                console.log(`fb-zero-check changed to ${this.checked}, updating chart`);
+                debouncedUpdate();
+            } else {
+                console.error("fb-zero or fb-zero-slider element not found");
+            }
         });
     }
     if (fbPoleCheck) {
         fbPoleCheck.addEventListener("change", function() {
             const fbPole = document.getElementById("fb-pole");
             const fbPoleSlider = document.getElementById("fb-pole-slider");
-            fbPole.disabled = !this.checked;
-            fbPoleSlider.disabled = !this.checked;
-            debouncedUpdate();
+            if (fbPole && fbPoleSlider) {
+                fbPole.disabled = !this.checked;
+                fbPoleSlider.disabled = !this.checked;
+                console.log(`fb-pole-check changed to ${this.checked}, updating chart`);
+                debouncedUpdate();
+            } else {
+                console.error("fb-pole or fb-pole-slider element not found");
+            }
         });
     }
 
-    // Initial update
-    updateFeedbackNetwork();
+    // Initial update with delay to ensure updateCharts is ready
+    function waitForCharts() {
+        console.log("Checking for updateCharts:", typeof updateCharts, window.updateCharts);
+        if (typeof updateCharts === "function") {
+            console.log("updateCharts ready, running initial update");
+            updateFeedbackNetwork();
+        } else {
+            console.log("Waiting for updateCharts...");
+            setTimeout(waitForCharts, 100);
+        }
+    }
+    waitForCharts();
 });
