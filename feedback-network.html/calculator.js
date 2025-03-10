@@ -39,7 +39,11 @@ function calculateFeedbackNetwork() {
     let compMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // Hz to rad/s
         let mag = compGain;
-        if (compOriginPole) mag *= (w / (2 * Math.PI * 0.1)) / (1 + w / (2 * Math.PI * 0.1)); // Adjusted to 0.1 Hz
+        if (compOriginPole) {
+            // Origin pole (1/s) contributes -20 dB/decade
+            // Magnitude is inversely proportional to frequency
+            mag /= w; // Linear division by frequency for 1/s term
+        }
         mag *= (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
         return 20 * Math.log10(mag > 0 ? mag : 0.0001);
     });

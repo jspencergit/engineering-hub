@@ -105,7 +105,7 @@ let compChart = new Chart(compCtx, {
     options: {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
-            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
+            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -40, max: 80 },
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 

@@ -352,6 +352,45 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    // Reset button functionality
+    const resetButton = document.getElementById("reset-button");
+    if (resetButton) {
+        resetButton.addEventListener("click", function() {
+            // Reset Plant
+            document.getElementById("plant-gain").value = "0";
+            document.getElementById("plant-pole").value = "1";
+            document.getElementById("plant-zero").value = "0.1";
+
+            // Reset Compensator
+            document.getElementById("comp-gain").value = "60";
+            document.getElementById("comp-gain-slider").value = "60";
+            document.getElementById("comp-pole").value = "100";
+            document.getElementById("comp-pole-slider").value = "100";
+            document.getElementById("comp-zero").value = "10";
+            document.getElementById("comp-zero-slider").value = "10";
+            document.getElementById("comp-origin-pole-check").checked = true;
+
+            // Reset Feedback
+            document.getElementById("fb-gain").value = "-12.7";
+            document.getElementById("fb-gain-slider").value = "-12.7";
+            document.getElementById("fb-zero-check").checked = false;
+            document.getElementById("fb-zero").value = "10.8";
+            document.getElementById("fb-zero-slider").value = "10.8";
+            document.getElementById("fb-zero").disabled = true;
+            document.getElementById("fb-zero-slider").disabled = true;
+            document.getElementById("fb-pole-check").checked = false;
+            document.getElementById("fb-pole").value = "155.7";
+            document.getElementById("fb-pole-slider").value = "155.7";
+            document.getElementById("fb-pole").disabled = true;
+            document.getElementById("fb-pole-slider").disabled = true;
+
+            console.log("Reset to default values, triggering update");
+            debouncedUpdate();
+        });
+    } else {
+        console.error("reset-button element not found");
+    }
+
     // Initial update with delay to ensure updateCharts is ready
     function waitForCharts() {
         console.log("Checking for updateCharts:", typeof updateCharts, window.updateCharts);
