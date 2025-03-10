@@ -8,12 +8,16 @@
     <title>Feedback Network Analyzer - Analog Engineering Hub</title>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <!-- External Libraries -->
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-            tex2jax: {inlineMath: [['\\(', '\\)']]},
-            CommonHTML: {scale: 150}
-        });
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']]
+            },
+            chtml: {
+                scale: 1.5
+            }
+        };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Link to CSS and JS files -->
@@ -56,14 +60,15 @@
             <div class="param-group">
                 <h4>Feedback</h4>
                 <label for="fb-gain">Gain (dB):</label>
-                <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="0">
-                <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="0">
+                <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="7">
+                <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="7">
                 <label>Zero:</label>
                 <input type="checkbox" id="fb-zero-check">
                 <input type="number" id="fb-zero" step="0.1" min="0.001" value="10" disabled>
                 <label>Pole:</label>
                 <input type="checkbox" id="fb-pole-check">
                 <input type="number" id="fb-pole" step="0.1" min="1" max="1000" value="1000" disabled>
+                <div class="transfer-function" id="fb-tf">\( F(s) = 1 \)</div>
             </div>
 
             <!-- Closed-Loop Outputs -->
@@ -80,7 +85,6 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Plant Response</h4>
-                    <div class="transfer-function" id="plant-tf">\( P(s) = 1 \)</div>
                 </div>
                 <canvas id="plant-bode-chart"></canvas>
             </div>
@@ -89,7 +93,6 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Compensator Response</h4>
-                    <div class="transfer-function" id="comp-tf">\( C(s) = 1 \)</div>
                 </div>
                 <canvas id="comp-bode-chart"></canvas>
             </div>
@@ -98,7 +101,7 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Feedback Response</h4>
-                    <div class="transfer-function" id="fb-tf">\( F(s) = 1 \)</div>
+                    <div class="transfer-function" id="fb-tf-chart">\( F(s) = 1 \)</div>
                 </div>
                 <canvas id="fb-bode-chart"></canvas>
             </div>
@@ -107,7 +110,6 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Closed-Loop Response</h4>
-                    <div class="transfer-function" id="closed-tf">\( T(s) = 1 \)</div>
                 </div>
                 <canvas id="closed-bode-chart"></canvas>
             </div>

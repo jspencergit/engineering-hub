@@ -2,6 +2,7 @@
 
 // Initialize Plant Bode Chart
 const plantCtx = document.getElementById("plant-bode-chart").getContext("2d");
+console.log("Initializing Plant Chart");
 let plantChart = new Chart(plantCtx, {
     type: "line",
     data: {
@@ -12,14 +13,6 @@ let plantChart = new Chart(plantCtx, {
         ]
     },
     options: {
-        plugins: { 
-            title: { 
-                display: true, 
-                text: "Plant Response", 
-                align: "center", 
-                font: { size: 16 } 
-            } 
-        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -37,6 +30,7 @@ let plantChart = new Chart(plantCtx, {
 
 // Initialize Compensator Bode Chart
 const compCtx = document.getElementById("comp-bode-chart").getContext("2d");
+console.log("Initializing Compensator Chart");
 let compChart = new Chart(compCtx, {
     type: "line",
     data: {
@@ -47,14 +41,6 @@ let compChart = new Chart(compCtx, {
         ]
     },
     options: {
-        plugins: { 
-            title: { 
-                display: true, 
-                text: "Compensator Response", 
-                align: "center", 
-                font: { size: 16 } 
-            } 
-        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -72,6 +58,7 @@ let compChart = new Chart(compCtx, {
 
 // Initialize Feedback Bode Chart
 const fbCtx = document.getElementById("fb-bode-chart").getContext("2d");
+console.log("Initializing Feedback Chart");
 let fbChart = new Chart(fbCtx, {
     type: "line",
     data: {
@@ -82,14 +69,6 @@ let fbChart = new Chart(fbCtx, {
         ]
     },
     options: {
-        plugins: { 
-            title: { 
-                display: true, 
-                text: "Feedback Response", 
-                align: "center", 
-                font: { size: 16 } 
-            } 
-        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
@@ -107,6 +86,7 @@ let fbChart = new Chart(fbCtx, {
 
 // Initialize Closed-Loop Bode Chart
 const closedCtx = document.getElementById("closed-bode-chart").getContext("2d");
+console.log("Initializing Closed-Loop Chart");
 let closedChart = new Chart(closedCtx, {
     type: "line",
     data: {
@@ -117,14 +97,6 @@ let closedChart = new Chart(closedCtx, {
         ]
     },
     options: {
-        plugins: { 
-            title: { 
-                display: true, 
-                text: "Closed-Loop Response", 
-                align: "center", 
-                font: { size: 16 } 
-            } 
-        },
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },

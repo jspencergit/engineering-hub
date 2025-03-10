@@ -82,6 +82,19 @@ section {
     color: #555;
     margin-top: 5px;
 }
+.calculator .transfer-function {
+    font-size: 14px;
+    padding: 5px 10px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    margin-top: 10px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden; /* Remove scrollbars, truncate if needed */
+    max-width: 100%; /* Allow full width */
+}
 .calculator .output, .charts .transfer, .charts .poles-zeros, .charts .phase-boost {
     margin-top: 20px;
     font-size: 18px;
@@ -117,23 +130,32 @@ canvas {
     padding: 10px;
     margin-bottom: 20px;
     background-color: #f9f9f9;
+    position: relative; /* Ensure proper stacking */
 }
 .chart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    min-height: 40px;
 }
 .chart-header h4 {
     margin: 0;
     font-size: 16px;
     font-weight: bold;
+    padding: 5px 10px;
 }
-.transfer-function {
-    font-size: 14px;
-    padding: 5px;
-    background-color: #f8f9fa;
+.chart-header .transfer-function {
+    font-size: 12px; /* Reduced font size to fit */
+    padding: 5px 8px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
     border-radius: 4px;
     text-align: center;
-    max-width: 50%;
+    max-width: 50%; /* Reduced max-width to fit */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Remove scrollbars, truncate if needed */
+    white-space: nowrap; /* Prevent line breaks */
 }

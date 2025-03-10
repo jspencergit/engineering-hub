@@ -26,7 +26,8 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             // Update transfer functions
-            const fbGain = parseFloat(document.getElementById("fb-gain").value) || 0;
+            const fbGainInput = document.getElementById("fb-gain");
+            const fbGain = parseFloat(fbGainInput.value) || parseFloat(fbGainInput.getAttribute("value")) || 0;
             const fbZeroCheck = document.getElementById("fb-zero-check").checked;
             const fbZero = fbZeroCheck ? parseFloat(document.getElementById("fb-zero").value) * 1000 : null;
             const fbPoleCheck = document.getElementById("fb-pole-check").checked;
@@ -42,12 +43,31 @@ document.addEventListener("DOMContentLoaded", function() {
             } else if (fbPoleCheck) {
                 fbTf += ` \\cdot \\frac{1}{1 + \\frac{s}{2\\pi \\cdot ${(fbPole / 1000).toFixed(1)} \\text{kHz}}}`;
             }
+
+            // Update transfer function below feedback inputs
             const fbTfElement = document.getElementById("fb-tf");
             if (fbTfElement) {
                 fbTfElement.innerHTML = `\\(${fbTf}\\)`;
-                if (typeof MathJax !== "undefined" && MathJax.Hub) {
-                    MathJax.Hub.Queue(["Typeset", MathJax.Hub, fbTfElement]);
+                if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                    MathJax.typeset([fbTfElement]);
+                } else {
+                    console.error("MathJax not loaded or typeset undefined for fb-tf");
                 }
+            } else {
+                console.error("fb-tf element not found");
+            }
+
+            // Update transfer function near the graph
+            const fbTfChartElement = document.getElementById("fb-tf-chart");
+            if (fbTfChartElement) {
+                fbTfChartElement.innerHTML = `\\(${fbTf}\\)`;
+                if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                    MathJax.typeset([fbTfChartElement]);
+                } else {
+                    console.error("MathJax not loaded or typeset undefined for fb-tf-chart");
+                }
+            } else {
+                console.error("fb-tf-chart element not found");
             }
 
             // Update charts
