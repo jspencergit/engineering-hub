@@ -56,8 +56,8 @@ document.addEventListener("DOMContentLoaded", function() {
             // Update Compensator transfer function
             const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
             const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) || 0;
-            const compZero = parseFloat(document.getElementById("comp-zero").value) || 0.001; // Default to 0.001 if invalid
-            const compPole = parseFloat(document.getElementById("comp-pole").value) || 0.001; // Default to 0.001 if invalid
+            const compZero = parseFloat(document.getElementById("comp-zero").value) || 1; // Default to 1 if invalid
+            const compPole = parseFloat(document.getElementById("comp-pole").value) || 1; // Default to 1 if invalid
 
             console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole }); // Debug log
 
@@ -209,8 +209,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
                     let step = 0.1;
-                    let minValue = parseFloat(this.min) || 0.001;
-                    let maxValue = parseFloat(this.max) || 1000;
+                    let minValue = parseFloat(this.min) || 1; // Updated min
+                    let maxValue = parseFloat(this.max) || 500; // Updated max
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
@@ -233,9 +233,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
                     let step = 0.1;
-                    let minValue = parseFloat(this.min) || 0.001;
-                    if (event.deltaY < 0) value += step;
-                    else if (value - step >= minValue) value -= step;
+                    let minValue = parseFloat(this.min) || 1; // Updated min
+                    let maxValue = parseFloat(this.max) || 100; // Updated max
+                    if (event.deltaY < 0 && value + step <= maxValue) value += step;
+                    else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
                     document.getElementById("comp-zero-slider").value = value.toFixed(1);
                     debouncedUpdate();

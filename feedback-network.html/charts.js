@@ -79,6 +79,26 @@ let compChart = new Chart(compCtx, {
                 pointBorderColor: "red", 
                 showLine: false, 
                 yAxisID: "y-phase" 
+            },
+            { 
+                label: "Low Freq Gain Marker (Mag)", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
+                label: "Low Freq Gain Marker (Phase)", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-phase" 
             }
         ]
     },
@@ -86,7 +106,7 @@ let compChart = new Chart(compCtx, {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -40, max: 80 },
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 0, grid: { drawOnChartArea: false } }
         },
         plugins: { 
             legend: { display: false }, // Remove legend
@@ -251,6 +271,12 @@ function updateCharts(calcData) {
         ? [{ x: compPoleValue, y: calcData.compPhases[compClosestPoleIndex] }] 
         : [];
 
+    // Add low-frequency gain marker
+    const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
+    const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) / 1000 || 0.1; // Convert Hz to kHz
+    compChart.data.datasets[6].data = [{ x: compLowFreq, y: compLowFreqGain }]; // Magnitude marker
+    compChart.data.datasets[7].data = [{ x: compLowFreq, y: -90 }]; // Phase marker at -90 degrees
+
     compChart.update();
 
     // Update Feedback Chart
@@ -258,30 +284,33 @@ function updateCharts(calcData) {
     fbChart.data.datasets[0].data = calcData.fbMags;
     fbChart.data.datasets[1].data = calcData.fbPhases;
 
-    // Add pole and zero markers for magnitude plot
+    // Add pole and zero markers for Feedback plot
     const fbZeroCheck = document.getElementById("fb-zero-check").checked;
     const fbPoleCheck = document.getElementById("fb-pole-check").checked;
     const fbZeroValue = fbZeroCheck ? parseFloat(document.getElementById("fb-zero").value) : null;
     const fbPoleValue = fbPoleCheck ? parseFloat(document.getElementById("fb-pole").value) : null;
 
-    let fbClosestZeroIndex = -1;
-    let fbClosestPoleIndex = -1;
-    if (fbZeroCheck && calcData.freqs.length > 0) {
+    // Find exact or closest indices for zero and pole
+    let fbClosestZeroIndex = fbZeroCheck && calcData.freqs.length > 0 ? calcData.freqs.findIndex(f => Math.abs(f - fbZeroValue) < 0.1) : -1;
+    let fbClosestPoleIndex = fbPoleCheck && calcData.freqs.length > 0 ? calcData.freqs.findIndex(f => Math.abs(f - fbPoleValue) < 0.1) : -1;
+
+    if (fbClosestZeroIndex === -1 && fbZeroCheck) {
         fbClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
             const minDist = Math.abs(arr[minIndex] - fbZeroValue);
             const currDist = Math.abs(curr - fbZeroValue);
             return currDist < minDist ? idx : minIndex;
         }, 0);
-        console.log(`Closest zero index (FB): ${fbClosestZeroIndex}, value: ${calcData.freqs[fbClosestZeroIndex]}, target: ${fbZeroValue}`);
     }
-    if (fbPoleCheck && calcData.freqs.length > 0) {
+    if (fbClosestPoleIndex === -1 && fbPoleCheck) {
         fbClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
             const minDist = Math.abs(arr[minIndex] - fbPoleValue);
             const currDist = Math.abs(curr - fbPoleValue);
             return currDist < minDist ? idx : minIndex;
         }, 0);
-        console.log(`Closest pole index (FB): ${fbClosestPoleIndex}, value: ${calcData.freqs[fbClosestPoleIndex]}, target: ${fbPoleValue}`);
     }
+
+    console.log(`Closest zero index (FB): ${fbClosestZeroIndex}, value: ${fbClosestZeroIndex >= 0 ? calcData.freqs[fbClosestZeroIndex] : 'N/A'}, target: ${fbZeroValue}`);
+    console.log(`Closest pole index (FB): ${fbClosestPoleIndex}, value: ${fbClosestPoleIndex >= 0 ? calcData.freqs[fbClosestPoleIndex] : 'N/A'}, target: ${fbPoleValue}`);
 
     fbChart.data.datasets[2].data = fbZeroCheck && fbClosestZeroIndex >= 0 && fbClosestZeroIndex < calcData.fbMags.length 
         ? [{ x: fbZeroValue, y: calcData.fbMags[fbClosestZeroIndex] }] 
