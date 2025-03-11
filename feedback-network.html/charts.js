@@ -61,16 +61,6 @@ let compChart = new Chart(compCtx, {
                 yAxisID: "y-mag" 
             },
             { 
-                label: "Origin Pole Marker", 
-                data: [], 
-                pointStyle: "crossRot", 
-                pointRadius: 5, 
-                pointBackgroundColor: "purple", 
-                pointBorderColor: "purple", 
-                showLine: false, 
-                yAxisID: "y-mag" 
-            },
-            { 
                 label: "Zero Marker (Phase)", 
                 data: [], 
                 pointStyle: "circle", 
@@ -87,16 +77,6 @@ let compChart = new Chart(compCtx, {
                 pointRadius: 5, 
                 pointBackgroundColor: "red", 
                 pointBorderColor: "red", 
-                showLine: false, 
-                yAxisID: "y-phase" 
-            },
-            { 
-                label: "Origin Pole Marker (Phase)", 
-                data: [], 
-                pointStyle: "crossRot", 
-                pointRadius: 5, 
-                pointBackgroundColor: "purple", 
-                pointBorderColor: "purple", 
                 showLine: false, 
                 yAxisID: "y-phase" 
             }
@@ -243,7 +223,6 @@ function updateCharts(calcData) {
     // Add pole and zero markers for Compensator plot
     const compZeroValue = calcData.compZero; // Already in kHz
     const compPoleValue = calcData.compPole; // Already in kHz
-    const compOriginPole = calcData.compOriginPole;
 
     let compClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
         const minDist = Math.abs(arr[minIndex] - compZeroValue);
@@ -255,7 +234,6 @@ function updateCharts(calcData) {
         const currDist = Math.abs(curr - compPoleValue);
         return currDist < minDist ? idx : minIndex;
     }, 0);
-    const originFreq = calcData.freqs[0]; // Smallest frequency for origin pole marker
 
     console.log(`Closest zero index (Comp): ${compClosestZeroIndex}, value: ${calcData.freqs[compClosestZeroIndex]}, target: ${compZeroValue}`);
     console.log(`Closest pole index (Comp): ${compClosestPoleIndex}, value: ${calcData.freqs[compClosestPoleIndex]}, target: ${compPoleValue}`);
@@ -266,17 +244,11 @@ function updateCharts(calcData) {
     compChart.data.datasets[3].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compMags.length 
         ? [{ x: compPoleValue, y: calcData.compMags[compClosestPoleIndex] }] 
         : [];
-    compChart.data.datasets[4].data = compOriginPole && originFreq 
-        ? [{ x: originFreq, y: calcData.compMags[0] }] 
-        : [];
-    compChart.data.datasets[5].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compPhases.length 
+    compChart.data.datasets[4].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compPhases.length 
         ? [{ x: compZeroValue, y: calcData.compPhases[compClosestZeroIndex] }] 
         : [];
-    compChart.data.datasets[6].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compPhases.length 
+    compChart.data.datasets[5].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compPhases.length 
         ? [{ x: compPoleValue, y: calcData.compPhases[compClosestPoleIndex] }] 
-        : [];
-    compChart.data.datasets[7].data = compOriginPole && originFreq 
-        ? [{ x: originFreq, y: calcData.compPhases[0] }] 
         : [];
 
     compChart.update();

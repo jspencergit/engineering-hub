@@ -5,17 +5,17 @@ function calculateFeedbackNetwork() {
     let plantPole = parseFloat(document.getElementById("plant-pole").value) * 1000; // kHz to Hz
     let plantZero = parseFloat(document.getElementById("plant-zero").value) * 1000; // kHz to Hz
 
-    let compGain = Math.pow(10, parseFloat(document.getElementById("comp-gain").value) / 20); // dB to linear
+    let compLowFreqGain = Math.pow(10, parseFloat(document.getElementById("comp-low-freq-gain").value) / 20); // dB to linear
+    let compLowFreq = parseFloat(document.getElementById("comp-low-freq").value); // Hz
     let compPole = parseFloat(document.getElementById("comp-pole").value) * 1000; // kHz to Hz
     let compZero = parseFloat(document.getElementById("comp-zero").value) * 1000; // kHz to Hz
-    let compOriginPole = document.getElementById("comp-origin-pole-check").checked; // Origin pole at 0 Hz
 
     let fbGain = Math.pow(10, parseFloat(document.getElementById("fb-gain").value) / 20); // dB to linear
     let fbZero = document.getElementById("fb-zero-check").checked ? parseFloat(document.getElementById("fb-zero").value) * 1000 : null;
     let fbPole = document.getElementById("fb-pole-check").checked ? parseFloat(document.getElementById("fb-pole").value) * 1000 : null;
 
     console.log("Feedback inputs:", { fbGain, fbZero, fbPole }); // Debug log
-    console.log("Compensator inputs:", { compGain, compZero, compPole, compOriginPole }); // Debug log
+    console.log("Compensator inputs:", { compLowFreqGain, compLowFreq, compPole, compZero }); // Debug log
 
     // Frequency range
     let xMin = 0.1 * 1000; // 0.1 kHz to Hz
@@ -29,22 +29,24 @@ function calculateFeedbackNetwork() {
         freqs.push(Math.pow(10, logF) / 1000); // Hz to kHz for labels
     }
 
+    // Calculate the gain factor to match compLowFreqGain at compLowFreq
+    // Transfer function: C(s) = (K / s) * (1 + s/wz) / (1 + s/wp)
+    // At f = compLowFreq, |C(jw)| ≈ (K / w) * sqrt(1 + (w/wz)^2) / sqrt(1 + (w/wp)^2) ≈ compLowFreqGain (linear)
+    // For low frequencies, |C(jw)| ≈ K / w, so K = compLowFreqGain * wLowFreq
+    let wLowFreq = 2 * Math.PI * compLowFreq;
+    let K = compLowFreqGain * wLowFreq; // Gain factor to achieve compLowFreqGain at compLowFreq
+    console.log("Calculated gain factor K:", K);
+
     // Calculate Bode data for each block
     let plantMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // Hz to rad/s
         let mag = plantGain * (1 + w / (2 * Math.PI * plantZero)) / (1 + w / (2 * Math.PI * plantPole));
-        return 20 * Math.log10(mag);
+        return 20 * Math.log10(mag > 0 ? mag : 0.0001);
     });
 
     let compMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // Hz to rad/s
-        let mag = compGain;
-        if (compOriginPole) {
-            // Origin pole (1/s) contributes -20 dB/decade
-            // Magnitude is inversely proportional to frequency
-            mag /= w; // Linear division by frequency for 1/s term
-        }
-        mag *= (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
+        let mag = (K / w) * (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
         return 20 * Math.log10(mag > 0 ? mag : 0.0001);
     });
 
@@ -74,8 +76,7 @@ function calculateFeedbackNetwork() {
 
     let compPhases = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000;
-        let phase = 0;
-        if (compOriginPole) phase -= Math.PI / 2; // Origin pole adds -90 degrees
+        let phase = -Math.PI / 2; // Phase contribution from 1/s (integrator)
         phase += Math.atan(w / (2 * Math.PI * compZero));
         phase -= Math.atan(w / (2 * Math.PI * compPole));
         return phase * 180 / Math.PI;
@@ -104,14 +105,13 @@ function calculateFeedbackNetwork() {
         compMags, compPhases,
         compZero: compZero / 1000, // kHz for charting
         compPole: compPole / 1000, // kHz for charting
-        compOriginPole,
         fbMags, fbPhases,
         closedMags, closedPhases,
         bandwidth, phaseMargin
     };
     console.log("calcData sample:", {
         freqs: result.freqs.slice(0, 5),
-        fbMags: result.fbMags.slice(0, 5),
+        compMags: result.compMags.slice(0, 5),
         closedPhases: result.closedPhases.slice(0, 5)
     });
     return result;

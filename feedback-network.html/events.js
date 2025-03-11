@@ -54,19 +54,15 @@ document.addEventListener("DOMContentLoaded", function() {
             }
 
             // Update Compensator transfer function
-            const compGainInput = document.getElementById("comp-gain");
-            const compGain = parseFloat(compGainInput.value) || parseFloat(compGainInput.getAttribute("value")) || 0;
-            const compZero = parseFloat(document.getElementById("comp-zero").value);
-            const compPole = parseFloat(document.getElementById("comp-pole").value);
-            const compOriginPoleCheck = document.getElementById("comp-origin-pole-check").checked;
+            const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
+            const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) || 0;
+            const compZero = parseFloat(document.getElementById("comp-zero").value) || 0.001; // Default to 0.001 if invalid
+            const compPole = parseFloat(document.getElementById("comp-pole").value) || 0.001; // Default to 0.001 if invalid
 
-            console.log("Compensator checks:", { compGain, compZero, compPole, compOriginPoleCheck }); // Debug log
+            console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole }); // Debug log
 
-            let compTf = `C(s) = ${compGain.toFixed(1)}`;
-            if (compOriginPoleCheck) {
-                compTf += ` \\cdot \\frac{1}{s}`;
-            }
-            compTf += ` \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`;
+            let compTf = `C(s) = \\frac{${compLowFreqGain.toFixed(1)}}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\cdot 1000}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\cdot 1000}}`; // Convert kHz to Hz
+            console.log("compTf string:", compTf); // Debug the string
 
             const compTfElement = document.getElementById("comp-tf");
             if (compTfElement) {
@@ -157,33 +153,44 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listeners for inputs
     const inputs = [
         "plant-gain", "plant-pole", "plant-zero",
-        "comp-gain", "comp-gain-slider", "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
+        "comp-low-freq-gain", "comp-low-freq",
+        "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
     ];
 
     inputs.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
-            if (id === "comp-gain-slider") {
-                element.addEventListener("input", function() {
-                    console.log(`Slider ${id} changed to ${this.value}`);
-                    document.getElementById("comp-gain").value = this.value;
-                    debouncedUpdate();
-                });
-            } else if (id === "comp-gain") {
+            if (id === "comp-low-freq-gain") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
-                    document.getElementById("comp-gain-slider").value = this.value;
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
                     let step = 1;
-                    if (event.deltaY < 0) value += step;
-                    else if (value - step >= -100) value -= step;
+                    let minValue = parseFloat(this.min) || -100;
+                    let maxValue = parseFloat(this.max) || 100;
+                    if (event.deltaY < 0 && value + step <= maxValue) value += step;
+                    else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
-                    document.getElementById("comp-gain-slider").value = value.toFixed(1);
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-low-freq") {
+                element.addEventListener("input", function() {
+                    console.log(`Input ${id} changed to ${this.value}`);
+                    debouncedUpdate();
+                });
+                element.addEventListener("wheel", function(event) {
+                    event.preventDefault();
+                    let value = parseFloat(this.value) || 0;
+                    let step = 1;
+                    let minValue = parseFloat(this.min) || 1;
+                    let maxValue = parseFloat(this.max) || 10000;
+                    if (event.deltaY < 0 && value + step <= maxValue) value += step;
+                    else if (event.deltaY > 0 && value - step >= minValue) value -= step;
+                    this.value = value.toFixed(1);
                     debouncedUpdate();
                 });
             } else if (id === "comp-pole-slider") {
@@ -313,14 +320,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Checkbox event listeners with debounced update
-    const compOriginPoleCheck = document.getElementById("comp-origin-pole-check");
-    if (compOriginPoleCheck) {
-        compOriginPoleCheck.addEventListener("change", function() {
-            console.log(`Comp origin pole check changed to ${this.checked}`);
-            debouncedUpdate();
-        });
-    }
-
     const fbZeroCheck = document.getElementById("fb-zero-check");
     const fbPoleCheck = document.getElementById("fb-pole-check");
     if (fbZeroCheck) {
@@ -362,13 +361,12 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("plant-zero").value = "0.1";
 
             // Reset Compensator
-            document.getElementById("comp-gain").value = "60";
-            document.getElementById("comp-gain-slider").value = "60";
+            document.getElementById("comp-low-freq-gain").value = "60";
+            document.getElementById("comp-low-freq").value = "100";
             document.getElementById("comp-pole").value = "100";
             document.getElementById("comp-pole-slider").value = "100";
             document.getElementById("comp-zero").value = "10";
             document.getElementById("comp-zero-slider").value = "10";
-            document.getElementById("comp-origin-pole-check").checked = true;
 
             // Reset Feedback
             document.getElementById("fb-gain").value = "-12.7";
