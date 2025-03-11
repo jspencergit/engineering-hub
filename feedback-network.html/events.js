@@ -53,6 +53,29 @@ document.addEventListener("DOMContentLoaded", function() {
                 pmOutput.textContent = "N/A";
             }
 
+            // Update Plant transfer function
+            const plantGain = parseFloat(document.getElementById("plant-gain").value) || 0;
+            const plantLowPole = parseFloat(document.getElementById("plant-low-pole").value) || 1;
+            const plantZero = parseFloat(document.getElementById("plant-zero").value) || 0.001;
+            const plantHighPole = parseFloat(document.getElementById("plant-high-pole").value) || 0.001;
+
+            console.log("Plant checks:", { plantGain, plantLowPole, plantZero, plantHighPole }); // Debug log
+
+            let plantTf = `P(s) = ${plantGain.toFixed(1)} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${plantZero.toFixed(1)} \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${plantLowPole.toFixed(1)} \\text{Hz}}\\right) \\left(1 + \\frac{s}{2\\pi \\cdot ${plantHighPole.toFixed(1)} \\text{kHz}}\\right)}`;
+
+            const plantTfElement = document.getElementById("plant-tf");
+            if (plantTfElement) {
+                plantTfElement.innerHTML = `\\(${plantTf}\\)`;
+                console.log("Attempting to typeset plant-tf:", plantTfElement.innerHTML);
+                if (typeof MathJax !== "undefined" && MathJax.typeset) {
+                    MathJax.typeset([plantTfElement]);
+                } else {
+                    typesetMathJax(plantTfElement);
+                }
+            } else {
+                console.error("plant-tf element not found");
+            }
+
             // Update Compensator transfer function
             const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
             const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) || 0;
@@ -152,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Event listeners for inputs
     const inputs = [
-        "plant-gain", "plant-pole", "plant-zero",
+        "plant-gain", "plant-low-pole", "plant-zero", "plant-high-pole",
         "comp-low-freq-gain", "comp-low-freq",
         "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
@@ -209,8 +232,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
                     let step = 0.1;
-                    let minValue = parseFloat(this.min) || 1; // Updated min
-                    let maxValue = parseFloat(this.max) || 500; // Updated max
+                    let minValue = parseFloat(this.min) || 1;
+                    let maxValue = parseFloat(this.max) || 500;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
@@ -233,8 +256,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
                     let step = 0.1;
-                    let minValue = parseFloat(this.min) || 1; // Updated min
-                    let maxValue = parseFloat(this.max) || 100; // Updated max
+                    let minValue = parseFloat(this.min) || 1;
+                    let maxValue = parseFloat(this.max) || 100;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
@@ -358,8 +381,9 @@ document.addEventListener("DOMContentLoaded", function() {
         resetButton.addEventListener("click", function() {
             // Reset Plant
             document.getElementById("plant-gain").value = "0";
-            document.getElementById("plant-pole").value = "1";
-            document.getElementById("plant-zero").value = "0.1";
+            document.getElementById("plant-low-pole").value = "10";
+            document.getElementById("plant-zero").value = "20";
+            document.getElementById("plant-high-pole").value = "100";
 
             // Reset Compensator
             document.getElementById("comp-low-freq-gain").value = "60";

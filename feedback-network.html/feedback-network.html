@@ -28,10 +28,12 @@
                 <h4>Plant</h4>
                 <label for="plant-gain">Gain (dB):</label>
                 <input type="number" id="plant-gain" step="1" min="-100" value="0">
-                <label for="plant-pole">Pole (kHz):</label>
-                <input type="number" id="plant-pole" step="0.1" min="0.001" value="1">
+                <label for="plant-low-pole">Low Frequency Pole (Hz):</label>
+                <input type="number" id="plant-low-pole" step="1" min="1" value="10">
                 <label for="plant-zero">Zero (kHz):</label>
-                <input type="number" id="plant-zero" step="0.1" min="0.001" value="0.1">
+                <input type="number" id="plant-zero" step="0.1" min="0.001" value="20">
+                <label for="plant-high-pole">High Frequency Pole (kHz):</label>
+                <input type="number" id="plant-high-pole" step="0.1" min="0.001" value="100">
             </div>
 
             <!-- Compensator Parameters -->
@@ -111,6 +113,7 @@
             <div class="chart-group">
                 <div class="chart-header">
                     <h4>Plant Response</h4>
+                    <div class="transfer-function" id="plant-tf">\( P(s) = 1 \)</div>
                 </div>
                 <canvas id="plant-bode-chart"></canvas>
             </div>

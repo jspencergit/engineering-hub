@@ -16,8 +16,8 @@ let plantChart = new Chart(plantCtx, {
     options: {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
-            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
+            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -80, max: 10 }, // Updated range
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 90, grid: { drawOnChartArea: false } } // Updated range
         },
         plugins: { 
             legend: { display: false }, // Remove legend
