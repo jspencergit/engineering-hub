@@ -381,7 +381,7 @@ document.addEventListener("DOMContentLoaded", function() {
         resetButton.addEventListener("click", function() {
             // Reset Plant
             document.getElementById("plant-gain").value = "0";
-            document.getElementById("plant-low-pole").value = "10";
+            document.getElementById("plant-low-pole").value = "1000"; // Default to 1000 Hz
             document.getElementById("plant-zero").value = "20";
             document.getElementById("plant-high-pole").value = "100";
 
@@ -394,8 +394,8 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("comp-zero-slider").value = "10";
 
             // Reset Feedback
-            document.getElementById("fb-gain").value = "-12.7";
-            document.getElementById("fb-gain-slider").value = "-12.7";
+            document.getElementById("fb-gain").value = "0"; // Default to 0 dB
+            document.getElementById("fb-gain-slider").value = "0"; // Default to 0 dB
             document.getElementById("fb-zero-check").checked = false;
             document.getElementById("fb-zero").value = "10.8";
             document.getElementById("fb-zero-slider").value = "10.8";

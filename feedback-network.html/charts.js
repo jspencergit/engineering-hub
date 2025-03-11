@@ -16,8 +16,8 @@ let plantChart = new Chart(plantCtx, {
     options: {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
-            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -80, max: 10 }, // Updated range
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 90, grid: { drawOnChartArea: false } } // Updated range
+            "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -80, max: 10 },
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 90, grid: { drawOnChartArea: false } }
         },
         plugins: { 
             legend: { display: false }, // Remove legend
@@ -188,9 +188,9 @@ let fbChart = new Chart(fbCtx, {
     }
 });
 
-// Initialize Closed-Loop Bode Chart
+// Initialize Loop Gain Bode Chart (renamed from Closed-Loop)
 const closedCtx = document.getElementById("closed-bode-chart").getContext("2d");
-console.log("Initializing Closed-Loop Chart with context:", closedCtx);
+console.log("Initializing Loop Gain Chart with context:", closedCtx);
 let closedChart = new Chart(closedCtx, {
     type: "line",
     data: {
@@ -204,7 +204,7 @@ let closedChart = new Chart(closedCtx, {
         scales: {
             x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
-            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
+            "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -360, max: -180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
             legend: { display: false }, // Remove legend
@@ -327,10 +327,73 @@ function updateCharts(calcData) {
 
     fbChart.update();
 
-    // Update Closed-Loop Chart
+    // Update Loop Gain Chart
     closedChart.data.labels = calcData.freqs;
     closedChart.data.datasets[0].data = calcData.closedMags;
     closedChart.data.datasets[1].data = calcData.closedPhases;
+
+    // Remove any existing gain crossover line to prevent multiple lines
+    closedChart.data.datasets = closedChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
+
+    // Calculate bandwidth and phase margin
+    let bandwidth = 0;
+    let phaseMargin = 0;
+    let gainCrossoverIndex = -1;
+    for (let i = 0; i < calcData.closedMags.length; i++) {
+        if (calcData.closedMags[i] >= -1 && calcData.closedMags[i] <= 1) {
+            gainCrossoverIndex = i;
+            bandwidth = calcData.freqs[i];
+            break;
+        }
+    }
+    if (gainCrossoverIndex === -1 && calcData.closedMags.length > 1) {
+        for (let i = 0; i < calcData.closedMags.length - 1; i++) {
+            if ((calcData.closedMags[i] > 0 && calcData.closedMags[i + 1] < 0) || 
+                (calcData.closedMags[i] < 0 && calcData.closedMags[i + 1] > 0)) {
+                const mag1 = calcData.closedMags[i];
+                const mag2 = calcData.closedMags[i + 1];
+                const freq1 = calcData.freqs[i];
+                const freq2 = calcData.freqs[i + 1];
+                bandwidth = freq1 + (freq2 - freq1) * (0 - mag1) / (mag2 - mag1);
+                gainCrossoverIndex = i; // Use the first index for phase margin
+                break;
+            }
+        }
+    }
+    if (gainCrossoverIndex !== -1) {
+        // Updated phase margin calculation: phase - (-360)
+        phaseMargin = calcData.closedPhases[gainCrossoverIndex] - (-360);
+    }
+
+    // Update display
+    const lgBwElement = document.getElementById("lg-bw");
+    const lgPmElement = document.getElementById("lg-pm");
+    const loopGainStatsElement = document.getElementById("loop-gain-stats");
+    if (lgBwElement && lgPmElement && loopGainStatsElement) {
+        lgBwElement.textContent = bandwidth.toFixed(1);
+        lgPmElement.textContent = phaseMargin.toFixed(1);
+        loopGainStatsElement.innerHTML = `Bandwidth: <span id="lg-bw">${bandwidth.toFixed(1)}</span> kHz, Phase Margin: <span id="lg-pm">${phaseMargin.toFixed(1)}</span>°`;
+        if (typeof MathJax !== "undefined" && MathJax.typeset) {
+            MathJax.typeset([loopGainStatsElement]);
+        }
+    } else {
+        console.error("Loop gain stats elements not found");
+    }
+
+    // Add vertical dashed line at 0 dB gain crossover
+    if (gainCrossoverIndex !== -1) {
+        const crossoverFreq = bandwidth; // Use calculated bandwidth
+        closedChart.data.datasets.push({
+            label: 'Gain Crossover',
+            data: [{ x: crossoverFreq, y: -60 }, { x: crossoverFreq, y: 60 }],
+            borderColor: 'gray',
+            borderDash: [5, 5], // Dashed line
+            borderWidth: 1,
+            pointRadius: 0,
+            yAxisID: 'y-mag'
+        });
+    }
+
     closedChart.update();
 }
 

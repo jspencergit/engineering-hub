@@ -81,22 +81,23 @@ function calculateFeedbackNetwork() {
         return phase * 180 / Math.PI;
     });
 
-    let closedMags = freqs.map(f => {
-        let w = 2 * Math.PI * f * 1000;
-        let openLoop = plantMags[freqs.indexOf(f)] + compMags[freqs.indexOf(f)] - fbMags[freqs.indexOf(f)];
-        let loopGain = Math.pow(10, openLoop / 20); // Convert dB to linear
-        let closedLoopGain = loopGain / (1 + loopGain); // Basic feedback formula
-        return 20 * Math.log10(closedLoopGain > 0 ? closedLoopGain : 0);
-    });
+    // Calculate loop gain L(s) = P(s) C(s) F(s)
+    let closedMags = [];
+    let closedPhases = [];
+    for (let i = 0; i < freqs.length; i++) {
+        // Loop gain magnitude (sum in dB)
+        let loopGainMag = plantMags[i] + compMags[i] + fbMags[i];
 
-    let closedPhases = freqs.map(f => {
-        let phase = plantPhases[freqs.indexOf(f)] + compPhases[freqs.indexOf(f)] - fbPhases[freqs.indexOf(f)];
-        return phase;
-    });
+        // Loop gain phase (sum of phases - 180° for negative feedback)
+        let loopGainPhase = plantPhases[i] + compPhases[i] + fbPhases[i] - 180;
 
-    // Placeholder bandwidth and phase margin
-    let bandwidth = 100; // kHz (to be calculated later)
-    let phaseMargin = 45; // degrees (to be calculated later)
+        closedMags.push(loopGainMag);
+        closedPhases.push(loopGainPhase);
+    }
+
+    // Placeholder bandwidth and phase margin (to be calculated later)
+    let bandwidth = 100; // kHz
+    let phaseMargin = 45; // degrees
 
     let result = {
         freqs,
@@ -111,6 +112,7 @@ function calculateFeedbackNetwork() {
     console.log("calcData sample:", {
         freqs: result.freqs.slice(0, 5),
         plantMags: result.plantMags.slice(0, 5),
+        closedMags: result.closedMags.slice(0, 5),
         closedPhases: result.closedPhases.slice(0, 5)
     });
     return result;
