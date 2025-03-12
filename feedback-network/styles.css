@@ -12,26 +12,116 @@ header {
     color: white;
 }
 section {
-    max-width: 1200px;
     margin: 20px auto;
     padding: 20px;
     background-color: white;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    display: flex;
+    width: 95%;
+    max-width: 1400px;
 }
-.calculator {
+
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 20px;
+    margin-bottom: 20px;
+}
+
+.chart-group {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    position: relative;
+}
+
+.chart-group .input-group {
+    position: absolute;
+    top: 10px;
+    right: 10px; /* Shift slightly to the right */
+    width: 280px; /* Reduce width to remove extra whitespace after sliders */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 10;
+}
+
+.chart-group .input-group .input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3px; /* Reduce margin to minimize vertical space */
+}
+
+.chart-group .input-group label {
+    font-size: 12px;
+    margin-right: 5px;
+    white-space: nowrap;
+    width: 80px; /* Fixed width for labels to align sliders */
+}
+
+.chart-group .input-group input[type="number"] {
+    font-size: 12px;
+    padding: 4px;
+    width: 50px; /* Fixed width for text boxes */
+}
+
+/* Specific width for Gain input */
+.chart-group .input-group input#plant-gain {
+    max-width: 30px;
+}
+
+/* Width for other inputs */
+.chart-group .input-group input#plant-low-pole,
+.chart-group .input-group input#plant-zero,
+.chart-group .input-group input#plant-high-pole {
+    max-width: 50px;
+}
+
+/* Style for sliders in Plant input group */
+.chart-group .input-group input[type="range"] {
+    width: 120px; /* Width of sliders */
+    margin-left: 5px;
+    -webkit-appearance: none;
+    height: 8px;
+    background: #ddd;
+    border-radius: 4px;
+    outline: none;
+}
+
+.chart-group .input-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #1a73e8;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.chart-group .input-group input[type="range"]::-webkit-slider-thumb:hover {
+    background: #1557b0;
+}
+
+.inputs-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 20px;
+}
+
+.input-group {
     background-color: #f9f9f9;
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #ddd;
-    width: 40%;
-    margin-right: 20px;
 }
-.charts {
-    width: 60%;
-    padding-left: 20px;
+
+.input-group h3 {
+    margin-top: 0;
+    font-size: 18px;
+    font-weight: bold;
 }
+
 .calculator label {
     display: block;
     margin: 5px 0;
@@ -59,12 +149,12 @@ section {
 }
 .calculator input[type="number"] {
     width: 100%;
-    max-width: 100px; /* Reduced from 200px to a more appropriate width */
+    max-width: 100px;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px;
-    margin-right: 10px; /* Add spacing between inputs */
+    margin-right: 10px;
 }
 .calculator input[type="number"]:focus {
     border-color: #1a73e8;
@@ -96,9 +186,9 @@ section {
     margin-right: 10px;
 }
 .calculator .checkbox-label {
-    font-size: 0.9em; /* Slightly smaller font */
-    font-weight: normal; /* Remove bold to differentiate from labels */
-    margin-right: 10px; /* Add spacing between label and checkbox */
+    font-size: 0.9em;
+    font-weight: normal;
+    margin-right: 10px;
 }
 .calculator .equation {
     font-size: 14px;
@@ -115,8 +205,8 @@ section {
     margin-top: 10px;
     display: block;
     white-space: nowrap;
-    overflow: hidden; /* Remove scrollbars, truncate if needed */
-    max-width: 100%; /* Allow full width */
+    overflow: hidden;
+    max-width: 100%;
 }
 .calculator .output, .charts .transfer, .charts .poles-zeros, .charts .phase-boost {
     margin-top: 20px;
@@ -135,20 +225,10 @@ canvas {
     max-width: 100%;
     margin-top: 10px;
 }
-.chart-group {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 20px;
-    background-color: #f9f9f9;
-    position: relative; /* Ensure proper stacking */
-}
 .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: block;
     margin-bottom: 10px;
-    min-height: 40px;
+    min-height: 60px;
 }
 .chart-header h4 {
     margin: 0;
@@ -157,16 +237,49 @@ canvas {
     padding: 5px 10px;
 }
 .chart-header .transfer-function {
-    font-size: 12px; /* Reduced font size to fit */
+    font-size: 12px;
     padding: 5px 8px;
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    text-align: center;
-    max-width: 70%; /* Increase max-width to fit */
+    text-align: left; /* Change from center to left for all transfer functions */
+    max-width: 70%; /* Adjust to prevent overlap */
     display: flex;
     align-items: center;
-    justify-content: center;
-    overflow: hidden; /* Remove scrollbars, truncate if needed */
-    white-space: nowrap; /* Prevent line breaks */
+    justify-content: flex-start; /* Ensure left alignment */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-top: 5px;
+    position: absolute;
+    left: 10px; /* Shift slightly to the right */
+}
+
+/* Apply similar adjustments to other transfer functions if needed */
+.calculator .transfer-function#comp-tf,
+.calculator .transfer-function#fb-tf,
+.chart-header .transfer-function#comp-tf-chart,
+.chart-header .transfer-function#fb-tf-chart,
+.chart-header .transfer-function#loop-gain-stats {
+    text-align: left;
+    justify-content: flex-start;
+    max-width: 70%;
+    left: 10px;
+}
+
+@media (max-width: 800px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    .inputs-container {
+        grid-template-columns: 1fr;
+    }
+    .chart-group {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .input-group {
+        width: 100%;
+        margin-bottom: 20px;
+    }
 }

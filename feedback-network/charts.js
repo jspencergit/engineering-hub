@@ -1,4 +1,3 @@
-// feedback-network/charts.js
 console.log("charts.js loaded, checking window:", window);
 
 // Initialize Plant Bode Chart
@@ -15,12 +14,17 @@ let plantChart = new Chart(plantCtx, {
     },
     options: {
         scales: {
-            x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+            x: { 
+                type: "logarithmic", 
+                title: { display: true, text: "Frequency (kHz)" }, 
+                ticks: { callback: value => value.toFixed(1) },
+                min: 0.1 // Set minimum frequency to 0.1 kHz
+            },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -80, max: 10 },
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 90, grid: { drawOnChartArea: false } }
         },
         plugins: { 
-            legend: { display: false }, // Remove legend
+            legend: { display: false }, 
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -104,12 +108,17 @@ let compChart = new Chart(compCtx, {
     },
     options: {
         scales: {
-            x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+            x: { 
+                type: "logarithmic", 
+                title: { display: true, text: "Frequency (kHz)" }, 
+                ticks: { callback: value => value.toFixed(1) },
+                min: 0.1 // Set minimum frequency to 0.1 kHz
+            },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -40, max: 80 },
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 0, grid: { drawOnChartArea: false } }
         },
         plugins: { 
-            legend: { display: false }, // Remove legend
+            legend: { display: false }, 
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -173,12 +182,17 @@ let fbChart = new Chart(fbCtx, {
     },
     options: {
         scales: {
-            x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+            x: { 
+                type: "logarithmic", 
+                title: { display: true, text: "Frequency (kHz)" }, 
+                ticks: { callback: value => value.toFixed(1) },
+                min: 0.1 // Set minimum frequency to 0.1 kHz
+            },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -180, max: 180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
-            legend: { display: false }, // Remove legend
+            legend: { display: false }, 
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -188,7 +202,7 @@ let fbChart = new Chart(fbCtx, {
     }
 });
 
-// Initialize Loop Gain Bode Chart (renamed from Closed-Loop)
+// Initialize Loop Gain Bode Chart
 const closedCtx = document.getElementById("closed-bode-chart").getContext("2d");
 console.log("Initializing Loop Gain Chart with context:", closedCtx);
 let closedChart = new Chart(closedCtx, {
@@ -202,12 +216,17 @@ let closedChart = new Chart(closedCtx, {
     },
     options: {
         scales: {
-            x: { type: "logarithmic", title: { display: true, text: "Frequency (kHz)" }, ticks: { callback: value => value.toFixed(1) } },
+            x: { 
+                type: "logarithmic", 
+                title: { display: true, text: "Frequency (kHz)" }, 
+                ticks: { callback: value => value.toFixed(1) },
+                min: 0.1 // Set minimum frequency to 0.1 kHz
+            },
             "y-mag": { position: "left", title: { display: true, text: "Magnitude (dB)" }, min: -60, max: 60 },
             "y-phase": { position: "right", title: { display: true, text: "Phase (degrees)" }, min: -360, max: -180, grid: { drawOnChartArea: false } }
         },
         plugins: { 
-            legend: { display: false }, // Remove legend
+            legend: { display: false }, 
             tooltip: { 
                 mode: "nearest", 
                 intersect: false, 
@@ -229,7 +248,7 @@ function updateCharts(calcData) {
         return;
     }
 
-    // Calculate bandwidth and phase margin early
+    // Calculate bandwidth and phase margin
     let bandwidth = 0;
     let phaseMargin = 0;
     let gainCrossoverIndex = -1;
@@ -249,7 +268,7 @@ function updateCharts(calcData) {
                 const freq1 = calcData.freqs[i];
                 const freq2 = calcData.freqs[i + 1];
                 bandwidth = freq1 + (freq2 - freq1) * (0 - mag1) / (mag2 - mag1);
-                gainCrossoverIndex = i; // Use the first index for phase margin
+                gainCrossoverIndex = i;
                 break;
             }
         }
@@ -265,17 +284,14 @@ function updateCharts(calcData) {
     plantChart.data.datasets[0].data = calcData.plantMags;
     plantChart.data.datasets[1].data = calcData.plantPhases;
 
-    // Remove any existing gain crossover line to prevent multiple lines
     plantChart.data.datasets = plantChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
-
-    // Add Gain Crossover line for Plant Chart
-    const plantMinMag = plantChart.options.scales["y-mag"].min || -80; // Default to -80 if not set
-    const plantMaxMag = plantChart.options.scales["y-mag"].max || 10;  // Default to 10 if not set
+    const plantMinMag = plantChart.options.scales["y-mag"].min || -80;
+    const plantMaxMag = plantChart.options.scales["y-mag"].max || 10;
     plantChart.data.datasets.push({
         label: 'Gain Crossover',
         data: [{ x: calcData.bandwidth, y: plantMinMag }, { x: calcData.bandwidth, y: plantMaxMag }],
         borderColor: 'gray',
-        borderDash: [5, 5], // Dashed line
+        borderDash: [5, 5],
         borderWidth: 1,
         pointRadius: 0,
         yAxisID: 'y-mag'
@@ -287,54 +303,35 @@ function updateCharts(calcData) {
     compChart.data.datasets[0].data = calcData.compMags;
     compChart.data.datasets[1].data = calcData.compPhases;
 
-    // Add pole and zero markers for Compensator plot
-    const compZeroValue = calcData.compZero; // Already in kHz
-    const compPoleValue = calcData.compPole; // Already in kHz
+    const compZeroValue = calcData.compZero;
+    const compPoleValue = calcData.compPole;
 
-    let compClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
-        const minDist = Math.abs(arr[minIndex] - compZeroValue);
-        const currDist = Math.abs(curr - compZeroValue);
-        return currDist < minDist ? idx : minIndex;
-    }, 0);
-    let compClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
-        const minDist = Math.abs(arr[minIndex] - compPoleValue);
-        const currDist = Math.abs(curr - compPoleValue);
-        return currDist < minDist ? idx : minIndex;
-    }, 0);
-
-    console.log(`Closest zero index (Comp): ${compClosestZeroIndex}, value: ${calcData.freqs[compClosestZeroIndex]}, target: ${compZeroValue}`);
-    console.log(`Closest pole index (Comp): ${compClosestPoleIndex}, value: ${calcData.freqs[compClosestPoleIndex]}, target: ${compPoleValue}`);
+    let compClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
+        Math.abs(arr[minIndex] - compZeroValue) < Math.abs(curr - compZeroValue) ? minIndex : idx, 0);
+    let compClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
+        Math.abs(arr[minIndex] - compPoleValue) < Math.abs(curr - compPoleValue) ? minIndex : idx, 0);
 
     compChart.data.datasets[2].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compMags.length 
-        ? [{ x: compZeroValue, y: calcData.compMags[compClosestZeroIndex] }] 
-        : [];
+        ? [{ x: compZeroValue, y: calcData.compMags[compClosestZeroIndex] }] : [];
     compChart.data.datasets[3].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compMags.length 
-        ? [{ x: compPoleValue, y: calcData.compMags[compClosestPoleIndex] }] 
-        : [];
+        ? [{ x: compPoleValue, y: calcData.compMags[compClosestPoleIndex] }] : [];
     compChart.data.datasets[4].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compPhases.length 
-        ? [{ x: compZeroValue, y: calcData.compPhases[compClosestZeroIndex] }] 
-        : [];
+        ? [{ x: compZeroValue, y: calcData.compPhases[compClosestZeroIndex] }] : [];
     compChart.data.datasets[5].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compPhases.length 
-        ? [{ x: compPoleValue, y: calcData.compPhases[compClosestPoleIndex] }] 
-        : [];
+        ? [{ x: compPoleValue, y: calcData.compPhases[compClosestPoleIndex] }] : [];
 
-    // Add low-frequency gain marker
-    const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
-    const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) / 1000 || 0.1; // Convert Hz to kHz
-    compChart.data.datasets[6].data = [{ x: compLowFreq, y: compLowFreqGain }]; // Magnitude marker
-    compChart.data.datasets[7].data = [{ x: compLowFreq, y: -90 }]; // Phase marker at -90 degrees
+    const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) / 1000 || 0.1;
+    compChart.data.datasets[6].data = [{ x: compLowFreq, y: parseFloat(document.getElementById("comp-low-freq-gain").value) || 0 }];
+    compChart.data.datasets[7].data = [{ x: compLowFreq, y: -90 }];
 
-    // Remove any existing gain crossover line to prevent multiple lines
     compChart.data.datasets = compChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
-
-    // Add Gain Crossover line for Compensator Chart
-    const compMinMag = compChart.options.scales["y-mag"].min || -40; // Default to -40 if not set
-    const compMaxMag = compChart.options.scales["y-mag"].max || 80;  // Default to 80 if not set
+    const compMinMag = compChart.options.scales["y-mag"].min || -40;
+    const compMaxMag = compChart.options.scales["y-mag"].max || 80;
     compChart.data.datasets.push({
         label: 'Gain Crossover',
         data: [{ x: calcData.bandwidth, y: compMinMag }, { x: calcData.bandwidth, y: compMaxMag }],
         borderColor: 'gray',
-        borderDash: [5, 5], // Dashed line
+        borderDash: [5, 5],
         borderWidth: 1,
         pointRadius: 0,
         yAxisID: 'y-mag'
@@ -346,58 +343,40 @@ function updateCharts(calcData) {
     fbChart.data.datasets[0].data = calcData.fbMags;
     fbChart.data.datasets[1].data = calcData.fbPhases;
 
-    // Add pole and zero markers for Feedback plot
     const fbZeroCheck = document.getElementById("fb-zero-check").checked;
     const fbPoleCheck = document.getElementById("fb-pole-check").checked;
     const fbZeroValue = fbZeroCheck ? parseFloat(document.getElementById("fb-zero").value) : null;
     const fbPoleValue = fbPoleCheck ? parseFloat(document.getElementById("fb-pole").value) : null;
 
-    // Find exact or closest indices for zero and pole
     let fbClosestZeroIndex = fbZeroCheck && calcData.freqs.length > 0 ? calcData.freqs.findIndex(f => Math.abs(f - fbZeroValue) < 0.1) : -1;
     let fbClosestPoleIndex = fbPoleCheck && calcData.freqs.length > 0 ? calcData.freqs.findIndex(f => Math.abs(f - fbPoleValue) < 0.1) : -1;
 
     if (fbClosestZeroIndex === -1 && fbZeroCheck) {
-        fbClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
-            const minDist = Math.abs(arr[minIndex] - fbZeroValue);
-            const currDist = Math.abs(curr - fbZeroValue);
-            return currDist < minDist ? idx : minIndex;
-        }, 0);
+        fbClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
+            Math.abs(arr[minIndex] - fbZeroValue) < Math.abs(curr - fbZeroValue) ? minIndex : idx, 0);
     }
     if (fbClosestPoleIndex === -1 && fbPoleCheck) {
-        fbClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => {
-            const minDist = Math.abs(arr[minIndex] - fbPoleValue);
-            const currDist = Math.abs(curr - fbPoleValue);
-            return currDist < minDist ? idx : minIndex;
-        }, 0);
+        fbClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
+            Math.abs(arr[minIndex] - fbPoleValue) < Math.abs(curr - fbPoleValue) ? minIndex : idx, 0);
     }
 
-    console.log(`Closest zero index (FB): ${fbClosestZeroIndex}, value: ${fbClosestZeroIndex >= 0 ? calcData.freqs[fbClosestZeroIndex] : 'N/A'}, target: ${fbZeroValue}`);
-    console.log(`Closest pole index (FB): ${fbClosestPoleIndex}, value: ${fbClosestPoleIndex >= 0 ? calcData.freqs[fbClosestPoleIndex] : 'N/A'}, target: ${fbPoleValue}`);
-
     fbChart.data.datasets[2].data = fbZeroCheck && fbClosestZeroIndex >= 0 && fbClosestZeroIndex < calcData.fbMags.length 
-        ? [{ x: fbZeroValue, y: calcData.fbMags[fbClosestZeroIndex] }] 
-        : [];
+        ? [{ x: fbZeroValue, y: calcData.fbMags[fbClosestZeroIndex] }] : [];
     fbChart.data.datasets[3].data = fbPoleCheck && fbClosestPoleIndex >= 0 && fbClosestPoleIndex < calcData.fbMags.length 
-        ? [{ x: fbPoleValue, y: calcData.fbMags[fbClosestPoleIndex] }] 
-        : [];
+        ? [{ x: fbPoleValue, y: calcData.fbMags[fbClosestPoleIndex] }] : [];
     fbChart.data.datasets[4].data = fbZeroCheck && fbClosestZeroIndex >= 0 && fbClosestZeroIndex < calcData.fbPhases.length 
-        ? [{ x: fbZeroValue, y: calcData.fbPhases[fbClosestZeroIndex] }] 
-        : [];
+        ? [{ x: fbZeroValue, y: calcData.fbPhases[fbClosestZeroIndex] }] : [];
     fbChart.data.datasets[5].data = fbPoleCheck && fbClosestPoleIndex >= 0 && fbClosestPoleIndex < calcData.fbPhases.length 
-        ? [{ x: fbPoleValue, y: calcData.fbPhases[fbClosestPoleIndex] }] 
-        : [];
+        ? [{ x: fbPoleValue, y: calcData.fbPhases[fbClosestPoleIndex] }] : [];
 
-    // Remove any existing gain crossover line to prevent multiple lines
     fbChart.data.datasets = fbChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
-
-    // Add Gain Crossover line for Feedback Chart
-    const fbMinMag = fbChart.options.scales["y-mag"].min || -60; // Default to -60 if not set
-    const fbMaxMag = fbChart.options.scales["y-mag"].max || 60;  // Default to 60 if not set
+    const fbMinMag = fbChart.options.scales["y-mag"].min || -60;
+    const fbMaxMag = fbChart.options.scales["y-mag"].max || 60;
     fbChart.data.datasets.push({
         label: 'Gain Crossover',
         data: [{ x: calcData.bandwidth, y: fbMinMag }, { x: calcData.bandwidth, y: fbMaxMag }],
         borderColor: 'gray',
-        borderDash: [5, 5], // Dashed line
+        borderDash: [5, 5],
         borderWidth: 1,
         pointRadius: 0,
         yAxisID: 'y-mag'
@@ -409,41 +388,30 @@ function updateCharts(calcData) {
     closedChart.data.datasets[0].data = calcData.closedMags;
     closedChart.data.datasets[1].data = calcData.closedPhases;
 
-    // Remove any existing gain crossover line to prevent multiple lines
     closedChart.data.datasets = closedChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
-
-    // Add vertical dashed line at gain crossover
     if (gainCrossoverIndex !== -1) {
-        const crossoverFreq = calcData.bandwidth; // Use calculated bandwidth
+        const crossoverFreq = calcData.bandwidth;
         closedChart.data.datasets.push({
             label: 'Gain Crossover',
             data: [{ x: crossoverFreq, y: -60 }, { x: crossoverFreq, y: 60 }],
             borderColor: 'gray',
-            borderDash: [5, 5], // Dashed line
+            borderDash: [5, 5],
             borderWidth: 1,
             pointRadius: 0,
             yAxisID: 'y-mag'
         });
     }
 
-    // Update display
-    const lgBwElement = document.getElementById("lg-bw");
-    const lgPmElement = document.getElementById("lg-pm");
-    const loopGainStatsElement = document.getElementById("loop-gain-stats");
-    if (lgBwElement && lgPmElement && loopGainStatsElement) {
-        lgBwElement.textContent = calcData.bandwidth.toFixed(1);
-        lgPmElement.textContent = calcData.phaseMargin.toFixed(1);
-        loopGainStatsElement.innerHTML = `Bandwidth: <span id="lg-bw">${calcData.bandwidth.toFixed(1)}</span> kHz, Phase Margin: <span id="lg-pm">${calcData.phaseMargin.toFixed(1)}</span>°`;
-        if (typeof MathJax !== "undefined" && MathJax.typeset) {
-            MathJax.typeset([loopGainStatsElement]);
-        }
-    } else {
-        console.error("Loop gain stats elements not found");
+    const bwOutput = document.getElementById("bw-output");
+    const pmOutput = document.getElementById("pm-output");
+    if (bwOutput && pmOutput) {
+        bwOutput.textContent = calcData.bandwidth.toFixed(1);
+        pmOutput.textContent = calcData.phaseMargin.toFixed(1);
     }
 
     closedChart.update();
 }
 
-// Expose updateCharts globally to ensure accessibility
+// Expose updateCharts globally
 window.updateCharts = updateCharts;
 console.log("updateCharts exposed globally:", window.updateCharts);
