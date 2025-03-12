@@ -229,10 +229,57 @@ function updateCharts(calcData) {
         return;
     }
 
+    // Calculate bandwidth and phase margin early
+    let bandwidth = 0;
+    let phaseMargin = 0;
+    let gainCrossoverIndex = -1;
+    for (let i = 0; i < calcData.closedMags.length; i++) {
+        if (calcData.closedMags[i] >= -1 && calcData.closedMags[i] <= 1) {
+            gainCrossoverIndex = i;
+            bandwidth = calcData.freqs[i];
+            break;
+        }
+    }
+    if (gainCrossoverIndex === -1 && calcData.closedMags.length > 1) {
+        for (let i = 0; i < calcData.closedMags.length - 1; i++) {
+            if ((calcData.closedMags[i] > 0 && calcData.closedMags[i + 1] < 0) || 
+                (calcData.closedMags[i] < 0 && calcData.closedMags[i + 1] > 0)) {
+                const mag1 = calcData.closedMags[i];
+                const mag2 = calcData.closedMags[i + 1];
+                const freq1 = calcData.freqs[i];
+                const freq2 = calcData.freqs[i + 1];
+                bandwidth = freq1 + (freq2 - freq1) * (0 - mag1) / (mag2 - mag1);
+                gainCrossoverIndex = i; // Use the first index for phase margin
+                break;
+            }
+        }
+    }
+    if (gainCrossoverIndex !== -1) {
+        phaseMargin = calcData.closedPhases[gainCrossoverIndex] - (-360);
+    }
+    calcData.bandwidth = bandwidth;
+    calcData.phaseMargin = phaseMargin;
+
     // Update Plant Chart
     plantChart.data.labels = calcData.freqs;
     plantChart.data.datasets[0].data = calcData.plantMags;
     plantChart.data.datasets[1].data = calcData.plantPhases;
+
+    // Remove any existing gain crossover line to prevent multiple lines
+    plantChart.data.datasets = plantChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
+
+    // Add Gain Crossover line for Plant Chart
+    const plantMinMag = plantChart.options.scales["y-mag"].min || -80; // Default to -80 if not set
+    const plantMaxMag = plantChart.options.scales["y-mag"].max || 10;  // Default to 10 if not set
+    plantChart.data.datasets.push({
+        label: 'Gain Crossover',
+        data: [{ x: calcData.bandwidth, y: plantMinMag }, { x: calcData.bandwidth, y: plantMaxMag }],
+        borderColor: 'gray',
+        borderDash: [5, 5], // Dashed line
+        borderWidth: 1,
+        pointRadius: 0,
+        yAxisID: 'y-mag'
+    });
     plantChart.update();
 
     // Update Compensator Chart
@@ -277,6 +324,21 @@ function updateCharts(calcData) {
     compChart.data.datasets[6].data = [{ x: compLowFreq, y: compLowFreqGain }]; // Magnitude marker
     compChart.data.datasets[7].data = [{ x: compLowFreq, y: -90 }]; // Phase marker at -90 degrees
 
+    // Remove any existing gain crossover line to prevent multiple lines
+    compChart.data.datasets = compChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
+
+    // Add Gain Crossover line for Compensator Chart
+    const compMinMag = compChart.options.scales["y-mag"].min || -40; // Default to -40 if not set
+    const compMaxMag = compChart.options.scales["y-mag"].max || 80;  // Default to 80 if not set
+    compChart.data.datasets.push({
+        label: 'Gain Crossover',
+        data: [{ x: calcData.bandwidth, y: compMinMag }, { x: calcData.bandwidth, y: compMaxMag }],
+        borderColor: 'gray',
+        borderDash: [5, 5], // Dashed line
+        borderWidth: 1,
+        pointRadius: 0,
+        yAxisID: 'y-mag'
+    });
     compChart.update();
 
     // Update Feedback Chart
@@ -325,6 +387,21 @@ function updateCharts(calcData) {
         ? [{ x: fbPoleValue, y: calcData.fbPhases[fbClosestPoleIndex] }] 
         : [];
 
+    // Remove any existing gain crossover line to prevent multiple lines
+    fbChart.data.datasets = fbChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
+
+    // Add Gain Crossover line for Feedback Chart
+    const fbMinMag = fbChart.options.scales["y-mag"].min || -60; // Default to -60 if not set
+    const fbMaxMag = fbChart.options.scales["y-mag"].max || 60;  // Default to 60 if not set
+    fbChart.data.datasets.push({
+        label: 'Gain Crossover',
+        data: [{ x: calcData.bandwidth, y: fbMinMag }, { x: calcData.bandwidth, y: fbMaxMag }],
+        borderColor: 'gray',
+        borderDash: [5, 5], // Dashed line
+        borderWidth: 1,
+        pointRadius: 0,
+        yAxisID: 'y-mag'
+    });
     fbChart.update();
 
     // Update Loop Gain Chart
@@ -335,54 +412,9 @@ function updateCharts(calcData) {
     // Remove any existing gain crossover line to prevent multiple lines
     closedChart.data.datasets = closedChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
 
-    // Calculate bandwidth and phase margin
-    let bandwidth = 0;
-    let phaseMargin = 0;
-    let gainCrossoverIndex = -1;
-    for (let i = 0; i < calcData.closedMags.length; i++) {
-        if (calcData.closedMags[i] >= -1 && calcData.closedMags[i] <= 1) {
-            gainCrossoverIndex = i;
-            bandwidth = calcData.freqs[i];
-            break;
-        }
-    }
-    if (gainCrossoverIndex === -1 && calcData.closedMags.length > 1) {
-        for (let i = 0; i < calcData.closedMags.length - 1; i++) {
-            if ((calcData.closedMags[i] > 0 && calcData.closedMags[i + 1] < 0) || 
-                (calcData.closedMags[i] < 0 && calcData.closedMags[i + 1] > 0)) {
-                const mag1 = calcData.closedMags[i];
-                const mag2 = calcData.closedMags[i + 1];
-                const freq1 = calcData.freqs[i];
-                const freq2 = calcData.freqs[i + 1];
-                bandwidth = freq1 + (freq2 - freq1) * (0 - mag1) / (mag2 - mag1);
-                gainCrossoverIndex = i; // Use the first index for phase margin
-                break;
-            }
-        }
-    }
+    // Add vertical dashed line at gain crossover
     if (gainCrossoverIndex !== -1) {
-        // Updated phase margin calculation: phase - (-360)
-        phaseMargin = calcData.closedPhases[gainCrossoverIndex] - (-360);
-    }
-
-    // Update display
-    const lgBwElement = document.getElementById("lg-bw");
-    const lgPmElement = document.getElementById("lg-pm");
-    const loopGainStatsElement = document.getElementById("loop-gain-stats");
-    if (lgBwElement && lgPmElement && loopGainStatsElement) {
-        lgBwElement.textContent = bandwidth.toFixed(1);
-        lgPmElement.textContent = phaseMargin.toFixed(1);
-        loopGainStatsElement.innerHTML = `Bandwidth: <span id="lg-bw">${bandwidth.toFixed(1)}</span> kHz, Phase Margin: <span id="lg-pm">${phaseMargin.toFixed(1)}</span>°`;
-        if (typeof MathJax !== "undefined" && MathJax.typeset) {
-            MathJax.typeset([loopGainStatsElement]);
-        }
-    } else {
-        console.error("Loop gain stats elements not found");
-    }
-
-    // Add vertical dashed line at 0 dB gain crossover
-    if (gainCrossoverIndex !== -1) {
-        const crossoverFreq = bandwidth; // Use calculated bandwidth
+        const crossoverFreq = calcData.bandwidth; // Use calculated bandwidth
         closedChart.data.datasets.push({
             label: 'Gain Crossover',
             data: [{ x: crossoverFreq, y: -60 }, { x: crossoverFreq, y: 60 }],
@@ -392,6 +424,21 @@ function updateCharts(calcData) {
             pointRadius: 0,
             yAxisID: 'y-mag'
         });
+    }
+
+    // Update display
+    const lgBwElement = document.getElementById("lg-bw");
+    const lgPmElement = document.getElementById("lg-pm");
+    const loopGainStatsElement = document.getElementById("loop-gain-stats");
+    if (lgBwElement && lgPmElement && loopGainStatsElement) {
+        lgBwElement.textContent = calcData.bandwidth.toFixed(1);
+        lgPmElement.textContent = calcData.phaseMargin.toFixed(1);
+        loopGainStatsElement.innerHTML = `Bandwidth: <span id="lg-bw">${calcData.bandwidth.toFixed(1)}</span> kHz, Phase Margin: <span id="lg-pm">${calcData.phaseMargin.toFixed(1)}</span>°`;
+        if (typeof MathJax !== "undefined" && MathJax.typeset) {
+            MathJax.typeset([loopGainStatsElement]);
+        }
+    } else {
+        console.error("Loop gain stats elements not found");
     }
 
     closedChart.update();
