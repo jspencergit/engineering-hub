@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             console.log("Plant checks:", { plantGain, plantLowPole, plantZero, plantHighPole }); // Debug log
 
-            let plantTf = `P(s) = ${plantGain.toFixed(1)} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${plantZero.toFixed(1)} \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${plantLowPole.toFixed(1)} \\text{Hz}}\\right) \\left(1 + \\frac{s}{2\\pi \\cdot ${plantHighPole.toFixed(1)} \\text{kHz}}\\right)}`;
+            let plantTf = `P(s) = ${plantGain.toFixed(1)} \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${plantZero.toFixed(1)} \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${plantLowPole.toFixed(1)} \\text{Hz}}\\right) \\left(1 + \\frac{s}{2\\pi \\cdot ${plantHighPole.toFixed(1)} \\text{kHz}}\\right)}`;
 
             const plantTfElement = document.getElementById("plant-tf");
             if (plantTfElement) {
@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole }); // Debug log
 
-            let compTf = `C(s) = \\frac{${compLowFreqGain.toFixed(1)}}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\cdot 1000}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\cdot 1000}}`; // Convert kHz to Hz
+            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\cdot 1000}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\cdot 1000}}`; // Convert kHz to Hz
             console.log("compTf string:", compTf); // Debug the string
 
             const compTfElement = document.getElementById("comp-tf");
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             console.log("Feedback checks:", { fbGain, fbZeroCheck, fbZero, fbPoleCheck, fbPole }); // Debug log
 
-            let fbTf = `F(s) = ${fbGain.toFixed(1)}`;
+            let fbTf = `F(s) = ${fbGain.toFixed(1)} \\text{dB}`;
             if (fbZeroCheck && fbPoleCheck) {
                 fbTf += ` \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${(fbZero / 1000).toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${(fbPole / 1000).toFixed(1)} \\text{kHz}}}`;
             } else if (fbZeroCheck) {
