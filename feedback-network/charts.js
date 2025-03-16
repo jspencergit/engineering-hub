@@ -231,7 +231,27 @@ let closedChart = new Chart(closedCtx, {
                 mode: "nearest", 
                 intersect: false, 
                 callbacks: { label: context => `${context.parsed.x.toFixed(1)} kHz, ${context.dataset.label}: ${context.parsed.y.toFixed(1)}` } 
-            } 
+            },
+            annotation: {
+                annotations: {
+                    phaseMarginLine: {
+                        type: 'line',
+                        xMin: 0, // Will be set dynamically
+                        xMax: 0,
+                        yMin: -60,
+                        yMax: 60,
+                        borderColor: 'red',
+                        borderWidth: 2,
+                        label: {
+                            enabled: true,
+                            content: 'Phase Margin: 0°',
+                            position: 'end',
+                            backgroundColor: 'rgba(255, 100, 100, 0.8)',
+                            yAdjust: -10 // Adjust label position above the line
+                        }
+                    }
+                }
+            }
         }
     }
 });
@@ -388,6 +408,7 @@ function updateCharts(calcData) {
     closedChart.data.datasets[0].data = calcData.closedMags;
     closedChart.data.datasets[1].data = calcData.closedPhases;
 
+    // Update Gain Crossover Line
     closedChart.data.datasets = closedChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
     if (gainCrossoverIndex !== -1) {
         const crossoverFreq = calcData.bandwidth;
@@ -400,6 +421,42 @@ function updateCharts(calcData) {
             pointRadius: 0,
             yAxisID: 'y-mag'
         });
+    }
+
+    // Update Phase Margin Annotation
+    if (gainCrossoverIndex !== -1) {
+        const crossoverFreq = calcData.bandwidth;
+        const pmLabel = `Phase Margin: ${calcData.phaseMargin.toFixed(1)}°`;
+        closedChart.options.plugins.annotation.annotations.phaseMarginLine = {
+            type: 'line',
+            xMin: crossoverFreq,
+            xMax: crossoverFreq,
+            yMin: -60,
+            yMax: 60,
+            borderColor: 'red',
+            borderWidth: 2,
+            label: {
+                enabled: true,
+                content: pmLabel,
+                position: 'end',
+                backgroundColor: 'rgba(255, 100, 100, 0.8)',
+                yAdjust: -10 // Adjust label position above the line
+            }
+        };
+    } else {
+        // Disable annotation if no crossover is found
+        closedChart.options.plugins.annotation.annotations.phaseMarginLine = {
+            type: 'line',
+            xMin: 0,
+            xMax: 0,
+            yMin: -60,
+            yMax: 60,
+            borderColor: 'red',
+            borderWidth: 0, // Hide the line if no crossover
+            label: {
+                enabled: false
+            }
+        };
     }
 
     const bwOutput = document.getElementById("bw-output");

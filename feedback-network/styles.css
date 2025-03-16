@@ -39,7 +39,7 @@ section {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    top: 92%; /* Adjusted from 92% to 90% to move lower but stay visible */
+    top: 92%; /* Adjusted as per your preference */
     z-index: 5; /* Ensure it’s above the charts but below overlays */
 }
 
@@ -178,7 +178,7 @@ canvas {
 .chart-header {
     display: block;
     margin-bottom: 0; /* Remove bottom margin to move content up */
-    min-height: 50px; /* Reduced from 60px to allow more space */
+    min-height: 60px; /* Reverted from 100px */
     position: relative; /* Ensure proper positioning context */
 }
 
@@ -193,8 +193,8 @@ canvas {
 
 .chart-header .transfer-function,
 .calculator .transfer-function {
-    font-size: 14px; /* Increased from 12px to 14px for better readability */
-    padding: 5px 8px;
+    font-size: 18px; /* Reverted from 20px */
+    padding: 8px; /* Reverted from 10px */
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -208,7 +208,7 @@ canvas {
     text-overflow: ellipsis;
     position: absolute;
     left: 10px;
-    top: 25px; /* Adjusted from margin-top: 5px to move equation up */
+    top: 25px; /* Reverted from 40px */
 }
 
 /* Apply similar adjustments to other transfer functions */
