@@ -70,7 +70,7 @@ section {
 
 .chart-group .input-group#fb-inputs {
     width: 340px; /* Match comp-inputs width to accommodate checkboxes and labels */
-    right: 100px; /* Adjusted to create space from transfer function */
+    right: 50px; /* Adjusted to create space from transfer function */
 }
 
 .chart-group .input-group .input-row {
