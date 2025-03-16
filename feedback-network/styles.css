@@ -48,6 +48,16 @@ section {
     z-index: 10;
 }
 
+.chart-group .input-group#comp-inputs {
+    width: 340px; /* Increased width to prevent overlap */
+    right: 0px; /* Shift leftward to utilize space */
+}
+
+.chart-group .input-group#fb-inputs {
+    width: 340px; /* Match comp-inputs width to accommodate checkboxes and labels */
+    right: 100px; /* Adjusted to create space from transfer function */
+}
+
 .chart-group .input-group .input-row {
     display: flex;
     align-items: center;
@@ -58,7 +68,7 @@ section {
     font-size: 12px;
     margin-right: 5px;
     white-space: nowrap;
-    width: 80px; /* Fixed width for labels to align sliders */
+    width: 100px; /* Increased width for longer labels like "Low Frequency Gain" */
 }
 
 .chart-group .input-group input[type="number"] {
@@ -67,21 +77,27 @@ section {
     width: 50px; /* Fixed width for text boxes */
 }
 
-/* Specific width for Gain input */
+/* Specific width adjustments */
 .chart-group .input-group input#plant-gain {
     max-width: 30px;
 }
 
-/* Width for other inputs */
 .chart-group .input-group input#plant-low-pole,
 .chart-group .input-group input#plant-zero,
-.chart-group .input-group input#plant-high-pole {
+.chart-group .input-group input#plant-high-pole,
+.chart-group .input-group input#comp-low-freq,
+.chart-group .input-group input#comp-pole,
+.chart-group .input-group input#comp-zero {
     max-width: 50px;
 }
 
-/* Style for sliders in Plant input group */
+.chart-group .input-group input#comp-low-freq-gain {
+    max-width: 50px;
+}
+
+/* Style for sliders */
 .chart-group .input-group input[type="range"] {
-    width: 120px; /* Width of sliders */
+    width: 120px; /* Keep slider width, but adjust with input-group width */
     margin-left: 5px;
     -webkit-appearance: none;
     height: 8px;
@@ -103,9 +119,40 @@ section {
     background: #1557b0;
 }
 
+/* Style for Loop Gain Metrics */
+.chart-group .loop-gain-metrics {
+    position: absolute;
+    top: 10px;
+    right: 100px; /* Match the positioning of fb-inputs for consistency */
+    width: 200px; /* Smaller width since it’s just text, not inputs */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 10;
+}
+
+.chart-group .loop-gain-metrics .metric-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.chart-group .loop-gain-metrics label {
+    font-size: 12px;
+    margin-right: 5px;
+    white-space: nowrap;
+    width: 120px; /* Slightly wider to accommodate "Loop Bandwidth (kHz)" */
+}
+
+.chart-group .loop-gain-metrics .output {
+    font-size: 12px;
+    color: #1a73e8;
+}
+
 .inputs-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     grid-gap: 20px;
 }
 
@@ -242,20 +289,20 @@ canvas {
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    text-align: left; /* Change from center to left for all transfer functions */
-    max-width: 70%; /* Adjust to prevent overlap */
+    text-align: left;
+    max-width: 70%;
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Ensure left alignment */
+    justify-content: flex-start;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     margin-top: 5px;
     position: absolute;
-    left: 10px; /* Shift slightly to the right */
+    left: 10px;
 }
 
-/* Apply similar adjustments to other transfer functions if needed */
+/* Apply similar adjustments to other transfer functions */
 .calculator .transfer-function#comp-tf,
 .calculator .transfer-function#fb-tf,
 .chart-header .transfer-function#comp-tf-chart,
@@ -265,6 +312,29 @@ canvas {
     justify-content: flex-start;
     max-width: 70%;
     left: 10px;
+}
+
+/* Style the reset button */
+#reset-button {
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+    display: block;
+}
+
+#reset-button:hover {
+    background-color: #1557b0;
+}
+
+#reset-button:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
 }
 
 @media (max-width: 800px) {

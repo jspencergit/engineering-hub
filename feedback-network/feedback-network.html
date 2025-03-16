@@ -3,201 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Language" content="en">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Feedback Network Analyzer - Analog Engineering Hub</title>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
-    <!-- Link to CSS -->
+    <title>Feedback Network Analyzer</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <header>
-        <h1>Analog Engineering Hub</h1>
-        <p><a href="https://jspencergit.github.io/engineering-hub/tools.html">Back to Tools</a></p>
+        <h1>Feedback Network Analyzer</h1>
     </header>
-
-    <section id="tools">
-        <div class="charts-container">
-            <div class="chart-group">
-                <div class="chart-header">
-                    <h4>Plant Response</h4>
-                    <div class="transfer-function" id="plant-tf"></div>
-                </div>
-                <canvas id="plant-bode-chart"></canvas>
-                <!-- Overlay Input Group for Plant -->
-                <div class="input-group" id="plant-inputs">
-                    <div class="param-group">
-                        <div class="input-row">
-                            <label for="plant-gain">Gain (dB):</label>
-                            <input type="number" id="plant-gain" step="1" min="-20" max="20" value="0">
-                            <input type="range" id="plant-gain-slider" min="-20" max="20" step="1" value="0">
-                            <input type="hidden" id="plant-gain-hz">
-                        </div>
-                        <div class="input-row">
-                            <label for="plant-low-pole">LF Pole (kHz):</label>
-                            <input type="number" id="plant-low-pole" step="0.1" min="0.01" max="10" value="1">
-                            <input type="range" id="plant-low-pole-slider" min="0.01" max="10" step="0.1" value="1">
-                            <input type="hidden" id="plant-low-pole-hz">
-                        </div>
-                        <div class="input-row">
-                            <label for="plant-zero">Zero (kHz):</label>
-                            <input type="number" id="plant-zero" step="1" min="1" max="100" value="20">
-                            <input type="range" id="plant-zero-slider" min="1" max="100" step="1" value="20">
-                            <input type="hidden" id="plant-zero-hz">
-                        </div>
-                        <div class="input-row">
-                            <label for="plant-high-pole">HF Pole (kHz):</label>
-                            <input type="number" id="plant-high-pole" step="1" min="10" max="500" value="100">
-                            <input type="range" id="plant-high-pole-slider" min="10" max="500" step="1" value="100">
-                            <input type="hidden" id="plant-high-pole-hz">
-                        </div>
+    <section class="charts-container">
+        <div class="chart-group">
+            <div class="chart-header">
+                <h4>Plant Response</h4>
+                <div class="transfer-function" id="plant-tf"></div>
+            </div>
+            <canvas id="plant-bode-chart"></canvas>
+            <!-- Overlay Input Group for Plant -->
+            <div class="input-group" id="plant-inputs">
+                <div class="param-group">
+                    <div class="input-row">
+                        <label for="plant-gain">Gain (dB):</label>
+                        <input type="number" id="plant-gain" step="1" min="-20" max="20" value="0" title="Overall gain of the plant in decibels">
+                        <input type="range" id="plant-gain-slider" min="-20" max="20" step="1" value="0" title="Adjust plant gain">
+                        <input type="hidden" id="plant-gain-hz">
+                    </div>
+                    <div class="input-row">
+                        <label for="plant-low-pole">LF Pole (kHz):</label>
+                        <input type="number" id="plant-low-pole" step="0.1" min="0.01" max="10" value="1" title="Low-frequency pole affecting the plant's roll-off">
+                        <input type="range" id="plant-low-pole-slider" min="0.01" max="10" step="0.1" value="1" title="Adjust low-frequency pole">
+                        <input type="hidden" id="plant-low-pole-hz">
+                    </div>
+                    <div class="input-row">
+                        <label for="plant-zero">Zero (kHz):</label>
+                        <input type="number" id="plant-zero" step="1" min="1" max="100" value="20" title="Zero frequency that boosts phase">
+                        <input type="range" id="plant-zero-slider" min="1" max="100" step="1" value="20" title="Adjust zero frequency">
+                        <input type="hidden" id="plant-zero-hz">
+                    </div>
+                    <div class="input-row">
+                        <label for="plant-high-pole">HF Pole (kHz):</label>
+                        <input type="number" id="plant-high-pole" step="1" min="10" max="500" value="100" title="High-frequency pole affecting high-frequency roll-off">
+                        <input type="range" id="plant-high-pole-slider" min="10" max="500" step="1" value="100" title="Adjust high-frequency pole">
+                        <input type="hidden" id="plant-high-pole-hz">
                     </div>
                 </div>
-            </div>
-            <div class="chart-group">
-                <div class="chart-header">
-                    <h4>Compensator Response</h4>
-                    <div class="transfer-function" id="comp-tf-chart"></div>
-                </div>
-                <canvas id="comp-bode-chart"></canvas>
-            </div>
-            <div class="chart-group">
-                <div class="chart-header">
-                    <h4>Feedback Response</h4>
-                    <div class="transfer-function" id="fb-tf-chart"></div>
-                </div>
-                <canvas id="fb-bode-chart"></canvas>
-            </div>
-            <div class="chart-group">
-                <div class="chart-header">
-                    <h4>Loop Gain</h4>
-                    <div class="transfer-function" id="loop-gain-stats"></div>
-                </div>
-                <canvas id="closed-bode-chart"></canvas>
             </div>
         </div>
-        <div class="inputs-container">
-            <div class="input-group">
-                <h3>Compensator</h3>
-                <!-- Compensator Parameters -->
-                <div class="param-group-container">
-                    <div class="param-group">
-                        <div class="input-group">
-                            <label for="comp-low-freq-gain">Low Frequency Gain (dB):</label>
-                            <input type="number" id="comp-low-freq-gain" step="1" min="-100" max="100" value="60">
-                        </div>
-                        <div class="input-group">
-                            <label for="comp-low-freq">at Frequency (Hz):</label>
-                            <input type="number" id="comp-low-freq" step="1" min="1" max="10000" value="100">
-                        </div>
-                        <div class="input-row">
-                            <label for="comp-pole">Pole (kHz):</label>
-                            <input type="number" id="comp-pole" step="0.1" min="1" max="500" value="100">
-                            <input type="hidden" id="comp-pole-hz">
-                        </div>
-                        <div class="input-group">
-                            <input type="range" id="comp-pole-slider" min="1" max="500" step="0.1" value="100">
-                        </div>
-                        <div class="input-row">
-                            <label for="comp-zero">Zero (kHz):</label>
-                            <input type="number" id="comp-zero" step="0.1" min="1" max="100" value="10">
-                            <input type="hidden" id="comp-zero-hz">
-                        </div>
-                        <div class="input-group">
-                            <input type="range" id="comp-zero-slider" min="1" max="100" step="0.1" value="10">
-                        </div>
-                        <div class="transfer-function" id="comp-tf">\( C(s) = \frac{1}{s} \)</div>
-                    </div>
-                </div>
+        <div class="chart-group">
+            <div class="chart-header">
+                <h4>Compensator Response</h4>
+                <div class="transfer-function" id="comp-tf"></div>
             </div>
-            <div class="input-group">
-                <h3>Feedback</h3>
-                <!-- Feedback Parameters -->
-                <div class="param-group-container">
-                    <div class="param-group">
-                        <div class="input-group">
-                            <label for="fb-gain">Gain (dB):</label>
-                            <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="0">
-                        </div>
-                        <div class="input-group">
-                            <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="0">
-                        </div>
-                        <div class="input-group checkbox-row">
-                            <label><span class="checkbox-label">Enable Feedback Zero</span></label>
-                            <input type="checkbox" id="fb-zero-check">
-                            <label for="fb-zero">Zero (kHz):</label>
-                            <input type="number" id="fb-zero" step="0.1" min="0.001" max="1000" value="10.8" disabled>
-                            <input type="hidden" id="fb-zero-hz">
-                            <input type="range" id="fb-zero-slider" min="1" max="100" step="0.1" value="10.8" disabled>
-                        </div>
-                        <div class="input-group checkbox-row">
-                            <label><span class="checkbox-label">Enable Feedback Pole</span></label>
-                            <input type="checkbox" id="fb-pole-check">
-                            <label for="fb-pole">Pole (kHz):</label>
-                            <input type="number" id="fb-pole" step="0.1" min="1" max="1000" value="155.7" disabled>
-                            <input type="hidden" id="fb-pole-hz">
-                            <input type="range" id="fb-pole-slider" min="1" max="1000" step="0.1" value="155.7" disabled>
-                        </div>
-                        <div class="transfer-function" id="fb-tf">\( F(s) = 1 \)</div>
-                    </div>
-                </div>
-            </div>
-            <div class="input-group">
-                <h3>Closed-Loop Results</h3>
-                <!-- Closed-Loop Outputs -->
+            <canvas id="comp-bode-chart"></canvas>
+            <!-- Overlay Input Group for Compensator -->
+            <div class="input-group" id="comp-inputs">
                 <div class="param-group">
-                    <div>Bandwidth: <span id="bw-output">0</span> kHz</div>
-                    <div>Phase Margin: <span id="pm-output">0</span>°</div>
+                    <div class="input-row">
+                        <label for="comp-low-freq-gain">Low Frequency Gain (dB):</label>
+                        <input type="number" id="comp-low-freq-gain" step="1" min="-100" max="100" value="60" title="Gain at low frequencies for the compensator">
+                        <input type="range" id="comp-low-freq-gain-slider" min="-100" max="100" step="1" value="60" title="Adjust low-frequency gain">
+                    </div>
+                    <div class="input-row">
+                        <label for="comp-low-freq">@ Frequency (Hz):</label>
+                        <input type="number" id="comp-low-freq" step="1" min="1" max="10000" value="100" title="Frequency at which the low-frequency gain is specified">
+                        <input type="range" id="comp-low-freq-slider" min="1" max="10000" step="1" value="100" title="Adjust frequency for low-frequency gain">
+                    </div>
+                    <div class="input-row">
+                        <label for="comp-pole">Pole (kHz):</label>
+                        <input type="number" id="comp-pole" step="0.1" min="1" max="500" value="100" title="Compensator pole frequency">
+                        <input type="range" id="comp-pole-slider" min="1" max="500" step="0.1" value="100" title="Adjust compensator pole">
+                        <input type="hidden" id="comp-pole-hz">
+                    </div>
+                    <div class="input-row">
+                        <label for="comp-zero">Zero (kHz):</label>
+                        <input type="number" id="comp-zero" step="0.1" min="1" max="100" value="10" title="Compensator zero frequency for phase boost">
+                        <input type="range" id="comp-zero-slider" min="1" max="100" step="0.1" value="10" title="Adjust compensator zero">
+                        <input type="hidden" id="comp-zero-hz">
+                    </div>
                 </div>
-                <!-- Reset Button -->
-                <div class="param-group" style="text-align: center; margin-top: 20px;">
-                    <button id="reset-button">Reset to Defaults</button>
+            </div>
+        </div>
+        <div class="chart-group">
+            <div class="chart-header">
+                <h4>Feedback Response</h4>
+                <div class="transfer-function" id="fb-tf"></div>
+            </div>
+            <canvas id="fb-bode-chart"></canvas>
+            <!-- Overlay Input Group for Feedback -->
+            <div class="input-group" id="fb-inputs">
+                <div class="param-group">
+                    <div class="input-row">
+                        <label for="fb-gain">Gain (dB):</label>
+                        <input type="number" id="fb-gain" step="0.1" min="-20" max="20" value="0" title="Feedback gain in decibels">
+                        <input type="range" id="fb-gain-slider" min="-20" max="20" step="0.1" value="0" title="Adjust feedback gain">
+                    </div>
+                    <div class="input-row checkbox-row">
+                        <label><span class="checkbox-label">Enable Zero</span></label>
+                        <input type="checkbox" id="fb-zero-check">
+                        <label for="fb-zero">Zero (kHz):</label>
+                        <input type="number" id="fb-zero" step="0.1" min="0.001" max="1000" value="10.8" disabled title="Zero frequency in the feedback path">
+                        <input type="hidden" id="fb-zero-hz">
+                        <input type="range" id="fb-zero-slider" min="0.001" max="1000" step="0.1" value="10.8" disabled title="Adjust feedback zero">
+                    </div>
+                    <div class="input-row checkbox-row">
+                        <label><span class="checkbox-label">Enable Pole</span></label>
+                        <input type="checkbox" id="fb-pole-check">
+                        <label for="fb-pole">Pole (kHz):</label>
+                        <input type="number" id="fb-pole" step="0.1" min="1" max="1000" value="155.7" disabled title="Pole frequency in the feedback path">
+                        <input type="hidden" id="fb-pole-hz">
+                        <input type="range" id="fb-pole-slider" min="1" max="1000" step="0.1" value="155.7" disabled title="Adjust feedback pole">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chart-group">
+            <div class="chart-header">
+                <h4>Loop Gain</h4>
+                <div class="transfer-function" id="loop-gain-stats"></div>
+            </div>
+            <canvas id="closed-bode-chart"></canvas>
+            <!-- Overlay Metrics for Loop Gain -->
+            <div class="loop-gain-metrics">
+                <div class="metric-row">
+                    <label>Loop Bandwidth (kHz):</label>
+                    <span class="output" id="bw-output">N/A</span>
+                </div>
+                <div class="metric-row">
+                    <label>Phase Margin (°):</label>
+                    <span class="output" id="pm-output">N/A</span>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['\\(', '\\)']]
-            },
-            chtml: {
-                scale: 1.5
-            },
-            startup: {
-                ready() {
-                    MathJax.startup.defaultReady();
-                    setTimeout(() => {
-                        if (typeof MathJax !== "undefined" && MathJax.typeset) {
-                            MathJax.typeset();
-                        }
-                    }, 1000);
-                }
-            }
-        };
-    </script>
+    <button id="reset-button">Reset to Defaults</button>
     <script src="calculator.js"></script>
     <script src="charts.js"></script>
     <script src="events.js"></script>
-    <!-- Mouse Wheel Increment/Decrement, Unit Conversion, Slider Sync, and Initial Chart Drawing -->
     <script>
         const inputs = {
-            'plant-gain': { step: 1, min: -20, max: 20 }, // Gain (dB)
-            'plant-low-pole': { step: 0.1, min: 0.01, max: 10 }, // LF Pole (kHz)
-            'plant-zero': { step: 1, min: 1, max: 100 }, // Zero (kHz)
-            'plant-high-pole': { step: 1, min: 10, max: 500 }, // HF Pole (kHz)
-            'comp-low-freq-gain': { step: 1, min: -100, max: 100 }, // Low Frequency Gain (dB)
-            'comp-low-freq': { step: 1, min: 1, max: 10000 }, // at Frequency (Hz)
-            'comp-pole': { step: 0.1, min: 1, max: 500 }, // Pole (kHz)
-            'comp-zero': { step: 0.1, min: 1, max: 100 }, // Zero (kHz)
-            'fb-gain': { step: 0.1, min: -20, max: 20 }, // Gain (dB)
-            'fb-zero': { step: 0.1, min: 0.001, max: 1000 }, // Zero (kHz)
-            'fb-pole': { step: 0.1, min: 1, max: 1000 } // Pole (kHz)
+            'plant-gain': { step: 1, min: -20, max: 20 },
+            'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
+            'plant-zero': { step: 1, min: 1, max: 100 },
+            'plant-high-pole': { step: 1, min: 10, max: 500 },
+            'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
+            'comp-low-freq': { step: 1, min: 1, max: 10000 },
+            'comp-pole': { step: 0.1, min: 1, max: 500 },
+            'comp-zero': { step: 0.1, min: 1, max: 100 },
+            'fb-gain': { step: 0.1, min: -20, max: 20 },
+            'fb-zero': { step: 0.1, min: 0.001, max: 1000 },
+            'fb-pole': { step: 0.1, min: 1, max: 1000 }
         };
 
         // Function to convert kHz to Hz and update hidden field
@@ -222,6 +177,14 @@
                 let value = parseFloat(textBox.value) || 0;
                 value = Math.max(config.min, Math.min(config.max, value));
                 slider.value = value;
+                if (isFrequency) {
+                    updateHzField(textBoxId, `${textBoxId}-hz`);
+                }
+            });
+
+            // Slider updates text box
+            slider.addEventListener('input', () => {
+                textBox.value = slider.value;
                 if (isFrequency) {
                     updateHzField(textBoxId, `${textBoxId}-hz`);
                 }
@@ -253,6 +216,17 @@
             syncSliderAndTextBox('plant-zero', 'plant-zero-slider', true);
             syncSliderAndTextBox('plant-high-pole', 'plant-high-pole-slider', true);
 
+            // Synchronize sliders for Compensator inputs
+            syncSliderAndTextBox('comp-low-freq-gain', 'comp-low-freq-gain-slider');
+            syncSliderAndTextBox('comp-low-freq', 'comp-low-freq-slider');
+            syncSliderAndTextBox('comp-pole', 'comp-pole-slider', true);
+            syncSliderAndTextBox('comp-zero', 'comp-zero-slider', true);
+
+            // Synchronize sliders for Feedback inputs
+            syncSliderAndTextBox('fb-gain', 'fb-gain-slider');
+            syncSliderAndTextBox('fb-zero', 'fb-zero-slider', true);
+            syncSliderAndTextBox('fb-pole', 'fb-pole-slider', true);
+
             // Mouse wheel increment/decrement for all inputs
             document.querySelectorAll('input[type="number"]').forEach(input => {
                 input.addEventListener('wheel', function(event) {
@@ -270,15 +244,15 @@
                     value = Math.max(min, Math.min(max, value + (delta * step)));
                     this.value = value.toFixed(step === 1 ? 0 : 1); // Adjust decimal places based on step
 
-                    // Update the hidden Hz field for frequency inputs
-                    if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(id)) {
-                        updateHzField(id, `${id}-hz`);
-                    }
-
                     // Update the corresponding slider
                     const slider = document.getElementById(`${id}-slider`);
                     if (slider) {
                         slider.value = this.value;
+                    }
+
+                    // Update the hidden Hz field for frequency inputs
+                    if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(id)) {
+                        updateHzField(id, `${id}-hz`);
                     }
                 });
             });

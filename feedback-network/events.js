@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputs = [
         "plant-gain", "plant-gain-slider", "plant-low-pole", "plant-low-pole-slider",
         "plant-zero", "plant-zero-slider", "plant-high-pole", "plant-high-pole-slider",
-        "comp-low-freq-gain", "comp-low-freq",
+        "comp-low-freq-gain", "comp-low-freq-gain-slider", "comp-low-freq", "comp-low-freq-slider",
         "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
     ];
@@ -198,6 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
+                    document.getElementById("comp-low-freq-gain-slider").value = value.toFixed(1);
                     debouncedUpdate();
                 });
             } else if (id === "comp-low-freq") {
@@ -214,18 +215,33 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
+                    document.getElementById("comp-low-freq-slider").value = value.toFixed(1);
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-low-freq-gain-slider") {
+                element.addEventListener("input", function() {
+                    console.log(`Slider ${id} changed to ${this.value}`);
+                    document.getElementById("comp-low-freq-gain").value = this.value;
+                    debouncedUpdate();
+                });
+            } else if (id === "comp-low-freq-slider") {
+                element.addEventListener("input", function() {
+                    console.log(`Slider ${id} changed to ${this.value}`);
+                    document.getElementById("comp-low-freq").value = this.value;
                     debouncedUpdate();
                 });
             } else if (id === "comp-pole-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
                     document.getElementById("comp-pole").value = this.value;
+                    updateHzField('comp-pole', 'comp-pole-hz');
                     debouncedUpdate();
                 });
             } else if (id === "comp-pole") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     document.getElementById("comp-pole-slider").value = this.value;
+                    updateHzField('comp-pole', 'comp-pole-hz');
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
@@ -238,18 +254,21 @@ document.addEventListener("DOMContentLoaded", function() {
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
                     document.getElementById("comp-pole-slider").value = value.toFixed(1);
+                    updateHzField('comp-pole', 'comp-pole-hz');
                     debouncedUpdate();
                 });
             } else if (id === "comp-zero-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
                     document.getElementById("comp-zero").value = this.value;
+                    updateHzField('comp-zero', 'comp-zero-hz');
                     debouncedUpdate();
                 });
             } else if (id === "comp-zero") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     document.getElementById("comp-zero-slider").value = this.value;
+                    updateHzField('comp-zero', 'comp-zero-hz');
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
@@ -262,6 +281,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
                     document.getElementById("comp-zero-slider").value = value.toFixed(1);
+                    updateHzField('comp-zero', 'comp-zero-hz');
                     debouncedUpdate();
                 });
             } else if (id === "fb-gain-slider") {
@@ -292,12 +312,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
                     document.getElementById("fb-zero").value = this.value;
+                    updateHzField('fb-zero', 'fb-zero-hz');
                     debouncedUpdate();
                 });
             } else if (id === "fb-zero") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     document.getElementById("fb-zero-slider").value = this.value;
+                    updateHzField('fb-zero', 'fb-zero-hz');
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
@@ -311,18 +333,21 @@ document.addEventListener("DOMContentLoaded", function() {
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
                     document.getElementById("fb-zero-slider").value = value.toFixed(1);
+                    updateHzField('fb-zero', 'fb-zero-hz');
                     debouncedUpdate();
                 });
             } else if (id === "fb-pole-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
                     document.getElementById("fb-pole").value = this.value;
+                    updateHzField('fb-pole', 'fb-pole-hz');
                     debouncedUpdate();
                 });
             } else if (id === "fb-pole") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     document.getElementById("fb-pole-slider").value = this.value;
+                    updateHzField('fb-pole', 'fb-pole-hz');
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
@@ -336,6 +361,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
                     document.getElementById("fb-pole-slider").value = value.toFixed(1);
+                    updateHzField('fb-pole', 'fb-pole-hz');
                     debouncedUpdate();
                 });
             } else if (id === "plant-gain-slider") {
@@ -502,7 +528,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Reset Compensator
             document.getElementById("comp-low-freq-gain").value = "60";
+            document.getElementById("comp-low-freq-gain-slider").value = "60";
             document.getElementById("comp-low-freq").value = "100";
+            document.getElementById("comp-low-freq-slider").value = "100";
             document.getElementById("comp-pole").value = "100";
             document.getElementById("comp-pole-slider").value = "100";
             document.getElementById("comp-zero").value = "10";
