@@ -1,4 +1,4 @@
-//feedback-network/calculator.js
+// feedback-network/calculator.js
 function calculateFeedbackNetwork() {
     // Get input values and convert units to Hz
     let plantGain = Math.pow(10, parseFloat(document.getElementById("plant-gain").value) / 20); // dB to linear
@@ -6,8 +6,8 @@ function calculateFeedbackNetwork() {
     let plantZero = parseFloat(document.getElementById("plant-zero-hz").value); // Hz (from hidden field)
     let plantHighPole = parseFloat(document.getElementById("plant-high-pole-hz").value); // Hz (from hidden field)
 
-    let compLowFreqGain = Math.pow(10, parseFloat(document.getElementById("comp-low-freq-gain").value) / 20); // dB to linear
-    let compLowFreq = parseFloat(document.getElementById("comp-low-freq").value); // Hz
+    let compGain = Math.pow(10, parseFloat(document.getElementById("comp-gain").value) / 20); // dB to linear
+    let compLfPole = parseFloat(document.getElementById("comp-lf-pole-hz").value); // Hz (from hidden field)
     let compPole = parseFloat(document.getElementById("comp-pole-hz").value); // Hz (from hidden field)
     let compZero = parseFloat(document.getElementById("comp-zero-hz").value); // Hz (from hidden field)
 
@@ -16,7 +16,7 @@ function calculateFeedbackNetwork() {
     let fbPole = document.getElementById("fb-pole-check").checked ? parseFloat(document.getElementById("fb-pole-hz").value) : null; // Hz (from hidden field)
 
     console.log("Feedback inputs:", { fbGain, fbZero, fbPole }); // Debug log
-    console.log("Compensator inputs:", { compLowFreqGain, compLowFreq, compPole, compZero }); // Debug log
+    console.log("Compensator inputs:", { compGain, compLfPole, compPole, compZero }); // Debug log
     console.log("Plant inputs:", { plantGain, plantLowPole, plantZero, plantHighPole }); // Debug log
 
     // Frequency range in Hz
@@ -30,11 +30,6 @@ function calculateFeedbackNetwork() {
     for (let logF = logMin; logF <= logMax; logF += (logMax - logMin) / 100) {
         freqs.push(Math.pow(10, logF) / 1000); // Store as kHz for chart labels
     }
-
-    // Calculate the gain factor to match compLowFreqGain at compLowFreq
-    let wLowFreq = 2 * Math.PI * compLowFreq;
-    let K = compLowFreqGain * wLowFreq; // Gain factor for compensator
-    console.log("Calculated gain factor K:", K);
 
     // Calculate Bode data for each block
     let plantMags = freqs.map(f => {
@@ -53,16 +48,16 @@ function calculateFeedbackNetwork() {
 
     let compMags = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // f in kHz, convert to Hz * 1000
-        let mag = (K / w) * (1 + w / (2 * Math.PI * compZero)) / (1 + w / (2 * Math.PI * compPole));
+        let mag = compGain * (1 + w / (2 * Math.PI * compZero)) / ((1 + w / (2 * Math.PI * compLfPole)) * (1 + w / (2 * Math.PI * compPole)));
         return 20 * Math.log10(mag > 0 ? mag : 0.0001);
     });
 
     let compPhases = freqs.map(f => {
         let w = 2 * Math.PI * f * 1000; // f in kHz, convert to Hz * 1000
-        let phase = -Math.PI / 2; // Phase contribution from 1/s (integrator)
-        phase += Math.atan(w / (2 * Math.PI * compZero));
-        phase -= Math.atan(w / (2 * Math.PI * compPole));
-        return phase * 180 / Math.PI;
+        let phaseLfPole = -Math.atan(w / (2 * Math.PI * compLfPole));
+        let phaseZero = Math.atan(w / (2 * Math.PI * compZero));
+        let phasePole = -Math.atan(w / (2 * Math.PI * compPole));
+        return (phaseLfPole + phaseZero + phasePole) * 180 / Math.PI;
     });
 
     let fbMags = freqs.map(f => {
@@ -99,8 +94,9 @@ function calculateFeedbackNetwork() {
         freqs,
         plantMags, plantPhases,
         compMags, compPhases,
-        compZero: compZero / 1000, // Convert back to kHz for charting
+        compLfPole: compLfPole / 1000, // Convert back to kHz for charting
         compPole: compPole / 1000, // Convert back to kHz for charting
+        compZero: compZero / 1000, // Convert back to kHz for charting
         fbMags, fbPhases,
         closedMags, closedPhases,
         bandwidth, phaseMargin

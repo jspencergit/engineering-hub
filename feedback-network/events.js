@@ -71,14 +71,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("plant-tf element not found");
             }
 
-            const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
-            const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) || 0;
+            const compGain = parseFloat(document.getElementById("comp-gain").value) || 0;
+            const compLfPole = parseFloat(document.getElementById("comp-lf-pole").value) || 0.3;
             const compZero = parseFloat(document.getElementById("comp-zero").value) || 1;
             const compPole = parseFloat(document.getElementById("comp-pole").value) || 1;
 
-            console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole });
+            console.log("Compensator checks:", { compGain, compLfPole, compZero, compPole });
 
-            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`;
+            let compTf = `C(s) = ${compGain.toFixed(1)} \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${compLfPole.toFixed(1)} \\text{kHz}}\\right) \\left(1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}\\right)}`;
             console.log("compTf string:", compTf);
 
             const compTfElement = document.getElementById("comp-tf");
@@ -93,8 +93,6 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 console.error("comp-tf element not found");
             }
-
-            // Removed the block for comp-tf-chart since the element doesn't exist
 
             const fbGainInput = document.getElementById("fb-gain");
             const fbGain = parseFloat(fbGainInput.value) || parseFloat(fbGainInput.getAttribute("value")) || 0;
@@ -127,8 +125,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("fb-tf element not found");
             }
 
-            // Removed the block for fb-tf-chart since the element doesn't exist
-
             if (typeof updateCharts === "function") {
                 console.log("Calling updateCharts with calcData:", calcData);
                 updateCharts(calcData);
@@ -148,8 +144,8 @@ document.addEventListener("DOMContentLoaded", function() {
         'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
         'plant-zero': { step: 1, min: 1, max: 100 },
         'plant-high-pole': { step: 1, min: 10, max: 500 },
-        'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
-        'comp-low-freq': { step: 1, min: 1, max: 10000 },
+        'comp-gain': { step: 1, min: -100, max: 100 },
+        'comp-lf-pole': { step: 0.1, min: 0.01, max: 10 },
         'comp-pole': { step: 0.1, min: 1, max: 500 },
         'comp-zero': { step: 0.1, min: 1, max: 100 },
         'fb-gain': { step: 0.1, min: -20, max: 20 },
@@ -192,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function() {
         slider.value = currentValue;
 
         // Update hidden Hz field if applicable
-        if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(inputId)) {
+        if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-lf-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(inputId)) {
             updateHzField(inputId, `${inputId}-hz`);
         }
 
@@ -202,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listeners for limit inputs
     const limitInputs = [
         'plant-gain', 'plant-low-pole', 'plant-zero', 'plant-high-pole',
-        'comp-low-freq-gain', 'comp-low-freq', 'comp-pole', 'comp-zero',
+        'comp-gain', 'comp-lf-pole', 'comp-pole', 'comp-zero',
         'fb-gain', 'fb-zero', 'fb-pole'
     ];
 
@@ -221,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputsList = [
         "plant-gain", "plant-gain-slider", "plant-low-pole", "plant-low-pole-slider",
         "plant-zero", "plant-zero-slider", "plant-high-pole", "plant-high-pole-slider",
-        "comp-low-freq-gain", "comp-low-freq-gain-slider", "comp-low-freq", "comp-low-freq-slider",
+        "comp-gain", "comp-gain-slider", "comp-lf-pole", "comp-lf-pole-slider",
         "comp-pole", "comp-pole-slider", "comp-zero", "comp-zero-slider",
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
     ];
@@ -229,7 +225,7 @@ document.addEventListener("DOMContentLoaded", function() {
     inputsList.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
-            if (id === "comp-low-freq-gain") {
+            if (id === "comp-gain") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     debouncedUpdate();
@@ -242,11 +238,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     let maxValue = parseFloat(this.max) || 100;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
-                    this.value = value.toFixed(1);
-                    document.getElementById("comp-low-freq-gain-slider").value = value.toFixed(1);
+                    this.value = value.toFixed(0);
+                    document.getElementById("comp-gain-slider").value = value.toFixed(0);
                     debouncedUpdate();
                 });
-            } else if (id === "comp-low-freq") {
+            } else if (id === "comp-lf-pole") {
                 element.addEventListener("input", function() {
                     console.log(`Input ${id} changed to ${this.value}`);
                     debouncedUpdate();
@@ -254,25 +250,27 @@ document.addEventListener("DOMContentLoaded", function() {
                 element.addEventListener("wheel", function(event) {
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
-                    let step = 1;
-                    let minValue = parseFloat(this.min) || 1;
-                    let maxValue = parseFloat(this.max) || 10000;
+                    let step = 0.1;
+                    let minValue = parseFloat(this.min) || 0.01;
+                    let maxValue = parseFloat(this.max) || 10;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
                     else if (event.deltaY > 0 && value - step >= minValue) value -= step;
                     this.value = value.toFixed(1);
-                    document.getElementById("comp-low-freq-slider").value = value.toFixed(1);
+                    document.getElementById("comp-lf-pole-slider").value = value.toFixed(1);
+                    updateHzField('comp-lf-pole', 'comp-lf-pole-hz');
                     debouncedUpdate();
                 });
-            } else if (id === "comp-low-freq-gain-slider") {
+            } else if (id === "comp-gain-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
-                    document.getElementById("comp-low-freq-gain").value = this.value;
+                    document.getElementById("comp-gain").value = this.value;
                     debouncedUpdate();
                 });
-            } else if (id === "comp-low-freq-slider") {
+            } else if (id === "comp-lf-pole-slider") {
                 element.addEventListener("input", function() {
                     console.log(`Slider ${id} changed to ${this.value}`);
-                    document.getElementById("comp-low-freq").value = this.value;
+                    document.getElementById("comp-lf-pole").value = this.value;
+                    updateHzField('comp-lf-pole', 'comp-lf-pole-hz');
                     debouncedUpdate();
                 });
             } else if (id === "comp-pole-slider") {
@@ -580,22 +578,23 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("plant-high-pole-max").value = "500";
 
             // Reset Compensator
-            document.getElementById("comp-low-freq-gain").value = "60";
-            document.getElementById("comp-low-freq-gain-slider").value = "60";
-            document.getElementById("comp-low-freq").value = "100";
-            document.getElementById("comp-low-freq-slider").value = "100";
-            document.getElementById("comp-pole").value = "100";
-            document.getElementById("comp-pole-slider").value = "100";
-            document.getElementById("comp-zero").value = "10";
-            document.getElementById("comp-zero-slider").value = "10";
+            document.getElementById("comp-gain").value = "60";
+            document.getElementById("comp-gain-slider").value = "60";
+            document.getElementById("comp-lf-pole").value = "0.3";
+            document.getElementById("comp-lf-pole-slider").value = "0.3";
+            document.getElementById("comp-pole").value = "175.1";
+            document.getElementById("comp-pole-slider").value = "175.1";
+            document.getElementById("comp-zero").value = "5.9";
+            document.getElementById("comp-zero-slider").value = "5.9";
+            updateHzField('comp-lf-pole', 'comp-lf-pole-hz');
             updateHzField('comp-pole', 'comp-pole-hz');
             updateHzField('comp-zero', 'comp-zero-hz');
 
             // Reset Compensator Limits
-            document.getElementById("comp-low-freq-gain-min").value = "-100";
-            document.getElementById("comp-low-freq-gain-max").value = "100";
-            document.getElementById("comp-low-freq-min").value = "1";
-            document.getElementById("comp-low-freq-max").value = "10000";
+            document.getElementById("comp-gain-min").value = "-100";
+            document.getElementById("comp-gain-max").value = "100";
+            document.getElementById("comp-lf-pole-min").value = "0.01";
+            document.getElementById("comp-lf-pole-max").value = "10";
             document.getElementById("comp-pole-min").value = "1";
             document.getElementById("comp-pole-max").value = "500";
             document.getElementById("comp-zero-min").value = "1";
@@ -631,8 +630,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
                 'plant-zero': { step: 1, min: 1, max: 100 },
                 'plant-high-pole': { step: 1, min: 10, max: 500 },
-                'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
-                'comp-low-freq': { step: 1, min: 1, max: 10000 },
+                'comp-gain': { step: 1, min: -100, max: 100 },
+                'comp-lf-pole': { step: 0.1, min: 0.01, max: 10 },
                 'comp-pole': { step: 0.1, min: 1, max: 500 },
                 'comp-zero': { step: 0.1, min: 1, max: 100 },
                 'fb-gain': { step: 0.1, min: -20, max: 20 },

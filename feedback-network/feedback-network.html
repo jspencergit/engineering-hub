@@ -60,25 +60,26 @@
             <div class="input-group" id="comp-inputs">
                 <div class="param-group">
                     <div class="input-row">
-                        <label for="comp-low-freq-gain">Low Frequency Gain (dB):</label>
-                        <input type="number" id="comp-low-freq-gain" step="1" min="-100" max="100" value="60" title="Gain at low frequencies for the compensator">
-                        <input type="range" id="comp-low-freq-gain-slider" min="-100" max="100" step="1" value="60" title="Adjust low-frequency gain">
+                        <label for="comp-gain">Gain (dB):</label>
+                        <input type="number" id="comp-gain" step="1" min="-100" max="100" value="60" title="Overall gain of the compensator in decibels">
+                        <input type="range" id="comp-gain-slider" min="-100" max="100" step="1" value="60" title="Adjust compensator gain">
                     </div>
                     <div class="input-row">
-                        <label for="comp-low-freq">@ Frequency (Hz):</label>
-                        <input type="number" id="comp-low-freq" step="1" min="1" max="10000" value="100" title="Frequency at which the low-frequency gain is specified">
-                        <input type="range" id="comp-low-freq-slider" min="1" max="10000" step="1" value="100" title="Adjust frequency for low-frequency gain">
+                        <label for="comp-lf-pole">LF Pole (kHz):</label>
+                        <input type="number" id="comp-lf-pole" step="0.1" min="0.01" max="10" value="0.3" title="Low-frequency pole affecting the compensator's roll-off">
+                        <input type="range" id="comp-lf-pole-slider" min="0.01" max="10" step="0.1" value="0.3" title="Adjust low-frequency pole">
+                        <input type="hidden" id="comp-lf-pole-hz">
                     </div>
                     <div class="input-row">
                         <label for="comp-pole">Pole (kHz):</label>
-                        <input type="number" id="comp-pole" step="0.1" min="1" max="500" value="100" title="Compensator pole frequency">
-                        <input type="range" id="comp-pole-slider" min="1" max="500" step="0.1" value="100" title="Adjust compensator pole">
+                        <input type="number" id="comp-pole" step="0.1" min="1" max="500" value="175.1" title="Compensator pole frequency">
+                        <input type="range" id="comp-pole-slider" min="1" max="500" step="0.1" value="175.1" title="Adjust compensator pole">
                         <input type="hidden" id="comp-pole-hz">
                     </div>
                     <div class="input-row">
                         <label for="comp-zero">Zero (kHz):</label>
-                        <input type="number" id="comp-zero" step="0.1" min="1" max="100" value="10" title="Compensator zero frequency for phase boost">
-                        <input type="range" id="comp-zero-slider" min="1" max="100" step="0.1" value="10" title="Adjust compensator zero">
+                        <input type="number" id="comp-zero" step="0.1" min="1" max="100" value="5.9" title="Compensator zero frequency for phase boost">
+                        <input type="range" id="comp-zero-slider" min="1" max="100" step="0.1" value="5.9" title="Adjust compensator zero">
                         <input type="hidden" id="comp-zero-hz">
                     </div>
                 </div>
@@ -170,16 +171,16 @@
         <div class="limits-group">
             <h3>Compensator Parameters</h3>
             <div class="limits-row">
-                <label for="comp-low-freq-gain-min">Low Freq Gain Min (dB):</label>
-                <input type="number" id="comp-low-freq-gain-min" step="1" value="-100">
-                <label for="comp-low-freq-gain-max">Max (dB):</label>
-                <input type="number" id="comp-low-freq-gain-max" step="1" value="100">
+                <label for="comp-gain-min">Gain Min (dB):</label>
+                <input type="number" id="comp-gain-min" step="1" value="-100">
+                <label for="comp-gain-max">Max (dB):</label>
+                <input type="number" id="comp-gain-max" step="1" value="100">
             </div>
             <div class="limits-row">
-                <label for="comp-low-freq-min">Low Freq Min (Hz):</label>
-                <input type="number" id="comp-low-freq-min" step="1" value="1">
-                <label for="comp-low-freq-max">Max (Hz):</label>
-                <input type="number" id="comp-low-freq-max" step="1" value="10000">
+                <label for="comp-lf-pole-min">LF Pole Min (kHz):</label>
+                <input type="number" id="comp-lf-pole-min" step="0.1" value="0.01">
+                <label for="comp-lf-pole-max">Max (kHz):</label>
+                <input type="number" id="comp-lf-pole-max" step="0.1" value="10">
             </div>
             <div class="limits-row">
                 <label for="comp-pole-min">Pole Min (kHz):</label>
@@ -225,8 +226,8 @@
             'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
             'plant-zero': { step: 1, min: 1, max: 100 },
             'plant-high-pole': { step: 1, min: 10, max: 500 },
-            'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
-            'comp-low-freq': { step: 1, min: 1, max: 10000 },
+            'comp-gain': { step: 1, min: -100, max: 100 },
+            'comp-lf-pole': { step: 0.1, min: 0.01, max: 10 },
             'comp-pole': { step: 0.1, min: 1, max: 500 },
             'comp-zero': { step: 0.1, min: 1, max: 100 },
             'fb-gain': { step: 0.1, min: -20, max: 20 },
@@ -269,6 +270,7 @@
             updateHzField('plant-low-pole', 'plant-low-pole-hz');
             updateHzField('plant-zero', 'plant-zero-hz');
             updateHzField('plant-high-pole', 'plant-high-pole-hz');
+            updateHzField('comp-lf-pole', 'comp-lf-pole-hz');
             updateHzField('comp-pole', 'comp-pole-hz');
             updateHzField('comp-zero', 'comp-zero-hz');
             updateHzField('fb-zero', 'fb-zero-hz');
@@ -277,6 +279,7 @@
             document.getElementById('plant-low-pole').addEventListener('input', () => updateHzField('plant-low-pole', 'plant-low-pole-hz'));
             document.getElementById('plant-zero').addEventListener('input', () => updateHzField('plant-zero', 'plant-zero-hz'));
             document.getElementById('plant-high-pole').addEventListener('input', () => updateHzField('plant-high-pole', 'plant-high-pole-hz'));
+            document.getElementById('comp-lf-pole').addEventListener('input', () => updateHzField('comp-lf-pole', 'comp-lf-pole-hz'));
             document.getElementById('comp-pole').addEventListener('input', () => updateHzField('comp-pole', 'comp-pole-hz'));
             document.getElementById('comp-zero').addEventListener('input', () => updateHzField('comp-zero', 'comp-zero-hz'));
             document.getElementById('fb-zero').addEventListener('input', () => updateHzField('fb-zero', 'fb-zero-hz'));
@@ -287,8 +290,8 @@
             syncSliderAndTextBox('plant-zero', 'plant-zero-slider', true);
             syncSliderAndTextBox('plant-high-pole', 'plant-high-pole-slider', true);
 
-            syncSliderAndTextBox('comp-low-freq-gain', 'comp-low-freq-gain-slider');
-            syncSliderAndTextBox('comp-low-freq', 'comp-low-freq-slider');
+            syncSliderAndTextBox('comp-gain', 'comp-gain-slider');
+            syncSliderAndTextBox('comp-lf-pole', 'comp-lf-pole-slider', true);
             syncSliderAndTextBox('comp-pole', 'comp-pole-slider', true);
             syncSliderAndTextBox('comp-zero', 'comp-zero-slider', true);
 
@@ -317,7 +320,7 @@
                         slider.value = this.value;
                     }
 
-                    if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(id)) {
+                    if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-lf-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(id)) {
                         updateHzField(id, `${id}-hz`);
                     }
                 });

@@ -56,6 +56,16 @@ let compChart = new Chart(compCtx, {
                 yAxisID: "y-mag" 
             },
             { 
+                label: "LF Pole Marker", 
+                data: [], 
+                pointStyle: "crossRot", 
+                pointRadius: 5, 
+                pointBackgroundColor: "red", 
+                pointBorderColor: "red", 
+                showLine: false, 
+                yAxisID: "y-mag" 
+            },
+            { 
                 label: "Pole Marker", 
                 data: [], 
                 pointStyle: "crossRot", 
@@ -76,7 +86,7 @@ let compChart = new Chart(compCtx, {
                 yAxisID: "y-phase" 
             },
             { 
-                label: "Pole Marker (Phase)", 
+                label: "LF Pole Marker (Phase)", 
                 data: [], 
                 pointStyle: "crossRot", 
                 pointRadius: 5, 
@@ -86,17 +96,7 @@ let compChart = new Chart(compCtx, {
                 yAxisID: "y-phase" 
             },
             { 
-                label: "Low Freq Gain Marker (Mag)", 
-                data: [], 
-                pointStyle: "crossRot", 
-                pointRadius: 5, 
-                pointBackgroundColor: "red", 
-                pointBorderColor: "red", 
-                showLine: false, 
-                yAxisID: "y-mag" 
-            },
-            { 
-                label: "Low Freq Gain Marker (Phase)", 
+                label: "Pole Marker (Phase)", 
                 data: [], 
                 pointStyle: "crossRot", 
                 pointRadius: 5, 
@@ -325,25 +325,28 @@ function updateCharts(calcData) {
     compChart.data.datasets[1].data = calcData.compPhases;
 
     const compZeroValue = calcData.compZero;
+    const compLfPoleValue = calcData.compLfPole;
     const compPoleValue = calcData.compPole;
 
     let compClosestZeroIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
         Math.abs(arr[minIndex] - compZeroValue) < Math.abs(curr - compZeroValue) ? minIndex : idx, 0);
+    let compClosestLfPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
+        Math.abs(arr[minIndex] - compLfPoleValue) < Math.abs(curr - compLfPoleValue) ? minIndex : idx, 0);
     let compClosestPoleIndex = calcData.freqs.reduce((minIndex, curr, idx, arr) => 
         Math.abs(arr[minIndex] - compPoleValue) < Math.abs(curr - compPoleValue) ? minIndex : idx, 0);
 
     compChart.data.datasets[2].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compMags.length 
         ? [{ x: compZeroValue, y: calcData.compMags[compClosestZeroIndex] }] : [];
-    compChart.data.datasets[3].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compMags.length 
+    compChart.data.datasets[3].data = compClosestLfPoleIndex >= 0 && compClosestLfPoleIndex < calcData.compMags.length 
+        ? [{ x: compLfPoleValue, y: calcData.compMags[compClosestLfPoleIndex] }] : [];
+    compChart.data.datasets[4].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compMags.length 
         ? [{ x: compPoleValue, y: calcData.compMags[compClosestPoleIndex] }] : [];
-    compChart.data.datasets[4].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compPhases.length 
+    compChart.data.datasets[5].data = compClosestZeroIndex >= 0 && compClosestZeroIndex < calcData.compPhases.length 
         ? [{ x: compZeroValue, y: calcData.compPhases[compClosestZeroIndex] }] : [];
-    compChart.data.datasets[5].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compPhases.length 
+    compChart.data.datasets[6].data = compClosestLfPoleIndex >= 0 && compClosestLfPoleIndex < calcData.compPhases.length 
+        ? [{ x: compLfPoleValue, y: calcData.compPhases[compClosestLfPoleIndex] }] : [];
+    compChart.data.datasets[7].data = compClosestPoleIndex >= 0 && compClosestPoleIndex < calcData.compPhases.length 
         ? [{ x: compPoleValue, y: calcData.compPhases[compClosestPoleIndex] }] : [];
-
-    const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) / 1000 || 0.1;
-    compChart.data.datasets[6].data = [{ x: compLowFreq, y: parseFloat(document.getElementById("comp-low-freq-gain").value) || 0 }];
-    compChart.data.datasets[7].data = [{ x: compLowFreq, y: -90 }];
 
     compChart.data.datasets = compChart.data.datasets.filter(dataset => dataset.label !== 'Gain Crossover');
     const compMinMag = compChart.options.scales["y-mag"].min || -40;

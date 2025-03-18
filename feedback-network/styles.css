@@ -65,7 +65,7 @@ section {
 }
 
 .chart-group .input-group#comp-inputs {
-    width: 340px;
+    width: 280px; /* Adjusted to fit new layout without extra parameters */
     right: 0px;
 }
 
@@ -100,13 +100,10 @@ section {
 .chart-group .input-group input#plant-low-pole,
 .chart-group .input-group input#plant-zero,
 .chart-group .input-group input#plant-high-pole,
-.chart-group .input-group input#comp-low-freq,
+.chart-group .input-group input#comp-gain,
+.chart-group .input-group input#comp-lf-pole,
 .chart-group .input-group input#comp-pole,
 .chart-group .input-group input#comp-zero {
-    max-width: 50px;
-}
-
-.chart-group .input-group input#comp-low-freq-gain {
     max-width: 50px;
 }
 
