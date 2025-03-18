@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 500);
     }
 
-    // Debounce function to prevent rapid updates
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -30,12 +29,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function updateFeedbackNetwork() {
         try {
-            const calcData = calculateFeedbackNetwork(); // From calculator.js
+            const calcData = calculateFeedbackNetwork();
 
-            // Debug: Log calcData to check values
             console.log("calcData:", calcData);
 
-            // Update DOM elements
             const bwOutput = document.getElementById("bw-output");
             const pmOutput = document.getElementById("pm-output");
             if (!bwOutput || !pmOutput) {
@@ -52,13 +49,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 pmOutput.textContent = "N/A";
             }
 
-            // Update Plant transfer function
             const plantGain = parseFloat(document.getElementById("plant-gain").value) || 0;
             const plantLowPole = parseFloat(document.getElementById("plant-low-pole").value) || 1;
             const plantZero = parseFloat(document.getElementById("plant-zero").value) || 0.001;
             const plantHighPole = parseFloat(document.getElementById("plant-high-pole").value) || 0.001;
 
-            console.log("Plant checks:", { plantGain, plantLowPole, plantZero, plantHighPole }); // Debug log
+            console.log("Plant checks:", { plantGain, plantLowPole, plantZero, plantHighPole });
 
             let plantTf = `P(s) = ${plantGain.toFixed(1)} \\text{dB} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${plantZero.toFixed(1)} \\text{kHz}}}{\\left(1 + \\frac{s}{2\\pi \\cdot ${plantLowPole.toFixed(1)} \\text{kHz}}\\right) \\left(1 + \\frac{s}{2\\pi \\cdot ${plantHighPole.toFixed(1)} \\text{kHz}}\\right)}`;
 
@@ -75,16 +71,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("plant-tf element not found");
             }
 
-            // Update Compensator transfer function
             const compLowFreqGain = parseFloat(document.getElementById("comp-low-freq-gain").value) || 0;
             const compLowFreq = parseFloat(document.getElementById("comp-low-freq").value) || 0;
-            const compZero = parseFloat(document.getElementById("comp-zero").value) || 1; // Default to 1 if invalid
-            const compPole = parseFloat(document.getElementById("comp-pole").value) || 1; // Default to 1 if invalid
+            const compZero = parseFloat(document.getElementById("comp-zero").value) || 1;
+            const compPole = parseFloat(document.getElementById("comp-pole").value) || 1;
 
-            console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole }); // Debug log
+            console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole });
 
-            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`; // Use kHz directly
-            console.log("compTf string:", compTf); // Debug the string
+            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`;
+            console.log("compTf string:", compTf);
 
             const compTfElement = document.getElementById("comp-tf");
             if (compTfElement) {
@@ -112,7 +107,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("comp-tf-chart element not found");
             }
 
-            // Update Feedback transfer function
             const fbGainInput = document.getElementById("fb-gain");
             const fbGain = parseFloat(fbGainInput.value) || parseFloat(fbGainInput.getAttribute("value")) || 0;
             const fbZeroCheck = document.getElementById("fb-zero-check").checked;
@@ -120,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const fbPoleCheck = document.getElementById("fb-pole-check").checked;
             const fbPole = fbPoleCheck ? parseFloat(document.getElementById("fb-pole").value) * 1000 : null;
 
-            console.log("Feedback checks:", { fbGain, fbZeroCheck, fbZero, fbPoleCheck, fbPole }); // Debug log
+            console.log("Feedback checks:", { fbGain, fbZeroCheck, fbZero, fbPoleCheck, fbPole });
 
             let fbTf = `F(s) = ${fbGain.toFixed(1)} \\text{dB}`;
             if (fbZeroCheck && fbPoleCheck) {
@@ -157,10 +151,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("fb-tf-chart element not found");
             }
 
-            // Update charts
             if (typeof updateCharts === "function") {
                 console.log("Calling updateCharts with calcData:", calcData);
-                updateCharts(calcData); // From charts.js
+                updateCharts(calcData);
             } else {
                 console.error("updateCharts is not a function");
             }
@@ -169,11 +162,85 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Debounced update function
     const debouncedUpdate = debounce(updateFeedbackNetwork, 100);
 
-    // Event listeners for inputs
-    const inputs = [
+    // Updated inputs configuration to be dynamic
+    let inputs = {
+        'plant-gain': { step: 1, min: -20, max: 20 },
+        'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
+        'plant-zero': { step: 1, min: 1, max: 100 },
+        'plant-high-pole': { step: 1, min: 10, max: 500 },
+        'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
+        'comp-low-freq': { step: 1, min: 1, max: 10000 },
+        'comp-pole': { step: 0.1, min: 1, max: 500 },
+        'comp-zero': { step: 0.1, min: 1, max: 100 },
+        'fb-gain': { step: 0.1, min: -20, max: 20 },
+        'fb-zero': { step: 0.1, min: 0.001, max: 1000 },
+        'fb-pole': { step: 0.1, min: 1, max: 1000 }
+    };
+
+    // Function to update slider limits dynamically
+    function updateSliderLimits(inputId) {
+        const minInput = document.getElementById(`${inputId}-min`);
+        const maxInput = document.getElementById(`${inputId}-max`);
+        const slider = document.getElementById(`${inputId}-slider`);
+        const textBox = document.getElementById(inputId);
+
+        if (!minInput || !maxInput || !slider || !textBox) return;
+
+        let newMin = parseFloat(minInput.value);
+        let newMax = parseFloat(maxInput.value);
+
+        // Ensure min is less than max
+        if (newMin >= newMax) {
+            newMin = newMax - inputs[inputId].step;
+            minInput.value = newMin;
+        }
+
+        // Update the inputs configuration
+        inputs[inputId].min = newMin;
+        inputs[inputId].max = newMax;
+
+        // Update slider and text box attributes
+        slider.min = newMin;
+        slider.max = newMax;
+        textBox.min = newMin;
+        textBox.max = newMax;
+
+        // Clamp the current value within the new range
+        let currentValue = parseFloat(textBox.value) || 0;
+        currentValue = Math.max(newMin, Math.min(newMax, currentValue));
+        textBox.value = currentValue.toFixed(inputs[inputId].step === 1 ? 0 : 1);
+        slider.value = currentValue;
+
+        // Update hidden Hz field if applicable
+        if (['plant-low-pole', 'plant-zero', 'plant-high-pole', 'comp-pole', 'comp-zero', 'fb-zero', 'fb-pole'].includes(inputId)) {
+            updateHzField(inputId, `${inputId}-hz`);
+        }
+
+        debouncedUpdate();
+    }
+
+    // Event listeners for limit inputs
+    const limitInputs = [
+        'plant-gain', 'plant-low-pole', 'plant-zero', 'plant-high-pole',
+        'comp-low-freq-gain', 'comp-low-freq', 'comp-pole', 'comp-zero',
+        'fb-gain', 'fb-zero', 'fb-pole'
+    ];
+
+    limitInputs.forEach(id => {
+        const minInput = document.getElementById(`${id}-min`);
+        const maxInput = document.getElementById(`${id}-max`);
+
+        if (minInput && maxInput) {
+            minInput.addEventListener('input', () => updateSliderLimits(id));
+            maxInput.addEventListener('input', () => updateSliderLimits(id));
+        } else {
+            console.error(`Limit input for ${id} not found`);
+        }
+    });
+
+    const inputsList = [
         "plant-gain", "plant-gain-slider", "plant-low-pole", "plant-low-pole-slider",
         "plant-zero", "plant-zero-slider", "plant-high-pole", "plant-high-pole-slider",
         "comp-low-freq-gain", "comp-low-freq-gain-slider", "comp-low-freq", "comp-low-freq-slider",
@@ -181,7 +248,7 @@ document.addEventListener("DOMContentLoaded", function() {
         "fb-gain", "fb-gain-slider", "fb-zero", "fb-zero-slider", "fb-pole", "fb-pole-slider"
     ];
 
-    inputs.forEach(id => {
+    inputsList.forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             if (id === "comp-low-freq-gain") {
@@ -323,10 +390,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
-                    if (this.disabled) return; // Skip if disabled
+                    if (this.disabled) return;
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
-                    let step = 0.1; // 0.1 kHz increments
+                    let step = 0.1;
                     let minValue = parseFloat(this.min) || 0.001;
                     let maxValue = parseFloat(this.max) || 1000;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
@@ -351,10 +418,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     debouncedUpdate();
                 });
                 element.addEventListener("wheel", function(event) {
-                    if (this.disabled) return; // Skip if disabled
+                    if (this.disabled) return;
                     event.preventDefault();
                     let value = parseFloat(this.value) || 0;
-                    let step = 0.1; // 0.1 kHz increments
+                    let step = 0.1;
                     let minValue = parseFloat(this.min) || 1;
                     let maxValue = parseFloat(this.max) || 1000;
                     if (event.deltaY < 0 && value + step <= maxValue) value += step;
@@ -477,7 +544,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Checkbox event listeners with debounced update
     const fbZeroCheck = document.getElementById("fb-zero-check");
     const fbPoleCheck = document.getElementById("fb-pole-check");
     if (fbZeroCheck) {
@@ -509,7 +575,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Reset button functionality
     const resetButton = document.getElementById("reset-button");
     if (resetButton) {
         resetButton.addEventListener("click", function() {
@@ -526,6 +591,16 @@ document.addEventListener("DOMContentLoaded", function() {
             updateHzField('plant-zero', 'plant-zero-hz');
             updateHzField('plant-high-pole', 'plant-high-pole-hz');
 
+            // Reset Plant Limits
+            document.getElementById("plant-gain-min").value = "-20";
+            document.getElementById("plant-gain-max").value = "20";
+            document.getElementById("plant-low-pole-min").value = "0.01";
+            document.getElementById("plant-low-pole-max").value = "10";
+            document.getElementById("plant-zero-min").value = "1";
+            document.getElementById("plant-zero-max").value = "100";
+            document.getElementById("plant-high-pole-min").value = "10";
+            document.getElementById("plant-high-pole-max").value = "500";
+
             // Reset Compensator
             document.getElementById("comp-low-freq-gain").value = "60";
             document.getElementById("comp-low-freq-gain-slider").value = "60";
@@ -537,6 +612,16 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("comp-zero-slider").value = "10";
             updateHzField('comp-pole', 'comp-pole-hz');
             updateHzField('comp-zero', 'comp-zero-hz');
+
+            // Reset Compensator Limits
+            document.getElementById("comp-low-freq-gain-min").value = "-100";
+            document.getElementById("comp-low-freq-gain-max").value = "100";
+            document.getElementById("comp-low-freq-min").value = "1";
+            document.getElementById("comp-low-freq-max").value = "10000";
+            document.getElementById("comp-pole-min").value = "1";
+            document.getElementById("comp-pole-max").value = "500";
+            document.getElementById("comp-zero-min").value = "1";
+            document.getElementById("comp-zero-max").value = "100";
 
             // Reset Feedback
             document.getElementById("fb-gain").value = "0";
@@ -554,6 +639,32 @@ document.addEventListener("DOMContentLoaded", function() {
             updateHzField('fb-zero', 'fb-zero-hz');
             updateHzField('fb-pole', 'fb-pole-hz');
 
+            // Reset Feedback Limits
+            document.getElementById("fb-gain-min").value = "-20";
+            document.getElementById("fb-gain-max").value = "20";
+            document.getElementById("fb-zero-min").value = "0.001";
+            document.getElementById("fb-zero-max").value = "1000";
+            document.getElementById("fb-pole-min").value = "1";
+            document.getElementById("fb-pole-max").value = "1000";
+
+            // Reset the inputs configuration
+            inputs = {
+                'plant-gain': { step: 1, min: -20, max: 20 },
+                'plant-low-pole': { step: 0.1, min: 0.01, max: 10 },
+                'plant-zero': { step: 1, min: 1, max: 100 },
+                'plant-high-pole': { step: 1, min: 10, max: 500 },
+                'comp-low-freq-gain': { step: 1, min: -100, max: 100 },
+                'comp-low-freq': { step: 1, min: 1, max: 10000 },
+                'comp-pole': { step: 0.1, min: 1, max: 500 },
+                'comp-zero': { step: 0.1, min: 1, max: 100 },
+                'fb-gain': { step: 0.1, min: -20, max: 20 },
+                'fb-zero': { step: 0.1, min: 0.001, max: 1000 },
+                'fb-pole': { step: 0.1, min: 1, max: 1000 }
+            };
+
+            // Update all sliders with default limits
+            limitInputs.forEach(id => updateSliderLimits(id));
+
             console.log("Reset to default values, triggering update");
             debouncedUpdate();
         });
@@ -561,7 +672,6 @@ document.addEventListener("DOMContentLoaded", function() {
         console.error("reset-button element not found");
     }
 
-    // Initial update with improved timing
     function initializeCharts() {
         console.log("Attempting to initialize charts...");
         console.log("Document readyState:", document.readyState);
@@ -576,7 +686,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Start the initialization process
     if (document.readyState === "complete") {
         console.log("Document already loaded, initializing charts immediately");
         initializeCharts();

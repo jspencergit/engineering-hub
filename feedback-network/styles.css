@@ -19,28 +19,28 @@ section {
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     width: 95%;
     max-width: 1400px;
-    position: relative; /* Ensure proper positioning context */
-    min-height: 620px; /* Slightly increased to accommodate button placement */
+    position: relative;
+    min-height: 620px;
 }
 
 .charts-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-gap: 20px;
-    margin-bottom: 40px; /* Added margin to prevent button cutoff */
-    position: relative; /* Added to help position the button */
-    min-height: 600px; /* Ensure enough height for symmetry */
+    margin-bottom: 40px;
+    position: relative;
+    min-height: 600px;
 }
 
 .button-container {
-    grid-column: 1 / span 2; /* Span both columns */
+    grid-column: 1 / span 2;
     text-align: center;
     padding: 10px 0;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    top: 92%; /* Adjusted as per your preference */
-    z-index: 5; /* Ensure it’s above the charts but below overlays */
+    top: 92%;
+    z-index: 5;
 }
 
 .chart-group {
@@ -54,8 +54,8 @@ section {
 .chart-group .input-group {
     position: absolute;
     top: 10px;
-    right: 10px; /* Shift slightly to the right */
-    width: 280px; /* Reduce width to remove extra whitespace after sliders */
+    right: 10px;
+    width: 280px;
     background-color: rgba(255, 255, 255, 0.8);
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -64,35 +64,34 @@ section {
 }
 
 .chart-group .input-group#comp-inputs {
-    width: 340px; /* Increased width to prevent overlap */
-    right: 0px; /* Shift leftward to utilize space */
+    width: 340px;
+    right: 0px;
 }
 
 .chart-group .input-group#fb-inputs {
-    width: 340px; /* Match comp-inputs width to accommodate checkboxes and labels */
-    right: 25px; /* Adjusted to create space from transfer function */
+    width: 340px;
+    right: 25px; /* Updated as per your adjustment */
 }
 
 .chart-group .input-group .input-row {
     display: flex;
     align-items: center;
-    margin-bottom: 3px; /* Reduce margin to minimize vertical space */
+    margin-bottom: 3px;
 }
 
 .chart-group .input-group label {
     font-size: 12px;
     margin-right: 5px;
     white-space: nowrap;
-    width: 100px; /* Increased width for longer labels like "Low Frequency Gain" */
+    width: 100px;
 }
 
 .chart-group .input-group input[type="number"] {
     font-size: 12px;
     padding: 4px;
-    width: 50px; /* Fixed width for text boxes */
+    width: 50px;
 }
 
-/* Specific width adjustments */
 .chart-group .input-group input#plant-gain {
     max-width: 30px;
 }
@@ -110,9 +109,8 @@ section {
     max-width: 50px;
 }
 
-/* Style for sliders */
 .chart-group .input-group input[type="range"] {
-    width: 120px; /* Keep slider width, but adjust with input-group width */
+    width: 120px;
     margin-left: 5px;
     -webkit-appearance: none;
     height: 8px;
@@ -134,12 +132,11 @@ section {
     background: #1557b0;
 }
 
-/* Style for Loop Gain Metrics */
 .chart-group .loop-gain-metrics {
     position: absolute;
     top: 10px;
-    right: 100px; /* Match the positioning of fb-inputs for consistency */
-    width: 200px; /* Smaller width since it’s just text, not inputs */
+    right: 100px;
+    width: 200px;
     background-color: rgba(255, 255, 255, 0.8);
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -157,7 +154,7 @@ section {
     font-size: 12px;
     margin-right: 5px;
     white-space: nowrap;
-    width: 120px; /* Slightly wider to accommodate "Loop Bandwidth (kHz)" */
+    width: 120px;
 }
 
 .chart-group .loop-gain-metrics .output {
@@ -165,21 +162,19 @@ section {
     color: #1a73e8;
 }
 
-/* Style for canvas (graphs) */
 canvas {
     max-width: 100%;
     margin-top: 10px;
-    width: 100%; /* Ensure full width */
-    height: auto; /* Maintain aspect ratio */
-    min-height: 300px; /* Increase minimum height to scale up graphs slightly */
+    width: 100%;
+    height: auto;
+    min-height: 300px;
 }
 
-/* Increase font size and adjust positioning for equations */
 .chart-header {
     display: block;
-    margin-bottom: 0; /* Remove bottom margin to move content up */
-    min-height: 60px; /* Reverted from 100px */
-    position: relative; /* Ensure proper positioning context */
+    margin-bottom: 0;
+    min-height: 60px;
+    position: relative;
 }
 
 .chart-header h4 {
@@ -188,13 +183,13 @@ canvas {
     font-weight: bold;
     padding: 5px 10px;
     position: absolute;
-    top: 0; /* Move title to the top */
+    top: 0;
 }
 
 .chart-header .transfer-function,
 .calculator .transfer-function {
-    font-size: 18px; /* Reverted from 20px */
-    padding: 8px; /* Reverted from 10px */
+    font-size: 18px;
+    padding: 8px;
     background-color: #ffffff;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -208,10 +203,9 @@ canvas {
     text-overflow: ellipsis;
     position: absolute;
     left: 10px;
-    top: 25px; /* Reverted from 40px */
+    top: 25px;
 }
 
-/* Apply similar adjustments to other transfer functions */
 .calculator .transfer-function#comp-tf,
 .calculator .transfer-function#fb-tf,
 .chart-header .transfer-function#comp-tf-chart,
@@ -221,10 +215,9 @@ canvas {
     justify-content: flex-start;
     max-width: 70%;
     left: 10px;
-    top: 25px; /* Consistent positioning */
+    top: 25px;
 }
 
-/* Style the reset button */
 #reset-button {
     background-color: #1a73e8;
     color: white;
@@ -234,7 +227,7 @@ canvas {
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-top: 0; /* Remove default margin */
+    margin-top: 0;
 }
 
 #reset-button:hover {
@@ -244,6 +237,53 @@ canvas {
 #reset-button:focus {
     outline: none;
     box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+
+/* New Styles for Limits Section */
+.limits-container {
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 95%;
+    max-width: 1400px;
+}
+
+.limits-container h2 {
+    text-align: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.limits-group {
+    margin-bottom: 20px;
+}
+
+.limits-group h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.limits-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.limits-row label {
+    font-size: 12px;
+    margin-right: 5px;
+    white-space: nowrap;
+    width: 120px;
+}
+
+.limits-row input[type="number"] {
+    font-size: 12px;
+    padding: 4px;
+    width: 60px;
+    margin-right: 10px;
 }
 
 @media (max-width: 800px) {
@@ -262,8 +302,18 @@ canvas {
         margin-bottom: 20px;
     }
     .button-container {
-        position: static; /* Reset to static positioning on mobile */
-        transform: none; /* Remove transform on mobile */
-        margin: 20px 0; /* Add vertical spacing on mobile */
+        position: static;
+        transform: none;
+        margin: 20px 0;
+    }
+    .limits-row {
+        flex-wrap: wrap;
+    }
+    .limits-row label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    .limits-row input[type="number"] {
+        margin-right: 5px;
     }
 }
