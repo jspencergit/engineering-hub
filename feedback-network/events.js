@@ -94,18 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("comp-tf element not found");
             }
 
-            const compTfChartElement = document.getElementById("comp-tf-chart");
-            if (compTfChartElement) {
-                compTfChartElement.innerHTML = `\\(${compTf}\\)`;
-                console.log("Attempting to typeset comp-tf-chart:", compTfChartElement.innerHTML);
-                if (typeof MathJax !== "undefined" && MathJax.typeset) {
-                    MathJax.typeset([compTfChartElement]);
-                } else {
-                    typesetMathJax(compTfChartElement);
-                }
-            } else {
-                console.error("comp-tf-chart element not found");
-            }
+            // Removed the block for comp-tf-chart since the element doesn't exist
 
             const fbGainInput = document.getElementById("fb-gain");
             const fbGain = parseFloat(fbGainInput.value) || parseFloat(fbGainInput.getAttribute("value")) || 0;
@@ -138,18 +127,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("fb-tf element not found");
             }
 
-            const fbTfChartElement = document.getElementById("fb-tf-chart");
-            if (fbTfChartElement) {
-                fbTfChartElement.innerHTML = `\\(${fbTf}\\)`;
-                console.log("Attempting to typeset fb-tf-chart:", fbTfChartElement.innerHTML);
-                if (typeof MathJax !== "undefined" && MathJax.typeset) {
-                    MathJax.typeset([fbTfChartElement]);
-                } else {
-                    typesetMathJax(fbTfChartElement);
-                }
-            } else {
-                console.error("fb-tf-chart element not found");
-            }
+            // Removed the block for fb-tf-chart since the element doesn't exist
 
             if (typeof updateCharts === "function") {
                 console.log("Calling updateCharts with calcData:", calcData);

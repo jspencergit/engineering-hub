@@ -1,3 +1,4 @@
+//feedback-network/calculator.js
 function calculateFeedbackNetwork() {
     // Get input values and convert units to Hz
     let plantGain = Math.pow(10, parseFloat(document.getElementById("plant-gain").value) / 20); // dB to linear

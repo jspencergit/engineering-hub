@@ -1,3 +1,4 @@
+/* feedback-network/styles.css */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -112,7 +113,9 @@ section {
 .chart-group .input-group input[type="range"] {
     width: 120px;
     margin-left: 5px;
+     /* Use both -webkit-appearance and appearance for compatibility */
     -webkit-appearance: none;
+     appearance: none;
     height: 8px;
     background: #ddd;
     border-radius: 4px;
@@ -208,8 +211,9 @@ canvas {
 
 .calculator .transfer-function#comp-tf,
 .calculator .transfer-function#fb-tf,
-.chart-header .transfer-function#comp-tf-chart,
-.chart-header .transfer-function#fb-tf-chart,
+.chart-header .transfer-function#plant-tf,
+.chart-header .transfer-function#comp-tf,
+.chart-header .transfer-function#fb-tf,
 .chart-header .transfer-function#loop-gain-stats {
     text-align: left;
     justify-content: flex-start;
