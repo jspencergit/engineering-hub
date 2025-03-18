@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             console.log("Compensator checks:", { compLowFreqGain, compLowFreq, compZero, compPole }); // Debug log
 
-            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\cdot 1000}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\cdot 1000}}`; // Convert kHz to Hz
+            let compTf = `C(s) = ${compLowFreqGain.toFixed(1)} \\text{dB} \\cdot \\frac{1}{s} \\cdot \\frac{1 + \\frac{s}{2\\pi \\cdot ${compZero.toFixed(1)} \\text{kHz}}}{1 + \\frac{s}{2\\pi \\cdot ${compPole.toFixed(1)} \\text{kHz}}}`; // Use kHz directly
             console.log("compTf string:", compTf); // Debug the string
 
             const compTfElement = document.getElementById("comp-tf");
