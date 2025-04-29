@@ -1,0 +1,125 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    line-height: 1.6;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.input-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.adc-group, .converter-group {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.input-group {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-group label {
+    width: 140px;
+    font-weight: bold;
+}
+
+.input-group input[type="number"],
+.input-group select {
+    width: 100px;
+    padding: 5px;
+}
+
+.input-group input[type="text"] {
+    width: 150px;
+    padding: 5px;
+}
+
+.input-group input[type="range"] {
+    width: 120px;
+}
+
+/* Specific style for the converter value slider */
+#converter-value-slider {
+    width: 240px;
+}
+
+.input-group span {
+    width: 80px;
+}
+
+.metric-group {
+    margin-top: 10px;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.button-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.presets {
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    padding: 5px 10px;
+    font-size: 14px;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1557b0;
+}
+
+.comparison-container, .converter-container {
+    margin-top: 30px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    table-layout: auto;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+td.best {
+    font-weight: bold;
+    background-color: #e0f7fa;
+}

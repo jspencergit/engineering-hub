@@ -1,0 +1,231 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision ADC Unit Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Precision ADC Unit Converter</h1>
+    </header>
+    <section class="input-container">
+        <div class="adc-group" id="adc-1">
+            <div class="input-group">
+                <label for="adc1-name">Name:</label>
+                <input type="text" id="adc1-name" value="ADC 1">
+            </div>
+            <div class="input-group">
+                <label for="adc1-resolution">Resolution (bits):</label>
+                <input type="number" id="adc1-resolution" min="8" max="24" step="1" value="16">
+                <input type="range" id="adc1-resolution-slider" min="8" max="24" step="1" value="16">
+            </div>
+            <div class="input-group">
+                <label for="adc1-vref">Reference Voltage (V):</label>
+                <input type="number" id="adc1-vref" min="0.1" max="10" step="0.1" value="5">
+                <input type="range" id="adc1-vref-slider" min="0.1" max="10" step="0.1" value="5">
+            </div>
+            <div class="input-group">
+                <label for="adc1-gain">Gain:</label>
+                <input type="number" id="adc1-gain" min="0.1" max="10" step="0.1" value="1">
+            </div>
+            <div class="input-group">
+                <label for="adc1-differential">Differential:</label>
+                <input type="checkbox" id="adc1-differential" checked>
+            </div>
+            <div class="input-group">
+                <label>FSR (V):</label>
+                <span id="adc1-fsr">10.000</span>
+            </div>
+            <div class="input-group">
+                <label>LSB (µV):</label>
+                <span id="adc1-lsb">152.59</span>
+            </div>
+            <div class="metric-group">
+                <h4>INL</h4>
+                <div class="input-group">
+                    <label for="adc1-inl-value">Value:</label>
+                    <input type="number" id="adc1-inl-value" min="0" step="0.1" value="1">
+                    <select id="adc1-inl-unit">
+                        <option value="lsb">LSB</option>
+                        <option value="ppm">ppm</option>
+                        <option value="uv">µV</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>LSB:</label><span id="adc1-inl-lsb">1.00</span>
+                    <label>ppm:</label><span id="adc1-inl-ppm">15.26</span>
+                    <label>µV:</label><span id="adc1-inl-uv">152.59</span>
+                </div>
+            </div>
+            <div class="metric-group">
+                <h4>DNL</h4>
+                <div class="input-group">
+                    <label for="adc1-dnl-value">Value:</label>
+                    <input type="number" id="adc1-dnl-value" min="0" step="0.1" value="0.5">
+                    <select id="adc1-dnl-unit">
+                        <option value="lsb">LSB</option>
+                        <option value="ppm">ppm</option>
+                        <option value="uv">µV</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>LSB:</label><span id="adc1-dnl-lsb">0.50</span>
+                    <label>ppm:</label><span id="adc1-dnl-ppm">7.63</span>
+                    <label>µV:</label><span id="adc1-dnl-uv">76.29</span>
+                </div>
+            </div>
+            <div class="metric-group">
+                <h4>Offset</h4>
+                <div class="input-group">
+                    <label for="adc1-offset-value">Value:</label>
+                    <input type="number" id="adc1-offset-value" step="0.1" value="10">
+                    <select id="adc1-offset-unit">
+                        <option value="ppm">ppm</option>
+                        <option value="lsb">LSB</option>
+                        <option value="uv">µV</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>LSB:</label><span id="adc1-offset-lsb">65.54</span>
+                    <label>ppm:</label><span id="adc1-offset-ppm">10.00</span>
+                    <label>µV:</label><span id="adc1-offset-uv">100.00</span>
+                </div>
+            </div>
+            <div class="metric-group">
+                <h4>Gain Error</h4>
+                <div class="input-group">
+                    <label for="adc1-gain-error-value">Value:</label>
+                    <input type="number" id="adc1-gain-error-value" step="0.01" value="0.1">
+                    <select id="adc1-gain-error-unit">
+                        <option value="percent">%FSR</option>
+                        <option value="ppm">ppm</option>
+                        <option value="lsb">LSB</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>%FSR:</label><span id="adc1-gain-error-percent">0.10</span>
+                    <label>LSB:</label><span id="adc1-gain-error-lsb">6553.60</span>
+                    <label>ppm:</label><span id="adc1-gain-error-ppm">1000.00</span>
+                </div>
+            </div>
+            <div class="metric-group">
+                <h4>Noise</h4>
+                <div class="input-group">
+                    <label for="adc1-noise-value">Value:</label>
+                    <input type="number" id="adc1-noise-value" min="0" step="0.1" value="5">
+                    <select id="adc1-noise-unit">
+                        <option value="uv">µV</option>
+                        <option value="lsb">LSB</option>
+                        <option value="ppm">ppm</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>LSB:</label><span id="adc1-noise-lsb">0.03</span>
+                    <label>ppm:</label><span id="adc1-noise-ppm">0.50</span>
+                    <label>µV:</label><span id="adc1-noise-uv">5.00</span>
+                </div>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="add-adc">Add ADC</button>
+            <button id="reset-button">Reset</button>
+            <div class="presets">
+                <button id="preset-16bit">16-bit ADC</button>
+                <button id="preset-18bit">18-bit ADC</button>
+                <button id="preset-20bit">20-bit ADC</button>
+            </div>
+        </div>
+    </section>
+    <section class="comparison-container">
+        <h3>Comparison Table</h3>
+        <div class="input-group">
+            <label for="comparison-unit">Display Units:</label>
+            <select id="comparison-unit">
+                <option value="ppm">ppm</option>
+                <option value="lsb">LSB</option>
+                <option value="uv">µV</option>
+            </select>
+        </div>
+        <table id="comparison-table">
+            <thead>
+                <tr>
+                    <th>ADC</th>
+                    <th>Resolution (bits)</th>
+                    <th>FSR (V)</th>
+                    <th>LSB (µV)</th>
+                    <th>INL</th>
+                    <th>DNL</th>
+                    <th>Offset</th>
+                    <th>Gain Error</th>
+                    <th>Noise</th>
+                    <th>Total Error</th>
+                </tr>
+            </thead>
+            <tbody id="comparison-body"></tbody>
+        </table>
+    </section>
+    <section class="converter-container">
+        <h3>Standalone Unit Converter</h3>
+        <div class="converter-group">
+            <div class="input-group">
+                <label for="converter-resolution">Resolution (bits):</label>
+                <input type="number" id="converter-resolution" min="8" max="24" step="1" value="16">
+            </div>
+            <div class="input-group">
+                <label for="converter-fsr">FSR (V):</label>
+                <input type="number" id="converter-fsr" min="0.1" max="20" step="0.1" value="10">
+            </div>
+            <div class="input-group">
+                <label for="converter-differential">Differential:</label>
+                <input type="checkbox" id="converter-differential" checked>
+            </div>
+            <div class="input-group">
+                <label>LSB (µV):</label>
+                <span id="converter-lsb">152.59</span>
+            </div>
+            <div class="converter-group">
+                <h4>Convert Value</h4>
+                <div class="input-group">
+                    <label for="converter-output-type">Output Type:</label>
+                    <select id="converter-output-type">
+                        <option value="unsigned">Unsigned</option>
+                        <option value="twos-complement">Two's Complement</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="converter-value">Value:</label>
+                    <input type="number" id="converter-value" step="1" value="0">
+                    <select id="converter-unit">
+                        <option value="lsb">LSB</option>
+                        <option value="ppm">ppm</option>
+                        <option value="uv">µV</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="converter-value-slider"></label>
+                    <input type="range" id="converter-value-slider" value="0">
+                </div>
+                <div class="input-group">
+                    <span id="converter-out-of-range" style="color: red; display: none;">Out of Range</span>
+                </div>
+                <div class="input-group">
+                    <label>LSB:</label><span id="converter-to-lsb">0.00</span>
+                    <label>ppm:</label><span id="converter-to-ppm">0.00</span>
+                    <label>µV:</label><span id="converter-to-uv">0.00</span>
+                </div>
+                <div class="input-group">
+                    <label>Binary:</label><span id="converter-to-binary">0000000000000000</span>
+                </div>
+                <div class="input-group">
+                    <label>Hex:</label><span id="converter-to-hex">0x0000</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script src="calculator.js"></script>
+    <script src="events.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision ADC Comparator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Precision ADC Comparator</h1>
+    </header>
+    <section class="input-container">
+        <div class="adc-group" id="adc-1">
+            <h3>ADC 1</h3>
+            <div class="input-group">
+                <label for="adc1-resolution">Resolution (bits):</label>
+                <input type="number" id="adc1-resolution" min="8" max="24" step="1" value="16">
+                <input type="range" id="adc1-resolution-slider" min="8" max="24" step="1" value="16">
+            </div>
+            <div class="input-group">
+                <label for="adc1-vref">Reference Voltage (V):</label>
+                <input type="number" id="adc1-vref" min="0.1" max="10" step="0.1" value="5">
+                <input type="range" id="adc1-vref-slider" min="0.1" max="10" step="0.1" value="5">
+            </div>
+            <div class="input-group">
+                <label for="adc1-gain">Gain:</label>
+                <input type="number" id="adc1-gain" min="0.1" max="10" step="0.1" value="1">
+            </div>
+            <div class="input-group">
+                <label for="adc1-differential">Differential:</label>
+                <input type="checkbox" id="adc1-differential" checked>
+            </div>
+            <div class="input-group">
+                <label for="adc1-inl">INL (LSB):</label>
+                <input type="number" id="adc1-inl" min="0" max="10" step="0.1" value="0.5">
+            </div>
+            <div class="input-group">
+                <label for="adc1-snr">SNR (dB):</label>
+                <input type="number" id="adc1-snr" min="0" max="120" step="1" value="70">
+            </div>
+        </div>
+        <button id="add-adc">Add ADC</button>
+        <button id="reset-button">Reset</button>
+        <input type="file" id="csv-upload" accept=".csv">
+    </section>
+    <section class="chart-container">
+        <h3>Transfer Function</h3>
+        <canvas id="transfer-chart"></canvas>
+        <h3>Metric Comparison</h3>
+        <canvas id="comparison-chart"></canvas>
+        <div class="metrics">
+            <table id="metrics-table">
+                <thead>
+                    <tr>
+                        <th>ADC</th>
+                        <th>FSR (V)</th>
+                        <th>LSB (µV)</th>
+                        <th>First Transition (V)</th>
+                        <th>Last Transition (V)</th>
+                        <th>INL (ppm)</th>
+                        <th>ENOB (bits)</th>
+                        <th>Dynamic Range (dB)</th>
+                    </tr>
+                </thead>
+                <tbody id="metrics-body"></tbody>
+            </table>
+        </div>
+    </section>
+    <script src="calculator.js"></script>
+    <script src="charts.js"></script>
+    <script src="events.js"></script>
+</body>
+</html>
