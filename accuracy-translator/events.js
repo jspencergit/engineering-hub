@@ -4,11 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleTextUpdate(inputType, inputElement) {
         const value = inputElement.value;
         updateValues(inputType, value);
-        // Sync the corresponding slider
-        const slider = document.getElementById(inputType);
-        if (slider) {
-            slider.value = value;
-        }
     }
 
     // Nomograph position slider
@@ -34,8 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const ppmSlider = document.getElementById('ppm');
     const ppmText = document.getElementById('ppmValue');
     ppmSlider.addEventListener('input', () => {
-        ppmText.value = ppmSlider.value;
-        updateValues('ppm', ppmSlider.value);
+        const sliderValue = parseFloat(ppmSlider.value);
+        const ppm = window.logarithmicMapping.linearToLogValue(sliderValue, window.logarithmicMapping.ppm.minLog, window.logarithmicMapping.ppm.maxLog, window.logarithmicMapping.ppm.logRange, 10);
+        ppmText.value = ppm;
+        updateValues('ppm', ppm);
     });
     ppmText.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -60,8 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const percentSlider = document.getElementById('percent');
     const percentText = document.getElementById('percentValue');
     percentSlider.addEventListener('input', () => {
-        percentText.value = percentSlider.value;
-        updateValues('percent', percentSlider.value);
+        const sliderValue = parseFloat(percentSlider.value);
+        const percent = window.logarithmicMapping.linearToLogValue(sliderValue, window.logarithmicMapping.percent.minLog, window.logarithmicMapping.percent.maxLog, window.logarithmicMapping.percent.logRange, 10);
+        percentText.value = percent;
+        updateValues('percent', percent);
     });
     percentText.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -99,8 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const countsSlider = document.getElementById('counts');
     const countsText = document.getElementById('countsValue');
     countsSlider.addEventListener('input', () => {
-        countsText.value = countsSlider.value;
-        updateValues('counts', countsSlider.value);
+        const sliderValue = parseFloat(countsSlider.value);
+        const counts = window.logarithmicMapping.linearToLogValue(sliderValue, window.logarithmicMapping.counts.minLog, window.logarithmicMapping.counts.maxLog, window.logarithmicMapping.counts.logRange, 2);
+        countsText.value = counts;
+        updateValues('counts', counts);
     });
     countsText.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -127,17 +128,17 @@ document.addEventListener('DOMContentLoaded', () => {
         nomographSlider.value = x;
         dvmSlider.value = 3.5;
         dvmText.value = 3.5;
-        ppmSlider.value = 1000;
+        ppmSlider.value = 0.597; // Normalized value for 1000
         ppmText.value = 1000;
         powersSlider.value = -3;
         powersText.value = -3;
-        percentSlider.value = 0.1;
+        percentSlider.value = 0.526; // Normalized value for 0.1
         percentText.value = 0.1;
         bitsSlider.value = 10;
         bitsText.value = 10;
         dbSlider.value = 60;
         dbText.value = 60;
-        countsSlider.value = 1024;
+        countsSlider.value = 0.391; // Normalized value for 1024
         countsText.value = 1024;
 
         // Update the nomograph

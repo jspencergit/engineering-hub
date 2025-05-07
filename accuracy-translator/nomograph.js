@@ -15,6 +15,40 @@ const POWERS_MIN = -6, POWERS_MAX = -1; // powers of 10
 const PPM_MIN = 0.1, PPM_MAX = 500000; // ppm
 const DVM_MIN = 1.5, DVM_MAX = 6.5; // DVM digits
 
+// Logarithmic ranges for sliders
+const ppmMinLog = Math.log10(PPM_MIN); // -1
+const ppmMaxLog = Math.log10(PPM_MAX); // ~5.69897
+const ppmLogRange = ppmMaxLog - ppmMinLog;
+
+const percentMinLog = Math.log10(PERCENT_MIN); // -4
+const percentMaxLog = Math.log10(PERCENT_MAX); // ~1.69897
+const percentLogRange = percentMaxLog - percentMinLog;
+
+const countsMinLog = Math.log2(COUNTS_MIN); // 1
+const countsMaxLog = Math.log2(COUNTS_MAX); // 24
+const countsLogRange = countsMaxLog - countsMinLog;
+
+// Convert linear slider value (0 to 1) to logarithmic parameter value
+function linearToLogValue(sliderValue, minLog, maxLog, logRange, base) {
+    const logValue = minLog + sliderValue * logRange;
+    return Math.pow(base, logValue);
+}
+
+// Convert logarithmic parameter value to linear slider value (0 to 1)
+function logValueToLinear(value, minLog, maxLog, logRange, logFunc) {
+    const logValue = logFunc(value);
+    return (logValue - minLog) / logRange;
+}
+
+// Make logarithmic mapping functions and constants globally accessible
+window.logarithmicMapping = {
+    linearToLogValue,
+    logValueToLinear,
+    ppm: { minLog: ppmMinLog, maxLog: ppmMaxLog, logRange: ppmLogRange },
+    percent: { minLog: percentMinLog, maxLog: percentMaxLog, logRange: percentLogRange },
+    counts: { minLog: countsMinLog, maxLog: countsMaxLog, logRange: countsLogRange }
+};
+
 // Map x-coordinate to a normalized value (0 to 1) across the nomograph
 function xToNormalized(x) {
     const nomographWidth = CANVAS_WIDTH - 2 * MARGIN;
@@ -177,7 +211,7 @@ function drawNomograph() {
         ctx.lineTo(x, percentBitsY + 5);
         ctx.stroke();
         ctx.save();
-        ctx.translate(x + 5, percentBitsY - 10);
+        ctx.translate(x + 5, percentBitsY - 20);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'left';
         ctx.fillText(percent.toString() + '%', 0, 0);
@@ -195,7 +229,7 @@ function drawNomograph() {
         ctx.lineTo(x, percentBitsY + 5);
         ctx.stroke();
         ctx.save();
-        ctx.translate(x + 5, percentBitsY + 25);
+        ctx.translate(x + 5, percentBitsY + 20); // Adjusted offset from +25 to +20
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'left';
         ctx.fillText(bits.toString(), 0, 0);
@@ -372,6 +406,11 @@ function updateValues(inputType, value) {
         }
     }
 
+    // Clamp values to valid ranges to avoid NaN
+    ppm = Math.max(PPM_MIN, Math.min(PPM_MAX, ppm));
+    percent = Math.max(PERCENT_MIN, Math.min(PERCENT_MAX, percent));
+    counts = Math.max(COUNTS_MIN, Math.min(COUNTS_MAX, counts));
+
     // Debug the powers value and slider position
     console.log('Powers value before setting:', powers);
     console.log('Powers slider value before setting:', document.getElementById('powers').value);
@@ -379,19 +418,21 @@ function updateValues(inputType, value) {
     // Update sliders and text boxes
     document.getElementById('dvm').value = dvm;
     document.getElementById('dvmValue').value = dvm;
-    document.getElementById('ppm').value = ppm;
     document.getElementById('ppmValue').value = ppm;
     document.getElementById('powers').value = powers;
     document.getElementById('powersValue').value = powers;
-    document.getElementById('percent').value = percent;
     document.getElementById('percentValue').value = percent;
     document.getElementById('bits').value = bits;
     document.getElementById('bitsValue').value = bits;
     document.getElementById('db').value = db;
     document.getElementById('dbValue').value = db;
-    document.getElementById('counts').value = counts;
     document.getElementById('countsValue').value = counts;
     document.getElementById('nomographPosition').value = x;
+
+    // Update the logarithmic sliders (ppm, percent, counts)
+    document.getElementById('ppm').value = window.logarithmicMapping.logValueToLinear(ppm, window.logarithmicMapping.ppm.minLog, window.logarithmicMapping.ppm.maxLog, window.logarithmicMapping.ppm.logRange, Math.log10);
+    document.getElementById('percent').value = window.logarithmicMapping.logValueToLinear(percent, window.logarithmicMapping.percent.minLog, window.logarithmicMapping.percent.maxLog, window.logarithmicMapping.percent.logRange, Math.log10);
+    document.getElementById('counts').value = window.logarithmicMapping.logValueToLinear(counts, window.logarithmicMapping.counts.minLog, window.logarithmicMapping.counts.maxLog, window.logarithmicMapping.counts.logRange, Math.log2);
 
     // Debug the powers slider value after setting
     console.log('Powers slider value after setting:', document.getElementById('powers').value);
