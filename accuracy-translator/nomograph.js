@@ -3,29 +3,29 @@ const canvas = document.getElementById('nomographCanvas');
 const ctx = canvas.getContext('2d');
 
 const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 425; // Updated to match HTML canvas height
-const MARGIN = 75; // Increased from 50 to 75 to provide more space below for Counts labels
+const CANVAS_HEIGHT = 425;
+const MARGIN = 75;
 
 // Nomograph scales (calibrated to match AN-82F Figure 1)
 const ENOB_MIN = 1, ENOB_MAX = 24; // bits
-const SNR_MIN = 6, SNR_MAX = 144; // dB
+const SNR_MIN = 6, SNR_MAX = 147; // dB (Increased from 144 to 147 to accommodate 24 bits: 6.02 * 24 + 1.76 = 146.24)
 const COUNTS_MIN = 2, COUNTS_MAX = Math.pow(2, 24); // counts
-const PERCENT_MIN = 0.0001, PERCENT_MAX = 50; // percent
+const PERCENT_MIN = 0.000001, PERCENT_MAX = 50; // percent (Reduced from 0.0001 to 0.000001 to allow Percent ≈ 0.0000059605 at 24 bits)
 const POWERS_MIN = -6, POWERS_MAX = -1; // powers of 10
-const PPM_MIN = 0.1, PPM_MAX = 500000; // ppm
-const DVM_MIN = 1.5, DVM_MAX = 6.5; // DVM digits
+const PPM_MIN = 0.01, PPM_MAX = 500000; // ppm (Reduced from 0.1 to 0.01 to allow PPM ≈ 0.059605 at 24 bits)
+const DVM_MIN = 1.5, DVM_MAX = 8; // DVM digits (Increased from 6.5 to 8 to accommodate DVM ≈ 7.38 at 24 bits)
 
 // Logarithmic ranges for sliders
-const ppmMinLog = Math.log10(PPM_MIN); // -1
-const ppmMaxLog = Math.log10(PPM_MAX); // ~5.69897
+const ppmMinLog = Math.log10(PPM_MIN); // Updated due to new PPM_MIN
+const ppmMaxLog = Math.log10(PPM_MAX);
 const ppmLogRange = ppmMaxLog - ppmMinLog;
 
-const percentMinLog = Math.log10(PERCENT_MIN); // -4
-const percentMaxLog = Math.log10(PERCENT_MAX); // ~1.69897
+const percentMinLog = Math.log10(PERCENT_MIN); // Updated due to new PERCENT_MIN
+const percentMaxLog = Math.log10(PERCENT_MAX);
 const percentLogRange = percentMaxLog - percentMinLog;
 
-const countsMinLog = Math.log2(COUNTS_MIN); // 1
-const countsMaxLog = Math.log2(COUNTS_MAX); // 24
+const countsMinLog = Math.log2(COUNTS_MIN);
+const countsMaxLog = Math.log2(COUNTS_MAX);
 const countsLogRange = countsMaxLog - countsMinLog;
 
 // Convert linear slider value (0 to 1) to logarithmic parameter value
@@ -245,7 +245,7 @@ function drawNomograph() {
     ctx.stroke();
 
     // dB markers (above the line, vertical text)
-    const dbMarkers = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
+    const dbMarkers = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140]; // Removed invalid token 'đây'
     dbMarkers.forEach(db => {
         const x = dbToX(db);
         ctx.beginPath();
