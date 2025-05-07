@@ -104,7 +104,7 @@ function powersToDb(powers) {
 }
 
 function dvmToDb(dvm) {
-    const bits = dvm * 3.25; // Adjusted to align 6.5 DVM Digits with ~21 bits
+    const bits = dvm * 3.25;
     return bitsToDb(bits);
 }
 
@@ -311,15 +311,20 @@ function calculateFromNomograph(x) {
     const percent = 100 / counts;
     const ppm = percent * 10000;
     const powers = Math.log10(percent / 100);
-    const dvm = enob / 3.25; // Updated to match calculateMetrics: bits / 3.25
+    const dvm = enob / 3.25;
+
+    // Debug: Log raw and rounded values
+    console.log(`calculateFromNomograph (x=${x}):`);
+    console.log(`  Raw: snr=${snr}, bits=${enob}, counts=${counts}`);
+    console.log(`  Raw: percent=${percent}, ppm=${ppm}, powers=${powers}, dvm=${dvm}`);
 
     return {
         counts: math.round(counts, 0),
         db: math.round(snr, 2),
         bits: math.round(enob, 2),
-        percent: math.round(percent, 4),
+        percent: math.round(percent, 6), // Increased precision to 6 decimal places
+        ppm: math.round(ppm, 2),         // Increased precision to 2 decimal places
         powers: math.round(powers, 2),
-        ppm: math.round(ppm, 0),
         dvm: math.round(dvm, 1)
     };
 }
@@ -357,7 +362,7 @@ function calculateMetrics(inputType, value) {
         db = 6.02 * bits + 1.76;
     } else if (inputType === 'dvm') {
         dvm = parseFloat(value);
-        bits = dvm * 3.25; // Adjusted to align 6.5 DVM Digits with ~21 bits
+        bits = dvm * 3.25;
         db = 6.02 * bits + 1.76;
     }
 
@@ -367,18 +372,18 @@ function calculateMetrics(inputType, value) {
     percent = 100 / counts;
     ppm = percent * 10000;
     powers = Math.log10(percent / 100);
-    dvm = bits / 3.25; // Adjusted formula
+    dvm = bits / 3.25;
 
     // Debug log to verify powers calculation
-    console.log(`calculateMetrics: inputType=${inputType}, value=${value}, percent=${percent}, powers=${powers}`);
+    console.log(`calculateMetrics: inputType=${inputType}, value=${value}, percent=${percent}, ppm=${ppm}, powers=${powers}`);
 
     return {
         counts: math.round(counts, 0),
         db: math.round(db, 2),
         bits: math.round(bits, 2),
-        percent: math.round(percent, 4),
+        percent: math.round(percent, 6), // Increased precision to 6 decimal places
+        ppm: math.round(ppm, 2),         // Increased precision to 2 decimal places
         powers: math.round(powers, 2),
-        ppm: math.round(ppm, 0),
         dvm: math.round(dvm, 1)
     };
 }
@@ -405,7 +410,7 @@ function updateValues(inputType, value) {
     if (inputType !== 'powers') {
         powers = Math.min(-1, Math.max(-7, powers));
         if (powers > 0) {
-            powers = -powers; // Force negative if positive
+            powers = -powers;
         }
     }
 
@@ -414,9 +419,9 @@ function updateValues(inputType, value) {
     percent = Math.max(PERCENT_MIN, Math.min(PERCENT_MAX, percent));
     counts = Math.max(COUNTS_MIN, Math.min(COUNTS_MAX, counts));
 
-    // Debug the powers value and slider position
-    console.log('Powers value before setting:', powers);
-    console.log('Powers slider value before setting:', document.getElementById('powers').value);
+    // Debug: Log values after clamping
+    console.log(`updateValues (inputType=${inputType}, value=${value}):`);
+    console.log(`  After clamping: percent=${percent}, ppm=${ppm}, bits=${bits}, db=${db}`);
 
     // Update sliders and text boxes
     document.getElementById('dvm').value = dvm;
@@ -437,10 +442,9 @@ function updateValues(inputType, value) {
     document.getElementById('percent').value = window.logarithmicMapping.logValueToLinear(percent, window.logarithmicMapping.percent.minLog, window.logarithmicMapping.percent.maxLog, window.logarithmicMapping.percent.logRange, Math.log10);
     document.getElementById('counts').value = window.logarithmicMapping.logValueToLinear(counts, window.logarithmicMapping.counts.minLog, window.logarithmicMapping.counts.maxLog, window.logarithmicMapping.counts.logRange, Math.log2);
 
-    // Debug the powers slider value after setting
-    console.log('Powers slider value after setting:', document.getElementById('powers').value);
+    // Debug: Log slider values
+    console.log(`Slider updates: ppmSlider=${document.getElementById('ppm').value}, percentSlider=${document.getElementById('percent').value}`);
 
-    // Update the nomograph line position
     updateNomograph(x);
 }
 
