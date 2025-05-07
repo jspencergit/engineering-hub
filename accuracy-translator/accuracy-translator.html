@@ -1,12 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accuracy Translator</title>
+    <!-- Math.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.0.0/math.min.js"></script>
+    <!-- Link to styles.css -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Inline CSS for slider -->
+    <style>
+        input[type="range"] {
+            -webkit-appearance: slider-horizontal;
+            width: 200px;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Style for Update buttons */
+        .input-group button {
+            margin-left: 5px;
+            padding: 2px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>Accuracy Translator</h1>
-    <p>Tool under construction...</p>
+    <div class="container">
+        <h1>Accuracy Translator</h1>
+        <p class="note">Use the nomograph slider to move the line, or adjust the values directly. Press Enter or click Update to apply changes from text boxes.</p>
+
+        <!-- Nomograph Canvas -->
+        <div class="nomograph">
+            <canvas id="nomographCanvas" width="1200" height="400"></canvas>
+        </div>
+
+        <!-- Nomograph Position Slider -->
+        <div class="nomograph-control">
+            <label for="nomographPosition">Nomograph Position:</label>
+            <input type="range" id="nomographPosition" min="0" max="1200" step="1" value="600">
+        </div>
+
+        <!-- Input Controls -->
+        <div class="controls">
+            <!-- DVM Digits Input -->
+            <div class="input-group">
+                <label for="dvm">DVM Digits:</label>
+                <input type="range" id="dvm" min="1.5" max="6.5" step="0.1" value="3.5">
+                <input type="number" id="dvmValue" step="0.1" value="3.5">
+                <button class="update-button" data-input="dvm">Update</button>
+            </div>
+
+            <!-- PPM Input -->
+            <div class="input-group">
+                <label for="ppm">PPM:</label>
+                <input type="range" id="ppm" min="0.1" max="500000" step="0.1" value="1000">
+                <input type="number" id="ppmValue" step="1" value="1000">
+                <button class="update-button" data-input="ppm">Update</button>
+            </div>
+
+            <!-- Powers of Ten Input -->
+            <div class="input-group">
+                <label for="powers">Powers of Ten:</label>
+                <input type="range" id="powers" min="-7" max="-1" step="0.1" value="-3">
+                <input type="number" id="powersValue" step="0.1" value="-3">
+                <button class="update-button" data-input="powers">Update</button>
+            </div>
+
+            <!-- Percent Input -->
+            <div class="input-group">
+                <label for="percent">Percent:</label>
+                <input type="range" id="percent" min="0.0001" max="50" step="0.0001" value="0.1">
+                <input type="number" id="percentValue" step="0.0001" value="0.1">
+                <button class="update-button" data-input="percent">Update</button>
+            </div>
+
+            <!-- Bits Input -->
+            <div class="input-group">
+                <label for="bits">Bits:</label>
+                <input type="range" id="bits" min="1" max="24" step="0.1" value="10">
+                <input type="number" id="bitsValue" step="0.1" value="10">
+                <button class="update-button" data-input="bits">Update</button>
+            </div>
+
+            <!-- dB Input -->
+            <div class="input-group">
+                <label for="db">dB:</label>
+                <input type="range" id="db" min="6" max="144" step="0.1" value="60">
+                <input type="number" id="dbValue" step="0.1" value="60">
+                <button class="update-button" data-input="db">Update</button>
+            </div>
+
+            <!-- Counts Input -->
+            <div class="input-group">
+                <label for="counts">Counts:</label>
+                <input type="range" id="counts" min="2" max="16777216" step="1" value="1024">
+                <input type="number" id="countsValue" step="1" value="1024">
+                <button class="update-button" data-input="counts">Update</button>
+            </div>
+
+            <!-- Reset Button -->
+            <button id="resetButton">Reset</button>
+        </div>
+    </div>
+
+    <!-- Link to local JavaScript files -->
+    <script src="nomograph.js"></script>
+    <script src="events.js"></script>
 </body>
 </html>
