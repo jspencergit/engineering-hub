@@ -229,7 +229,7 @@ function drawNomograph() {
         ctx.lineTo(x, percentBitsY + 5);
         ctx.stroke();
         ctx.save();
-        ctx.translate(x + 5, percentBitsY + 20); // Adjusted offset from +25 to +20
+        ctx.translate(x + 5, percentBitsY + 20);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'left';
         ctx.fillText(bits.toString(), 0, 0);
@@ -310,7 +310,7 @@ function calculateFromNomograph(x) {
     const counts = Math.pow(2, enob);
     const percent = 100 / counts;
     const ppm = percent * 10000;
-    const powers = -Math.log10(percent / 100); // Percent = 100 * 10^(-powers)
+    const powers = Math.log10(percent / 100); // Fixed: Removed negative sign
     const dvm = (Math.log10(counts) / Math.log10(2)) / 2; // Calibrated to match 3.5 at 1024 counts
 
     return {
@@ -351,7 +351,7 @@ function calculateMetrics(inputType, value) {
         db = 6.02 * bits + 1.76;
     } else if (inputType === 'powers') {
         powers = parseFloat(value);
-        percent = 100 * Math.pow(10, powers); // Fixed to match powersToDb
+        percent = 100 * Math.pow(10, powers);
         counts = 100 / percent;
         bits = Math.log2(counts);
         db = 6.02 * bits + 1.76;
@@ -366,8 +366,11 @@ function calculateMetrics(inputType, value) {
     counts = Math.pow(2, bits);
     percent = 100 / counts;
     ppm = percent * 10000;
-    powers = -Math.log10(percent / 100);
+    powers = Math.log10(percent / 100); // Fixed: Removed negative sign
     dvm = bits / 3.25; // Adjusted formula
+
+    // Debug log to verify powers calculation
+    console.log(`calculateMetrics: inputType=${inputType}, value=${value}, percent=${percent}, powers=${powers}`);
 
     return {
         counts: math.round(counts, 0),
