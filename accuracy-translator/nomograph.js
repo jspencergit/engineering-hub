@@ -3,8 +3,8 @@ const canvas = document.getElementById('nomographCanvas');
 const ctx = canvas.getContext('2d');
 
 const CANVAS_WIDTH = 1200;
-const CANVAS_HEIGHT = 400;
-const MARGIN = 50;
+const CANVAS_HEIGHT = 425; // Updated to match HTML canvas height
+const MARGIN = 75; // Increased from 50 to 75 to provide more space below for Counts labels
 
 // Nomograph scales (calibrated to match AN-82F Figure 1)
 const ENOB_MIN = 1, ENOB_MAX = 24; // bits
@@ -211,7 +211,7 @@ function drawNomograph() {
         ctx.lineTo(x, percentBitsY + 5);
         ctx.stroke();
         ctx.save();
-        ctx.translate(x + 5, percentBitsY - 20);
+        ctx.translate(x + 5, percentBitsY - 10);
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'left';
         ctx.fillText(percent.toString() + '%', 0, 0);
