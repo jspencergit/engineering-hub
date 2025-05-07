@@ -8,19 +8,19 @@ const MARGIN = 75;
 
 // Nomograph scales (calibrated to match AN-82F Figure 1)
 const ENOB_MIN = 1, ENOB_MAX = 24; // bits
-const SNR_MIN = 6, SNR_MAX = 147; // dB (Increased from 144 to 147 to accommodate 24 bits: 6.02 * 24 + 1.76 = 146.24)
+const SNR_MIN = 6, SNR_MAX = 147; // dB
 const COUNTS_MIN = 2, COUNTS_MAX = Math.pow(2, 24); // counts
-const PERCENT_MIN = 0.000001, PERCENT_MAX = 50; // percent (Reduced from 0.0001 to 0.000001 to allow Percent ≈ 0.0000059605 at 24 bits)
+const PERCENT_MIN = 0.000001, PERCENT_MAX = 50; // percent
 const POWERS_MIN = -6, POWERS_MAX = -1; // powers of 10
-const PPM_MIN = 0.01, PPM_MAX = 500000; // ppm (Reduced from 0.1 to 0.01 to allow PPM ≈ 0.059605 at 24 bits)
-const DVM_MIN = 1.5, DVM_MAX = 8; // DVM digits (Increased from 6.5 to 8 to accommodate DVM ≈ 7.38 at 24 bits)
+const PPM_MIN = 0.01, PPM_MAX = 500000; // ppm
+const DVM_MIN = 1.5, DVM_MAX = 8; // DVM digits
 
 // Logarithmic ranges for sliders
-const ppmMinLog = Math.log10(PPM_MIN); // Updated due to new PPM_MIN
+const ppmMinLog = Math.log10(PPM_MIN);
 const ppmMaxLog = Math.log10(PPM_MAX);
 const ppmLogRange = ppmMaxLog - ppmMinLog;
 
-const percentMinLog = Math.log10(PERCENT_MIN); // Updated due to new PERCENT_MIN
+const percentMinLog = Math.log10(PERCENT_MIN);
 const percentMaxLog = Math.log10(PERCENT_MAX);
 const percentLogRange = percentMaxLog - percentMinLog;
 
@@ -245,7 +245,7 @@ function drawNomograph() {
     ctx.stroke();
 
     // dB markers (above the line, vertical text)
-    const dbMarkers = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140]; // Removed invalid token 'đây'
+    const dbMarkers = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
     dbMarkers.forEach(db => {
         const x = dbToX(db);
         ctx.beginPath();
@@ -310,8 +310,8 @@ function calculateFromNomograph(x) {
     const counts = Math.pow(2, enob);
     const percent = 100 / counts;
     const ppm = percent * 10000;
-    const powers = Math.log10(percent / 100); // Fixed: Removed negative sign
-    const dvm = (Math.log10(counts) / Math.log10(2)) / 2; // Calibrated to match 3.5 at 1024 counts
+    const powers = Math.log10(percent / 100);
+    const dvm = enob / 3.25; // Updated to match calculateMetrics: bits / 3.25
 
     return {
         counts: math.round(counts, 0),
@@ -366,7 +366,7 @@ function calculateMetrics(inputType, value) {
     counts = Math.pow(2, bits);
     percent = 100 / counts;
     ppm = percent * 10000;
-    powers = Math.log10(percent / 100); // Fixed: Removed negative sign
+    powers = Math.log10(percent / 100);
     dvm = bits / 3.25; // Adjusted formula
 
     // Debug log to verify powers calculation
