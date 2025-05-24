@@ -1,0 +1,182 @@
+/* styles.css */
+
+/* Base styles for the body */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* Header styling for branding */
+header {
+    text-align: center;
+    padding: 20px;
+    background-color: #1a73e8;
+    color: white;
+}
+
+/* Main section with Flexbox layout */
+section {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 20px; /* Space between calculator and outputs */
+}
+
+/* Calculator section for image upload and dot placement */
+.calculator {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    width: 50%;
+}
+
+/* Outputs section for plots and table */
+.outputs {
+    width: 50%;
+}
+
+/* Container for axis range inputs and canvas (side by side) */
+.input-canvas-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* Axis range inputs for setting min/max values */
+.axis-range {
+    margin: 10px 0;
+    flex: 1; /* Take available space */
+}
+
+/* Input fields for axis ranges */
+.axis-range input[type="number"] {
+    width: 100%;
+    max-width: 150px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+/* Focus state for axis range inputs */
+.axis-range input[type="number"]:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+
+/* Instructions text for user guidance */
+.instructions {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Styling for labels */
+label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+}
+
+/* Dot entry form for entering current/efficiency */
+.dot-form {
+    margin: 10px 0;
+}
+
+/* Input fields for dot values */
+.dot-form input[type="number"] {
+    width: 100%;
+    max-width: 150px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+/* Focus state for input fields */
+.dot-form input[type="number"]:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
+}
+
+/* Canvas for image, dots, and fitted curve */
+canvas {
+    max-width: 100%;
+    flex: 2; /* Take more space than axis-range */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* Fixed div for cursor coordinates */
+#cursor-coords {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Buttons (Fit Curve, Reset, etc.) */
+button {
+    background-color: #1a73e8;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+/* Hover state for buttons */
+button:hover {
+    background-color: #1557b0;
+}
+
+/* Scale buttons for toggling X-axis (Linear/Log) */
+.scale-buttons {
+    margin: 10px 0;
+}
+
+/* Data table for preview */
+#data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* Table headers */
+#data-table th {
+    background-color: #1a73e8;
+    color: white;
+    padding: 8px;
+    text-align: left;
+}
+
+/* Table cells */
+#data-table td {
+    padding: 8px;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Fitted plots container */
+#fitted-plots canvas {
+    margin-top: 20px;
+}
