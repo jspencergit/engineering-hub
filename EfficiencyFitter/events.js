@@ -3,17 +3,30 @@
 /* Global variables for canvas, context, image, points, and scaling */
 let canvas = document.getElementById('image-canvas');
 let ctx = canvas.getContext('2d');
+let zoomCanvas = document.getElementById('zoom-canvas');
+let zoomCtx = zoomCanvas.getContext('2d');
+let stageIndicator = document.getElementById('stage-indicator');
 let image = null;
 let points = [];
 let scaling = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
 let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
 let isScaling = false;
-let scalingStep = 0; // 0: X-axis calibration, 1: Y-axis min, 2: Y-axis max
+let scalingStep = 0; // 0: X-axis calibration, 1: Y-axis calibration
 let lastMousePos = null;
-let calibrationPoints = { min: null, max: null }; // Y-axis calibration points
 let xCalibrationPoints = []; // X-axis calibration points (pixelX, current)
+let yCalibrationPoints = []; // Y-axis calibration points (pixelY, efficiency)
 let xScaleType = 'linear'; // Default to linear
 let xCalibrationFit = { a: 1, b: 0 }; // Linear fit: current = a * pixelX + b
+let yCalibrationFit = { a: 1, b: 0 }; // Linear fit: efficiency = a * pixelY + b
+
+/* Zoom settings */
+const ZOOM_FACTOR = 3; // 3x zoom
+const ZOOM_REGION = 50; // 50x50 pixel region to zoom
+const ZOOM_SIZE = 200; // Size of zoom canvas (width/height)
+
+/* Dot settings */
+const CALIBRATION_DOT_RADIUS = 1.25; // Reduced to 1/4 of original 5
+const CURVE_DOT_RADIUS = 1.25; // Reduced to 1/4 of original 5
 
 /* Helper function to map pixel coordinates to real values (X-axis) */
 function mapPixelToValueX(pixelX) {
@@ -40,13 +53,17 @@ function mapValueToPixelX(value) {
 }
 
 /* Helper function to map pixel coordinates to real values (Y-axis, linear) */
-function mapPixelToValueY(pixelY, pixelMin, pixelMax, valueMin, valueMax) {
-    return valueMin + (pixelY - pixelMin) * (valueMax - valueMin) / (pixelMax - pixelMin);
+function mapPixelToValueY(pixelY) {
+    // Linear mapping: efficiency = a * pixelY + b
+    const efficiency = yCalibrationFit.a * pixelY + yCalibrationFit.b;
+    return isNaN(efficiency) ? 0 : efficiency; // Return 0 if NaN to avoid display issues
 }
 
 /* Helper function to map real values to pixel coordinates (Y-axis, linear) */
-function mapValueToPixelY(value, valueMin, valueMax, pixelMin, pixelMax) {
-    return pixelMin + (value - valueMin) * (pixelMax - pixelMin) / (valueMax - valueMin);
+function mapValueToPixelY(value) {
+    // Linear mapping: pixelY = (efficiency - b) / a
+    const pixelY = (value - yCalibrationFit.b) / yCalibrationFit.a;
+    return isNaN(pixelY) ? 0 : pixelY; // Return 0 if NaN to avoid issues
 }
 
 /* Helper function to get canvas coordinates from mouse event */
@@ -83,12 +100,145 @@ function fitXCalibrationPoints() {
     }
 
     // Compute coefficients a and b
-    xCalibrationFit.a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    const denominator = (n * sumXX - sumX * sumX);
+    if (denominator === 0) {
+        alert('Please place X-axis calibration points at different positions for accurate fitting.');
+        xCalibrationFit = { a: 1, b: 0 }; // Revert to safe default
+        return;
+    }
+    xCalibrationFit.a = (n * sumXY - sumX * sumY) / denominator;
     xCalibrationFit.b = (sumY - xCalibrationFit.a * sumX) / n;
 
     // Set pixel min/max for mapping
     pixelScale.xMin = xValues[0];
     pixelScale.xMax = xValues[n - 1];
+}
+
+/* Fits Y-axis calibration points using least squares regression */
+function fitYCalibrationPoints() {
+    const n = yCalibrationPoints.length;
+    if (n < 2) return; // Need at least 2 points
+
+    // Sort points by pixelY to ensure monotonicity (inverted Y-axis)
+    yCalibrationPoints.sort((a, b) => a.pixelY - b.pixelY);
+
+    // Prepare data for fitting
+    const xValues = yCalibrationPoints.map(p => p.pixelY);
+    const yValues = yCalibrationPoints.map(p => p.efficiency);
+
+    // Least squares regression: efficiency = a * pixelY + b
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    for (let i = 0; i < n; i++) {
+        sumX += xValues[i];
+        sumY += yValues[i];
+        sumXY += xValues[i] * yValues[i];
+        sumXX += xValues[i] * xValues[i];
+    }
+
+    // Compute coefficients a and b
+    const denominator = (n * sumXX - sumX * sumX);
+    if (denominator === 0) {
+        alert('Please place Y-axis calibration points at different positions for accurate fitting.');
+        yCalibrationFit = { a: 1, b: 0 }; // Revert to safe default
+        return;
+    }
+    yCalibrationFit.a = (n * sumXY - sumX * sumY) / denominator;
+    yCalibrationFit.b = (sumY - yCalibrationFit.a * sumX) / n;
+
+    // Set pixel min/max for mapping based on user-entered range
+    pixelScale.yMax = mapValueToPixelY(scaling.yMin); // Inverted Y-axis: min efficiency at bottom
+    pixelScale.yMin = mapValueToPixelY(scaling.yMax); // Max efficiency at top
+}
+
+/* Draws the zoomed-in view on the zoom canvas */
+function drawZoomView(mouseX, mouseY) {
+    // Clear the zoom canvas
+    zoomCtx.clearRect(0, 0, ZOOM_SIZE, ZOOM_SIZE);
+
+    // Calculate the region to zoom (50x50 pixels around mouse)
+    const halfRegion = ZOOM_REGION / 2;
+    let srcX = mouseX - halfRegion;
+    let srcY = mouseY - halfRegion;
+
+    // Clamp the source region to the main canvas boundaries
+    srcX = Math.max(0, Math.min(srcX, canvas.width - ZOOM_REGION));
+    srcY = Math.max(0, Math.min(srcY, canvas.height - ZOOM_REGION));
+
+    // Draw the zoomed-in region
+    zoomCtx.drawImage(
+        canvas,
+        srcX, srcY, ZOOM_REGION, ZOOM_REGION, // Source region
+        0, 0, ZOOM_SIZE, ZOOM_SIZE // Destination (zoomed)
+    );
+
+    // Draw a crosshair based on the current stage
+    zoomCtx.strokeStyle = '#ff0000'; // Red crosshair
+    zoomCtx.lineWidth = 1;
+    if (isScaling && scalingStep === 0) {
+        // X-axis calibration: vertical line only
+        zoomCtx.beginPath();
+        zoomCtx.moveTo(ZOOM_SIZE / 2, 0);
+        zoomCtx.lineTo(ZOOM_SIZE / 2, ZOOM_SIZE);
+        zoomCtx.stroke();
+    } else if (isScaling && scalingStep === 1) {
+        // Y-axis calibration: horizontal line only
+        zoomCtx.beginPath();
+        zoomCtx.moveTo(0, ZOOM_SIZE / 2);
+        zoomCtx.lineTo(ZOOM_SIZE, ZOOM_SIZE / 2);
+        zoomCtx.stroke();
+    } else {
+        // Dot placement: full crosshair
+        zoomCtx.beginPath();
+        zoomCtx.moveTo(ZOOM_SIZE / 2, 0);
+        zoomCtx.lineTo(ZOOM_SIZE / 2, ZOOM_SIZE);
+        zoomCtx.stroke();
+        zoomCtx.beginPath();
+        zoomCtx.moveTo(0, ZOOM_SIZE / 2);
+        zoomCtx.lineTo(ZOOM_SIZE, ZOOM_SIZE / 2);
+        zoomCtx.stroke();
+    }
+}
+
+/* Positions the zoom canvas dynamically */
+function positionZoomCanvas(event) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseY = event.clientY - rect.top;
+
+    // Position the zoom canvas above the main canvas
+    const zoomCanvasHeight = ZOOM_SIZE;
+    zoomCanvas.style.top = `${rect.top - zoomCanvasHeight - 10}px`; // 10px gap above canvas
+    zoomCanvas.style.left = '50%';
+    zoomCanvas.style.transform = 'translateX(-50%)';
+
+    // Adjust position if mouse is too close to the top
+    if (mouseY < zoomCanvasHeight + 20) {
+        // Move to the right of the mouse
+        const mouseX = event.clientX - rect.left;
+        zoomCanvas.style.left = `${event.clientX + ZOOM_SIZE / 2 + 10}px`;
+        zoomCanvas.style.transform = 'none';
+    }
+}
+
+/* Updates the stage indicator based on the current stage */
+function updateStageIndicator() {
+    if (isScaling) {
+        if (scalingStep === 0) {
+            stageIndicator.textContent = 'Stage: Calibrating X-Axis';
+            stageIndicator.className = 'x-axis';
+            document.getElementById('apply-x-calibration-btn').style.display = 'block';
+            document.getElementById('apply-y-calibration-btn').style.display = 'none';
+        } else if (scalingStep === 1) {
+            stageIndicator.textContent = 'Stage: Calibrating Y-Axis';
+            stageIndicator.className = 'y-axis';
+            document.getElementById('apply-x-calibration-btn').style.display = 'none';
+            document.getElementById('apply-y-calibration-btn').style.display = 'block';
+        }
+    } else {
+        stageIndicator.textContent = 'Stage: Placing Efficiency Curve Points';
+        stageIndicator.className = 'dot-placement';
+        document.getElementById('apply-x-calibration-btn').style.display = 'none';
+        document.getElementById('apply-y-calibration-btn').style.display = 'none';
+    }
 }
 
 /* Loads the uploaded image onto the canvas */
@@ -103,8 +253,11 @@ function handleImageUpload(event) {
         isScaling = true; // Start scaling process
         scalingStep = 0;
         xCalibrationPoints = []; // Clear X-axis calibration points
-        xCalibrationFit = { a: 1, b: 0 }; // Reset fit
-        document.getElementById('cursor-coords').textContent = 'Align cursor with a known X-axis value and click';
+        yCalibrationPoints = []; // Clear Y-axis calibration points
+        xCalibrationFit = { a: 1, b: 0 }; // Reset X-axis fit
+        yCalibrationFit = { a: 1, b: 0 }; // Reset Y-axis fit
+        document.getElementById('cursor-coords').textContent = 'Pixel X: --';
+        updateStageIndicator();
     };
     image.src = URL.createObjectURL(file);
 }
@@ -115,32 +268,44 @@ function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (image) ctx.drawImage(image, 0, 0);
 
-    // Draw X-axis calibration points (blue)
+    // Draw X-axis calibration points (hollow blue) with labels
     xCalibrationPoints.forEach(point => {
+        // Draw the dot
         ctx.beginPath();
-        ctx.arc(point.pixelX, point.pixelY, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = '#00f'; // Blue for X-axis calibration points
-        ctx.fill();
+        ctx.arc(point.pixelX, point.pixelY, CALIBRATION_DOT_RADIUS, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#00f'; // Blue outline for X-axis calibration points
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw the label (current value)
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#00f';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${point.current.toFixed(1)} mA`, point.pixelX + 10, point.pixelY);
     });
 
-    // Draw Y-axis calibration points (min and max)
-    if (calibrationPoints.min) {
+    // Draw Y-axis calibration points (hollow orange) with labels
+    yCalibrationPoints.forEach(point => {
+        // Draw the dot
         ctx.beginPath();
-        ctx.arc(calibrationPoints.min.x, calibrationPoints.min.y, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffa07a'; // Light orange for min point
-        ctx.fill();
-    }
-    if (calibrationPoints.max) {
-        ctx.beginPath();
-        ctx.arc(calibrationPoints.max.x, calibrationPoints.max.y, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ff4500'; // Dark orange for max point
-        ctx.fill();
-    }
+        ctx.arc(point.pixelX, point.pixelY, CALIBRATION_DOT_RADIUS, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#ff4500'; // Orange outline for Y-axis calibration points
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-    // Draw user-placed points
+        // Draw the label (efficiency value)
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#ff4500';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${point.efficiency.toFixed(1)}%`, point.pixelX + 10, point.pixelY);
+    });
+
+    // Draw user-placed points (solid green)
     points.forEach(point => {
         ctx.beginPath();
-        ctx.arc(point.pixelX, point.pixelY, 5, 0, 2 * Math.PI);
+        ctx.arc(point.pixelX, point.pixelY, CURVE_DOT_RADIUS, 0, 2 * Math.PI);
         ctx.fillStyle = 'green';
         ctx.fill();
     });
@@ -156,7 +321,18 @@ function redrawCanvas() {
         ctx.stroke();
     }
 
-    // Draw crosshairs during Y-axis calibration or dot placement
+    // Draw horizontal cursor during Y-axis calibration
+    if (lastMousePos && isScaling && scalingStep === 1) {
+        const { y } = lastMousePos;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    // Draw crosshairs during dot placement
     if (lastMousePos && !isScaling) {
         const { x, y } = lastMousePos;
         // Draw X cursor (vertical line)
@@ -179,24 +355,34 @@ function updateCursorCoords(event) {
     const { x, y } = getCanvasCoordinates(event);
     lastMousePos = { x, y };
 
+    // Show the zoom canvas and draw the zoomed-in view
+    zoomCanvas.style.display = 'block';
+    positionZoomCanvas(event);
+    drawZoomView(x, y);
+
     if (isScaling) {
         if (scalingStep === 0) {
             // During X-axis calibration, show pixel position
             document.getElementById('cursor-coords').textContent = `Pixel X: ${x.toFixed(0)}`;
         } else if (scalingStep === 1) {
-            // During Y-axis min calibration
-            document.getElementById('cursor-coords').textContent = `Set Y-axis min (${scaling.yMin}%)`;
-        } else if (scalingStep === 2) {
-            // During Y-axis max calibration
-            document.getElementById('cursor-coords').textContent = `Set Y-axis max (${scaling.yMax}%)`;
+            // During Y-axis calibration, show pixel position
+            document.getElementById('cursor-coords').textContent = `Pixel Y: ${y.toFixed(0)}`;
         }
     } else {
         // During dot placement, show current and efficiency
         const current = mapPixelToValueX(x);
-        const efficiency = mapPixelToValueY(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
+        const efficiency = mapPixelToValueY(y);
         document.getElementById('cursor-coords').textContent = `Current: ${current.toFixed(1)} mA, Efficiency: ${efficiency.toFixed(1)}%`;
     }
 
+    updateStageIndicator();
+    redrawCanvas();
+}
+
+/* Hides the zoom canvas when the mouse leaves the main canvas */
+function hideZoomCanvas() {
+    zoomCanvas.style.display = 'none';
+    lastMousePos = null;
     redrawCanvas();
 }
 
@@ -235,27 +421,23 @@ function handleScaling(event) {
             return;
         }
         xCalibrationPoints.push({ pixelX: x, pixelY: y, current });
-        document.getElementById('cursor-coords').textContent = `Align cursor with another X-axis value or click "Apply Calibration"`;
+        document.getElementById('cursor-coords').textContent = `Pixel X: ${x.toFixed(0)}`;
     } else if (scalingStep === 1) {
-        // Set Y-axis min point (yMin)
-        pixelScale.yMax = y; // Y-axis inverted (yMin at bottom)
-        calibrationPoints.min = { x, y };
-        scalingStep = 2;
-        document.getElementById('cursor-coords').textContent = `Set Y-axis max (${scaling.yMax}%)`;
-    } else if (scalingStep === 2) {
-        // Set Y-axis max point (yMax)
-        pixelScale.yMin = y; // Y-axis inverted (yMax at top)
-        calibrationPoints.max = { x, y };
-        isScaling = false;
-        document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
-        lastMousePos = null;
+        // Y-axis calibration: Add calibration point
+        const efficiency = parseFloat(prompt('Enter efficiency at this position (%):', '50')) || 0;
+        if (efficiency < scaling.yMin || efficiency > scaling.yMax) {
+            alert(`Efficiency must be within axis range (${scaling.yMin}–${scaling.yMax}%).`);
+            return;
+        }
+        yCalibrationPoints.push({ pixelX: x, pixelY: y, efficiency });
+        document.getElementById('cursor-coords').textContent = `Pixel Y: ${y.toFixed(0)}`;
     }
 
     redrawCanvas();
 }
 
 /* Finishes X-axis calibration and proceeds to Y-axis calibration */
-function applyCalibration() {
+function applyXCalibration() {
     if (scalingStep !== 0) return; // Only apply during X-axis calibration
     if (xCalibrationPoints.length < 2) {
         alert('Please place at least two X-axis calibration points.');
@@ -267,7 +449,27 @@ function applyCalibration() {
 
     // Proceed to Y-axis calibration
     scalingStep = 1;
-    document.getElementById('cursor-coords').textContent = `Set Y-axis min (${scaling.yMin}%)`;
+    document.getElementById('cursor-coords').textContent = 'Pixel Y: --';
+    updateStageIndicator();
+    redrawCanvas();
+}
+
+/* Finishes Y-axis calibration and proceeds to dot placement */
+function applyYCalibration() {
+    if (scalingStep !== 1) return; // Only apply during Y-axis calibration
+    if (yCalibrationPoints.length < 2) {
+        alert('Please place at least two Y-axis calibration points.');
+        return;
+    }
+
+    // Fit the Y-axis calibration points
+    fitYCalibrationPoints();
+
+    // Proceed to dot placement
+    isScaling = false;
+    document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
+    lastMousePos = null;
+    updateStageIndicator();
     redrawCanvas();
 }
 
@@ -282,7 +484,7 @@ function handleCanvasClick(event) {
 
     // Calculate real values for the dot
     const current = mapPixelToValueX(x);
-    const efficiency = mapPixelToValueY(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
+    const efficiency = mapPixelToValueY(y);
 
     // Validate inputs against axis ranges
     if (current < scaling.xMin || current > scaling.xMax || 
@@ -323,9 +525,11 @@ function redoCalibration() {
     scalingStep = 0;
     points = []; // Clear existing points
     xCalibrationPoints = []; // Clear X-axis calibration points
-    xCalibrationFit = { a: 1, b: 0 }; // Reset fit
-    calibrationPoints = { min: null, max: null }; // Clear Y-axis calibration points
-    document.getElementById('cursor-coords').textContent = 'Align cursor with a known X-axis value and click';
+    yCalibrationPoints = []; // Clear Y-axis calibration points
+    xCalibrationFit = { a: 1, b: 0 }; // Reset X-axis fit
+    yCalibrationFit = { a: 1, b: 0 }; // Reset Y-axis fit
+    document.getElementById('cursor-coords').textContent = 'Pixel X: --';
+    updateStageIndicator();
     redrawCanvas();
 }
 
@@ -336,18 +540,23 @@ function handleFitCurve() {
         return;
     }
 
-    // Fit the curve using cubic spline, extending to max current
-    const { splineData, minCurrent, maxCurrent } = fitCurve(points, scaling.xMax);
+    // Get the user-specified number of points for CSV
+    const csvPoints = parseInt(document.getElementById('csv-points-input').value) || 100;
+    const numCsvPoints = Math.min(Math.max(csvPoints, 1), 1000); // Cap at 1000 points
+
+    // Fit the curve for the displayed table and chart (100 points)
+    const displayFit = fitCurve(points, scaling.xMax, 100);
+    const { splineData, minCurrent, maxCurrent } = displayFit;
 
     // Draw the fitted curve on the canvas for verification
     const scaleX = value => mapValueToPixelX(value);
-    const scaleY = value => mapValueToPixelY(value, scaling.yMin, scaling.yMax, pixelScale.yMax, pixelScale.yMin);
+    const scaleY = value => mapValueToPixelY(value);
     drawCurveOnCanvas(splineData, canvas, scaleX, scaleY);
 
     // Create a new chart with user-entered axis ranges
     createFittedChart(points, splineData, 'linear', scaling);
 
-    // Generate table data and CSV
+    // Generate table data (100 points for display)
     const tableData = generateTableData(splineData, minCurrent, maxCurrent);
     const table = document.getElementById('data-table');
     table.innerHTML = '<tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>';
@@ -355,8 +564,10 @@ function handleFitCurve() {
         table.innerHTML += `<tr><td>${row.current}</td><td>${row.efficiency}</td></tr>`;
     });
 
-    // Prepare CSV for download
-    const csv = generateCSV(tableData);
+    // Fit the curve for CSV with user-specified number of points
+    const csvFit = fitCurve(points, scaling.xMax, numCsvPoints);
+    const csvTableData = generateTableData(csvFit.splineData, minCurrent, maxCurrent);
+    const csv = generateCSV(csvTableData);
     const downloadBtn = document.getElementById('download-csv-btn');
     downloadBtn.onclick = () => {
         const link = document.createElement('a');
@@ -373,27 +584,33 @@ function resetTool() {
     isScaling = false;
     scalingStep = 0;
     xCalibrationPoints = [];
+    yCalibrationPoints = [];
     xCalibrationFit = { a: 1, b: 0 };
-    calibrationPoints = { min: null, max: null };
+    yCalibrationFit = { a: 1, b: 0 };
     document.getElementById('image-upload').value = '';
     document.getElementById('x-min-input').value = '0';
     document.getElementById('x-max-input').value = '1000';
     document.getElementById('y-min-input').value = '0';
     document.getElementById('y-max-input').value = '100';
     document.getElementById('x-scale-type').value = 'linear';
-    document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
+    document.getElementById('csv-points-input').value = '100';
+    document.getElementById('cursor-coords').textContent = 'Pixel X: --';
     document.getElementById('data-table').innerHTML = '<tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>';
     document.getElementById('fitted-plots').innerHTML = '';
+    zoomCanvas.style.display = 'none';
     charts = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     image = null;
+    updateStageIndicator();
 }
 
 /* Event listeners */
 document.getElementById('image-upload').addEventListener('change', handleImageUpload);
 canvas.addEventListener('mousemove', updateCursorCoords);
+canvas.addEventListener('mouseleave', hideZoomCanvas);
 canvas.addEventListener('click', handleCanvasClick);
-document.getElementById('apply-calibration-btn').addEventListener('click', applyCalibration);
+document.getElementById('apply-x-calibration-btn').addEventListener('click', applyXCalibration);
+document.getElementById('apply-y-calibration-btn').addEventListener('click', applyYCalibration);
 document.getElementById('fit-curve-btn').addEventListener('click', handleFitCurve);
 document.getElementById('undo-dot-btn').addEventListener('click', undoLastDot);
 document.getElementById('redo-calibration-btn').addEventListener('click', redoCalibration);

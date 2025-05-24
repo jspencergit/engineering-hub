@@ -5,6 +5,13 @@ let charts = [];
 
 /* Creates a new Chart.js plot for the fitted curve */
 function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
+    // Validate scaling values to prevent chart initialization errors
+    const { xMin, xMax, yMin, yMax } = scaling;
+    if ([xMin, xMax, yMin, yMax].some(val => !isFinite(val) || isNaN(val))) {
+        alert('Invalid axis ranges. Please ensure all axis values are valid numbers.');
+        return null;
+    }
+
     // Create a container for the chart and coordinates
     const chartContainer = document.createElement('div');
     const coordsDiv = document.createElement('div');

@@ -1,7 +1,7 @@
 /* calculator.js */
 
 /* Fits a cubic spline to the user-placed points in log space for X-axis */
-function fitCurve(points, maxCurrent) {
+function fitCurve(points, maxCurrent, numPoints = 100) {
     // Sort points by current to ensure spline works correctly
     points.sort((a, b) => a.current - b.current);
     const x = points.map(p => Math.log10(p.current)); // Transform to log space
@@ -38,13 +38,13 @@ function fitCurve(points, maxCurrent) {
         m[i] = (r[i] - c[i] * m[i + 1]) / b[i];
     }
 
-    // Generate 100 points for the fitted curve, sampling logarithmically
+    // Generate points for the fitted curve, sampling logarithmically
     const minCurrent = Math.min(...points.map(p => p.current));
     const logMin = Math.log10(minCurrent);
     const logMax = Math.log10(maxCurrent);
     const splineData = [];
-    const step = (logMax - logMin) / 99; // Logarithmic step
-    for (let i = 0; i < 100; i++) {
+    const step = (logMax - logMin) / (numPoints - 1);
+    for (let i = 0; i < numPoints; i++) {
         const logCurrent = logMin + i * step;
         const current = Math.pow(10, logCurrent);
         // Find the interval [x[j], x[j+1]] that logCurrent falls into
@@ -68,7 +68,7 @@ function fitCurve(points, maxCurrent) {
 /* Generates table data by sampling the spline at 100 points */
 function generateTableData(splineData, minCurrent, maxCurrent) {
     const tableData = splineData.map(point => ({
-        current: point.x.toFixed(1),
+        current: point.x.toFixed(6), // 6 decimal places for microamps
         efficiency: point.y.toFixed(1)
     }));
     return tableData;
