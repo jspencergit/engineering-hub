@@ -293,6 +293,19 @@ function handleCanvasClick(event) {
 
     // Add the point directly
     points.push({ current, efficiency, pixelX: x, pixelY: y });
+
+    // Check for sparse regions in log space (for logarithmic X-axis)
+    if (xScaleType === 'logarithmic') {
+        points.sort((a, b) => a.current - b.current);
+        for (let i = 0; i < points.length - 1; i++) {
+            const logDiff = Math.log10(points[i + 1].current) - Math.log10(points[i].current);
+            if (logDiff > 0.5) { // Factor of 10^0.5 ≈ 3.16
+                alert(`Consider adding more points between ${points[i].current.toFixed(1)} mA and ${points[i + 1].current.toFixed(1)} mA for better accuracy at low currents.`);
+                break;
+            }
+        }
+    }
+
     redrawCanvas();
 }
 

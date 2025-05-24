@@ -1,17 +1,17 @@
 /* calculator.js */
 
-/* Fits a cubic spline to the user-placed points using a custom implementation */
+/* Fits a cubic spline to the user-placed points in log space for X-axis */
 function fitCurve(points, maxCurrent) {
     // Sort points by current to ensure spline works correctly
     points.sort((a, b) => a.current - b.current);
-    const x = points.map(p => p.current); // mA
-    const y = points.map(p => p.efficiency); // %
+    const x = points.map(p => Math.log10(p.current)); // Transform to log space
+    const y = points.map(p => p.efficiency); // Efficiency remains linear
     const n = x.length - 1;
 
     // Ensure at least 2 points
-    if (n < 1) return { splineData: [], minCurrent: x[0], maxCurrent: x[0] };
+    if (n < 1) return { splineData: [], minCurrent: points[0].current, maxCurrent: points[0].current };
 
-    // Compute coefficients for cubic spline
+    // Compute coefficients for cubic spline in log space
     const h = [];
     for (let i = 0; i < n; i++) {
         h[i] = x[i + 1] - x[i];
@@ -38,19 +38,22 @@ function fitCurve(points, maxCurrent) {
         m[i] = (r[i] - c[i] * m[i + 1]) / b[i];
     }
 
-    // Generate 100 points for the fitted curve, from min dot to maxCurrent
-    const minCurrent = Math.min(...x); // Start at the smallest current with a dot
+    // Generate 100 points for the fitted curve, sampling logarithmically
+    const minCurrent = Math.min(...points.map(p => p.current));
+    const logMin = Math.log10(minCurrent);
+    const logMax = Math.log10(maxCurrent);
     const splineData = [];
-    const step = (maxCurrent - minCurrent) / 99;
+    const step = (logMax - logMin) / 99; // Logarithmic step
     for (let i = 0; i < 100; i++) {
-        const current = minCurrent + i * step;
-        // Find the interval [x[j], x[j+1]] that current falls into
+        const logCurrent = logMin + i * step;
+        const current = Math.pow(10, logCurrent);
+        // Find the interval [x[j], x[j+1]] that logCurrent falls into
         let j = 0;
-        while (j < n && current > x[j + 1]) j++;
+        while (j < n && logCurrent > x[j + 1]) j++;
         if (j === n) j--;
 
-        // Compute spline value at current
-        const t = (current - x[j]) / h[j];
+        // Compute spline value at logCurrent
+        const t = (logCurrent - x[j]) / h[j];
         const t2 = t * t, t3 = t2 * t;
         const efficiency = (1 - t) * y[j] + t * y[j + 1] +
                           (h[j] * h[j] / 6) * ((t3 - t) * m[j] + (t - t3 + t2 - t) * m[j + 1]);
