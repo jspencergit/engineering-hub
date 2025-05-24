@@ -21,6 +21,11 @@
             <input type="file" id="image-upload" accept="image/*">
             <div class="input-canvas-container">
                 <div class="axis-range">
+                    <label for="x-scale-type">X-Axis Scale:</label>
+                    <select id="x-scale-type">
+                        <option value="linear">Linear</option>
+                        <option value="logarithmic">Logarithmic</option>
+                    </select>
                     <label for="x-min-input">X-Axis Min (mA):</label>
                     <input type="number" id="x-min-input" step="0.1" value="0">
                     <label for="x-max-input">X-Axis Max (mA):</label>
@@ -29,15 +34,17 @@
                     <input type="number" id="y-min-input" step="0.1" value="0">
                     <label for="y-max-input">Y-Axis Max (%):</label>
                     <input type="number" id="y-max-input" step="0.1" value="100">
+                    <button id="apply-calibration-btn">Apply Calibration</button>
                 </div>
                 <canvas id="image-canvas"></canvas>
             </div>
             <div class="instructions">
                 <p>1. Upload the graph image.</p>
-                <p>2. Enter the axis ranges to the left.</p>
-                <p>3. Click on the graph to set the min and max points to calibrate.</p>
-                <p>4. Hover to see coordinates, click on the curve to place dots.</p>
-                <p>5. Click "Fit Curve" to generate the plot and CSV.</p>
+                <p>2. Select X-axis scale and enter axis ranges to the left.</p>
+                <p>3. Align the cursor with known X-axis values, click to add points, then click "Apply Calibration".</p>
+                <p>4. Click on the graph to set Y-axis min and max points to calibrate.</p>
+                <p>5. Hover to see coordinates, click on the curve to place dots.</p>
+                <p>6. Click "Fit Curve" to generate the plot and CSV.</p>
             </div>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
             <button id="fit-curve-btn">Fit Curve</button>

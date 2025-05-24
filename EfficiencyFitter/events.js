@@ -8,17 +8,44 @@ let points = [];
 let scaling = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
 let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
 let isScaling = false;
-let scalingStep = 0;
+let scalingStep = 0; // 0: X-axis calibration, 1: Y-axis min, 2: Y-axis max
 let lastMousePos = null;
-let calibrationPoints = { min: null, max: null }; // Store calibration points for display
+let calibrationPoints = { min: null, max: null }; // Y-axis calibration points
+let xCalibrationPoints = []; // X-axis calibration points (pixelX, current)
+let xScaleType = 'linear'; // Default to linear
+let xCalibrationFit = { a: 1, b: 0 }; // Linear fit: current = a * pixelX + b
 
-/* Helper function to map pixel coordinates to real values */
-function mapPixelToValue(pixel, pixelMin, pixelMax, valueMin, valueMax) {
-    return valueMin + (pixel - pixelMin) * (valueMax - valueMin) / (pixelMax - pixelMin);
+/* Helper function to map pixel coordinates to real values (X-axis) */
+function mapPixelToValueX(pixelX) {
+    if (xScaleType === 'linear') {
+        // Linear mapping: current = a * pixelX + b
+        return xCalibrationFit.a * pixelX + xCalibrationFit.b;
+    } else {
+        // Logarithmic mapping: log(current) = a * pixelX + b, current = 10^logCurrent
+        const logCurrent = xCalibrationFit.a * pixelX + xCalibrationFit.b;
+        return Math.pow(10, logCurrent);
+    }
 }
 
-/* Helper function to map real values to pixel coordinates */
-function mapValueToPixel(value, valueMin, valueMax, pixelMin, pixelMax) {
+/* Helper function to map real values to pixel coordinates (X-axis) */
+function mapValueToPixelX(value) {
+    if (xScaleType === 'linear') {
+        // Linear mapping: pixelX = (current - b) / a
+        return (value - xCalibrationFit.b) / xCalibrationFit.a;
+    } else {
+        // Logarithmic mapping: pixelX = (log(current) - b) / a
+        const logValue = Math.log10(value);
+        return (logValue - xCalibrationFit.b) / xCalibrationFit.a;
+    }
+}
+
+/* Helper function to map pixel coordinates to real values (Y-axis, linear) */
+function mapPixelToValueY(pixelY, pixelMin, pixelMax, valueMin, valueMax) {
+    return valueMin + (pixelY - pixelMin) * (valueMax - valueMin) / (pixelMax - pixelMin);
+}
+
+/* Helper function to map real values to pixel coordinates (Y-axis, linear) */
+function mapValueToPixelY(value, valueMin, valueMax, pixelMin, pixelMax) {
     return pixelMin + (value - valueMin) * (pixelMax - pixelMin) / (valueMax - valueMin);
 }
 
@@ -32,6 +59,38 @@ function getCanvasCoordinates(event) {
     return { x, y };
 }
 
+/* Fits X-axis calibration points using least squares regression */
+function fitXCalibrationPoints() {
+    const n = xCalibrationPoints.length;
+    if (n < 2) return; // Need at least 2 points
+
+    // Sort points by pixelX to ensure monotonicity
+    xCalibrationPoints.sort((a, b) => a.pixelX - b.pixelX);
+
+    // Prepare data for fitting
+    const xValues = xCalibrationPoints.map(p => p.pixelX);
+    const yValues = xScaleType === 'linear' 
+        ? xCalibrationPoints.map(p => p.current)
+        : xCalibrationPoints.map(p => Math.log10(p.current));
+
+    // Least squares regression: y = a * x + b
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    for (let i = 0; i < n; i++) {
+        sumX += xValues[i];
+        sumY += yValues[i];
+        sumXY += xValues[i] * yValues[i];
+        sumXX += xValues[i] * xValues[i];
+    }
+
+    // Compute coefficients a and b
+    xCalibrationFit.a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    xCalibrationFit.b = (sumY - xCalibrationFit.a * sumX) / n;
+
+    // Set pixel min/max for mapping
+    pixelScale.xMin = xValues[0];
+    pixelScale.xMax = xValues[n - 1];
+}
+
 /* Loads the uploaded image onto the canvas */
 function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -43,7 +102,9 @@ function handleImageUpload(event) {
         ctx.drawImage(image, 0, 0);
         isScaling = true; // Start scaling process
         scalingStep = 0;
-        document.getElementById('cursor-coords').textContent = `Click to set min point (${scaling.xMin} mA, ${scaling.yMin}%)`;
+        xCalibrationPoints = []; // Clear X-axis calibration points
+        xCalibrationFit = { a: 1, b: 0 }; // Reset fit
+        document.getElementById('cursor-coords').textContent = 'Align cursor with a known X-axis value and click';
     };
     image.src = URL.createObjectURL(file);
 }
@@ -54,7 +115,15 @@ function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (image) ctx.drawImage(image, 0, 0);
 
-    // Draw calibration points (min and max)
+    // Draw X-axis calibration points (blue)
+    xCalibrationPoints.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.pixelX, point.pixelY, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#00f'; // Blue for X-axis calibration points
+        ctx.fill();
+    });
+
+    // Draw Y-axis calibration points (min and max)
     if (calibrationPoints.min) {
         ctx.beginPath();
         ctx.arc(calibrationPoints.min.x, calibrationPoints.min.y, 5, 0, 2 * Math.PI);
@@ -76,7 +145,18 @@ function redrawCanvas() {
         ctx.fill();
     });
 
-    // Draw cursors if mouse is over canvas
+    // Draw vertical cursor during X-axis calibration
+    if (lastMousePos && isScaling && scalingStep === 0) {
+        const { x } = lastMousePos;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    // Draw crosshairs during Y-axis calibration or dot placement
     if (lastMousePos && !isScaling) {
         const { x, y } = lastMousePos;
         // Draw X cursor (vertical line)
@@ -96,23 +176,36 @@ function redrawCanvas() {
 
 /* Updates cursor coordinates based on mouse position */
 function updateCursorCoords(event) {
-    if (!image || isScaling) return;
     const { x, y } = getCanvasCoordinates(event);
     lastMousePos = { x, y };
 
-    // Calculate real values from pixel coordinates
-    const current = mapPixelToValue(x, pixelScale.xMin, pixelScale.xMax, scaling.xMin, scaling.xMax);
-    const efficiency = mapPixelToValue(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax); // Y-axis inverted
-    document.getElementById('cursor-coords').textContent = `Current: ${current.toFixed(1)} mA, Efficiency: ${efficiency.toFixed(1)}%`;
+    if (isScaling) {
+        if (scalingStep === 0) {
+            // During X-axis calibration, show pixel position
+            document.getElementById('cursor-coords').textContent = `Pixel X: ${x.toFixed(0)}`;
+        } else if (scalingStep === 1) {
+            // During Y-axis min calibration
+            document.getElementById('cursor-coords').textContent = `Set Y-axis min (${scaling.yMin}%)`;
+        } else if (scalingStep === 2) {
+            // During Y-axis max calibration
+            document.getElementById('cursor-coords').textContent = `Set Y-axis max (${scaling.yMax}%)`;
+        }
+    } else {
+        // During dot placement, show current and efficiency
+        const current = mapPixelToValueX(x);
+        const efficiency = mapPixelToValueY(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
+        document.getElementById('cursor-coords').textContent = `Current: ${current.toFixed(1)} mA, Efficiency: ${efficiency.toFixed(1)}%`;
+    }
 
     redrawCanvas();
 }
 
-/* Handles scaling by setting min and max points */
+/* Handles scaling by setting X-axis and Y-axis points */
 function handleScaling(event) {
     if (!isScaling) return;
 
-    // Get user-entered axis ranges
+    // Get user-entered axis ranges and scale type
+    xScaleType = document.getElementById('x-scale-type').value;
     scaling.xMin = parseFloat(document.getElementById('x-min-input').value) || 0;
     scaling.xMax = parseFloat(document.getElementById('x-max-input').value) || 1000;
     scaling.yMin = parseFloat(document.getElementById('y-min-input').value) || 0;
@@ -123,26 +216,58 @@ function handleScaling(event) {
         alert('Max values must be greater than min values.');
         return;
     }
+    if (xScaleType === 'logarithmic' && scaling.xMin <= 0) {
+        alert('Min current must be greater than 0 for logarithmic scale.');
+        return;
+    }
 
     const { x, y } = getCanvasCoordinates(event);
 
     if (scalingStep === 0) {
-        // Set min point (xMin, yMin)
-        pixelScale.xMin = x;
-        pixelScale.yMax = y; // Y-axis inverted (yMin at bottom)
-        calibrationPoints.min = { x, y }; // Store min point for display
-        scalingStep = 1;
-        document.getElementById('cursor-coords').textContent = `Click to set max point (${scaling.xMax} mA, ${scaling.yMax}%)`;
+        // X-axis calibration: Add calibration point
+        const current = parseFloat(prompt('Enter current at this position (mA):', '10')) || 0;
+        if (current < scaling.xMin || current > scaling.xMax) {
+            alert(`Current must be within axis range (${scaling.xMin}–${scaling.xMax} mA).`);
+            return;
+        }
+        if (xScaleType === 'logarithmic' && current <= 0) {
+            alert('Current must be greater than 0 for logarithmic scale.');
+            return;
+        }
+        xCalibrationPoints.push({ pixelX: x, pixelY: y, current });
+        document.getElementById('cursor-coords').textContent = `Align cursor with another X-axis value or click "Apply Calibration"`;
     } else if (scalingStep === 1) {
-        // Set max point (xMax, yMax)
-        pixelScale.xMax = x;
+        // Set Y-axis min point (yMin)
+        pixelScale.yMax = y; // Y-axis inverted (yMin at bottom)
+        calibrationPoints.min = { x, y };
+        scalingStep = 2;
+        document.getElementById('cursor-coords').textContent = `Set Y-axis max (${scaling.yMax}%)`;
+    } else if (scalingStep === 2) {
+        // Set Y-axis max point (yMax)
         pixelScale.yMin = y; // Y-axis inverted (yMax at top)
-        calibrationPoints.max = { x, y }; // Store max point for display
+        calibrationPoints.max = { x, y };
         isScaling = false;
         document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
         lastMousePos = null;
     }
 
+    redrawCanvas();
+}
+
+/* Finishes X-axis calibration and proceeds to Y-axis calibration */
+function applyCalibration() {
+    if (scalingStep !== 0) return; // Only apply during X-axis calibration
+    if (xCalibrationPoints.length < 2) {
+        alert('Please place at least two X-axis calibration points.');
+        return;
+    }
+
+    // Fit the X-axis calibration points
+    fitXCalibrationPoints();
+
+    // Proceed to Y-axis calibration
+    scalingStep = 1;
+    document.getElementById('cursor-coords').textContent = `Set Y-axis min (${scaling.yMin}%)`;
     redrawCanvas();
 }
 
@@ -156,8 +281,8 @@ function handleCanvasClick(event) {
     const { x, y } = getCanvasCoordinates(event);
 
     // Calculate real values for the dot
-    const current = mapPixelToValue(x, pixelScale.xMin, pixelScale.xMax, scaling.xMin, scaling.xMax);
-    const efficiency = mapPixelToValue(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
+    const current = mapPixelToValueX(x);
+    const efficiency = mapPixelToValueY(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
 
     // Validate inputs against axis ranges
     if (current < scaling.xMin || current > scaling.xMax || 
@@ -184,8 +309,10 @@ function redoCalibration() {
     isScaling = true;
     scalingStep = 0;
     points = []; // Clear existing points
-    calibrationPoints = { min: null, max: null }; // Clear calibration points
-    document.getElementById('cursor-coords').textContent = `Click to set min point (${scaling.xMin} mA, ${scaling.yMin}%)`;
+    xCalibrationPoints = []; // Clear X-axis calibration points
+    xCalibrationFit = { a: 1, b: 0 }; // Reset fit
+    calibrationPoints = { min: null, max: null }; // Clear Y-axis calibration points
+    document.getElementById('cursor-coords').textContent = 'Align cursor with a known X-axis value and click';
     redrawCanvas();
 }
 
@@ -200,8 +327,8 @@ function handleFitCurve() {
     const { splineData, minCurrent, maxCurrent } = fitCurve(points, scaling.xMax);
 
     // Draw the fitted curve on the canvas for verification
-    const scaleX = value => mapValueToPixel(value, scaling.xMin, scaling.xMax, pixelScale.xMin, pixelScale.xMax);
-    const scaleY = value => mapValueToPixel(value, scaling.yMin, scaling.yMax, pixelScale.yMax, pixelScale.yMin);
+    const scaleX = value => mapValueToPixelX(value);
+    const scaleY = value => mapValueToPixelY(value, scaling.yMin, scaling.yMax, pixelScale.yMax, pixelScale.yMin);
     drawCurveOnCanvas(splineData, canvas, scaleX, scaleY);
 
     // Create a new chart with user-entered axis ranges
@@ -232,12 +359,15 @@ function resetTool() {
     lastMousePos = null;
     isScaling = false;
     scalingStep = 0;
-    calibrationPoints = { min: null, max: null }; // Clear calibration points
+    xCalibrationPoints = [];
+    xCalibrationFit = { a: 1, b: 0 };
+    calibrationPoints = { min: null, max: null };
     document.getElementById('image-upload').value = '';
     document.getElementById('x-min-input').value = '0';
     document.getElementById('x-max-input').value = '1000';
     document.getElementById('y-min-input').value = '0';
     document.getElementById('y-max-input').value = '100';
+    document.getElementById('x-scale-type').value = 'linear';
     document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
     document.getElementById('data-table').innerHTML = '<tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>';
     document.getElementById('fitted-plots').innerHTML = '';
@@ -250,6 +380,7 @@ function resetTool() {
 document.getElementById('image-upload').addEventListener('change', handleImageUpload);
 canvas.addEventListener('mousemove', updateCursorCoords);
 canvas.addEventListener('click', handleCanvasClick);
+document.getElementById('apply-calibration-btn').addEventListener('click', applyCalibration);
 document.getElementById('fit-curve-btn').addEventListener('click', handleFitCurve);
 document.getElementById('undo-dot-btn').addEventListener('click', undoLastDot);
 document.getElementById('redo-calibration-btn').addEventListener('click', redoCalibration);
