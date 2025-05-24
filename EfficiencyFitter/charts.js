@@ -4,12 +4,20 @@
 let charts = [];
 
 /* Creates a new Chart.js plot for the fitted curve */
-function createFittedChart(points, splineData, xScaleType = 'linear') {
-    // Create a new canvas for the chart
-    const canvas = document.createElement('canvas');
-    document.getElementById('fitted-plots').appendChild(canvas);
+function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
+    // Create a container for the chart and coordinates
+    const chartContainer = document.createElement('div');
+    const coordsDiv = document.createElement('div');
+    coordsDiv.className = 'chart-coords';
+    coordsDiv.textContent = 'Current: -- mA, Efficiency: -- %';
+    chartContainer.appendChild(coordsDiv);
 
-    // Prepare datasets: fitted curve and user points
+    // Create the canvas for the chart
+    const canvas = document.createElement('canvas');
+    chartContainer.appendChild(canvas);
+    document.getElementById('fitted-plots').appendChild(chartContainer);
+
+    // Prepare datasets: fitted curve, user points, and red dot
     const datasets = [
         {
             label: 'Efficiency Curve',
@@ -25,6 +33,14 @@ function createFittedChart(points, splineData, xScaleType = 'linear') {
             pointRadius: 5,
             pointStyle: 'circle',
             borderColor: 'green',
+            showLine: false
+        },
+        {
+            label: 'Snap Point',
+            data: [], // Will be updated on mouse move
+            pointRadius: 5,
+            pointStyle: 'circle',
+            borderColor: 'red',
             showLine: false
         }
     ];
@@ -42,25 +58,56 @@ function createFittedChart(points, splineData, xScaleType = 'linear') {
                     type: xScaleType, // 'linear' or 'logarithmic'
                     title: { display: true, text: 'Current (mA)' },
                     ticks: { callback: value => value.toFixed(1) },
-                    min: Math.min(...points.map(p => p.current)),
-                    max: Math.max(...points.map(p => p.current))
+                    min: scaling.xMin, // Use user-entered min
+                    max: scaling.xMax  // Use user-entered max
                 },
                 y: {
                     title: { display: true, text: 'Efficiency (%)' },
-                    min: 0,
-                    max: 100
+                    min: scaling.yMin, // Use user-entered min
+                    max: scaling.yMax  // Use user-entered max
                 }
             },
             plugins: {
                 tooltip: {
-                    mode: 'nearest',
-                    intersect: false,
-                    callbacks: {
-                        label: context => `Current: ${context.parsed.x.toFixed(1)} mA, Efficiency: ${context.parsed.y.toFixed(1)}%`
-                    }
+                    enabled: false // Disable default tooltip
                 }
+            },
+            interaction: {
+                mode: 'nearest',
+                intersect: false
             }
         }
+    });
+
+    // Add mouse move event to update the red dot and coordinates
+    canvas.addEventListener('mousemove', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        // Convert mouse X to chart X value
+        const chartArea = chart.chartArea;
+        const xScale = chart.scales.x;
+        const chartX = xScale.getValueForPixel(mouseX);
+
+        // Find the nearest point on the curve
+        let nearestPoint = splineData.reduce((prev, curr) => {
+            return (Math.abs(curr.x - chartX) < Math.abs(prev.x - chartX)) ? curr : prev;
+        }, splineData[0]);
+
+        // Update the red dot dataset
+        chart.data.datasets[2].data = [{ x: nearestPoint.x, y: nearestPoint.y }];
+        chart.update('none'); // Update without animation for smoothness
+
+        // Update coordinates div
+        coordsDiv.textContent = `Current: ${nearestPoint.x.toFixed(1)} mA, Efficiency: ${nearestPoint.y.toFixed(1)}%`;
+    });
+
+    // Clear the red dot and coordinates when mouse leaves
+    canvas.addEventListener('mouseleave', () => {
+        chart.data.datasets[2].data = [];
+        chart.update('none');
+        coordsDiv.textContent = 'Current: -- mA, Efficiency: -- %';
     });
 
     // Store the chart instance
@@ -103,5 +150,8 @@ function clearLatestChart() {
     const latestChart = charts.pop();
     latestChart.destroy();
     const canvas = document.querySelector('#fitted-plots canvas:last-child');
-    if (canvas) canvas.remove();
+    if (canvas) {
+        const container = canvas.parentElement;
+        container.remove();
+    }
 }

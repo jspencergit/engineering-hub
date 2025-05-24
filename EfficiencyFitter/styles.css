@@ -88,29 +88,6 @@ label {
     font-weight: bold;
 }
 
-/* Dot entry form for entering current/efficiency */
-.dot-form {
-    margin: 10px 0;
-}
-
-/* Input fields for dot values */
-.dot-form input[type="number"] {
-    width: 100%;
-    max-width: 150px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-    margin: 5px 0;
-}
-
-/* Focus state for input fields */
-.dot-form input[type="number"]:focus {
-    border-color: #1a73e8;
-    outline: none;
-    box-shadow: 0 0 5px rgba(26, 115, 232, 0.5);
-}
-
 /* Canvas for image, dots, and fitted curve */
 canvas {
     max-width: 100%;
@@ -129,6 +106,18 @@ canvas {
     border-radius: 4px;
     font-size: 14px;
     color: #555;
+}
+
+/* Div for chart coordinates above each fitted curve */
+.chart-coords {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #555;
+    text-align: center;
 }
 
 /* Buttons (Fit Curve, Reset, etc.) */

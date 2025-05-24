@@ -36,19 +36,13 @@
                 <p>1. Upload the graph image.</p>
                 <p>2. Enter the axis ranges to the left.</p>
                 <p>3. Click on the graph to set the min and max points to calibrate.</p>
-                <p>4. Hover to see coordinates, click to place dots, and enter values below.</p>
+                <p>4. Hover to see coordinates, click on the curve to place dots.</p>
                 <p>5. Click "Fit Curve" to generate the plot and CSV.</p>
             </div>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
-            <div class="dot-form">
-                <label for="current-input">Current (mA):</label>
-                <input type="number" id="current-input" step="0.1" min="0">
-                <label for="efficiency-input">Efficiency (%):</label>
-                <input type="number" id="efficiency-input" step="0.1" min="0" max="100">
-                <button id="submit-dot-btn">Add Dot</button>
-            </div>
             <button id="fit-curve-btn">Fit Curve</button>
             <button id="undo-dot-btn">Undo Last Dot</button>
+            <button id="redo-calibration-btn">Redo Image Calibration</button>
             <button id="reset-btn">Reset</button>
         </div>
         <div class="outputs">

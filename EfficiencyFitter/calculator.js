@@ -1,7 +1,7 @@
 /* calculator.js */
 
 /* Fits a cubic spline to the user-placed points using a custom implementation */
-function fitCurve(points) {
+function fitCurve(points, maxCurrent) {
     // Sort points by current to ensure spline works correctly
     points.sort((a, b) => a.current - b.current);
     const x = points.map(p => p.current); // mA
@@ -38,11 +38,10 @@ function fitCurve(points) {
         m[i] = (r[i] - c[i] * m[i + 1]) / b[i];
     }
 
-    // Generate 100 points for the fitted curve
-    const minCurrent = Math.min(...x);
-    const maxCurrent = Math.max(...x);
-    const step = (maxCurrent - minCurrent) / 99;
+    // Generate 100 points for the fitted curve, from min dot to maxCurrent
+    const minCurrent = Math.min(...x); // Start at the smallest current with a dot
     const splineData = [];
+    const step = (maxCurrent - minCurrent) / 99;
     for (let i = 0; i < 100; i++) {
         const current = minCurrent + i * step;
         // Find the interval [x[j], x[j+1]] that current falls into

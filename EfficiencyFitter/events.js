@@ -10,6 +10,7 @@ let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
 let isScaling = false;
 let scalingStep = 0;
 let lastMousePos = null;
+let calibrationPoints = { min: null, max: null }; // Store calibration points for display
 
 /* Helper function to map pixel coordinates to real values */
 function mapPixelToValue(pixel, pixelMin, pixelMax, valueMin, valueMax) {
@@ -52,6 +53,20 @@ function redrawCanvas() {
     // Clear canvas and redraw image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (image) ctx.drawImage(image, 0, 0);
+
+    // Draw calibration points (min and max)
+    if (calibrationPoints.min) {
+        ctx.beginPath();
+        ctx.arc(calibrationPoints.min.x, calibrationPoints.min.y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffa07a'; // Light orange for min point
+        ctx.fill();
+    }
+    if (calibrationPoints.max) {
+        ctx.beginPath();
+        ctx.arc(calibrationPoints.max.x, calibrationPoints.max.y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ff4500'; // Dark orange for max point
+        ctx.fill();
+    }
 
     // Draw user-placed points
     points.forEach(point => {
@@ -115,12 +130,14 @@ function handleScaling(event) {
         // Set min point (xMin, yMin)
         pixelScale.xMin = x;
         pixelScale.yMax = y; // Y-axis inverted (yMin at bottom)
+        calibrationPoints.min = { x, y }; // Store min point for display
         scalingStep = 1;
         document.getElementById('cursor-coords').textContent = `Click to set max point (${scaling.xMax} mA, ${scaling.yMax}%)`;
     } else if (scalingStep === 1) {
         // Set max point (xMax, yMax)
         pixelScale.xMax = x;
         pixelScale.yMin = y; // Y-axis inverted (yMax at top)
+        calibrationPoints.max = { x, y }; // Store max point for display
         isScaling = false;
         document.getElementById('cursor-coords').textContent = 'Current: -- mA, Efficiency: -- %';
         lastMousePos = null;
@@ -129,54 +146,46 @@ function handleScaling(event) {
     redrawCanvas();
 }
 
-/* Handles dot placement on canvas click */
+/* Handles canvas click for scaling or dot placement */
 function handleCanvasClick(event) {
     if (isScaling) {
         handleScaling(event);
         return;
     }
+
     const { x, y } = getCanvasCoordinates(event);
 
     // Calculate real values for the dot
     const current = mapPixelToValue(x, pixelScale.xMin, pixelScale.xMax, scaling.xMin, scaling.xMax);
     const efficiency = mapPixelToValue(y, pixelScale.yMax, pixelScale.yMin, scaling.yMin, scaling.yMax);
 
-    // Pre-fill form with calculated values
-    document.getElementById('current-input').value = current.toFixed(1);
-    document.getElementById('efficiency-input').value = efficiency.toFixed(1);
-}
-
-/* Adds a dot after form submission */
-function addDot(event) {
-    event.preventDefault();
-    const current = parseFloat(document.getElementById('current-input').value);
-    const efficiency = parseFloat(document.getElementById('efficiency-input').value);
-
     // Validate inputs against axis ranges
-    if (isNaN(current) || isNaN(efficiency) || 
-        current < scaling.xMin || current > scaling.xMax || 
+    if (current < scaling.xMin || current > scaling.xMax || 
         efficiency < scaling.yMin || efficiency > scaling.yMax) {
-        alert(`Please enter values within the axis ranges (Current: ${scaling.xMin}–${scaling.xMax} mA, Efficiency: ${scaling.yMin}–${scaling.yMax}%).`);
+        alert(`Clicked point is outside axis ranges (Current: ${scaling.xMin}–${scaling.xMax} mA, Efficiency: ${scaling.yMin}–${scaling.yMax}%).`);
         return;
     }
 
-    // Calculate pixel coordinates for the dot
-    const pixelX = mapValueToPixel(current, scaling.xMin, scaling.xMax, pixelScale.xMin, pixelScale.xMax);
-    const pixelY = mapValueToPixel(efficiency, scaling.yMin, scaling.yMax, pixelScale.yMax, pixelScale.yMin);
-
-    // Add the point
-    points.push({ current, efficiency, pixelX, pixelY });
+    // Add the point directly
+    points.push({ current, efficiency, pixelX: x, pixelY: y });
     redrawCanvas();
-
-    // Clear form
-    document.getElementById('current-input').value = '';
-    document.getElementById('efficiency-input').value = '';
 }
 
 /* Removes the last dot placed by the user */
 function undoLastDot() {
     if (points.length === 0) return;
     points.pop();
+    redrawCanvas();
+}
+
+/* Redoes the image calibration process */
+function redoCalibration() {
+    if (!image) return;
+    isScaling = true;
+    scalingStep = 0;
+    points = []; // Clear existing points
+    calibrationPoints = { min: null, max: null }; // Clear calibration points
+    document.getElementById('cursor-coords').textContent = `Click to set min point (${scaling.xMin} mA, ${scaling.yMin}%)`;
     redrawCanvas();
 }
 
@@ -187,16 +196,16 @@ function handleFitCurve() {
         return;
     }
 
-    // Fit the curve using cubic spline
-    const { splineData, minCurrent, maxCurrent } = fitCurve(points);
+    // Fit the curve using cubic spline, extending to max current
+    const { splineData, minCurrent, maxCurrent } = fitCurve(points, scaling.xMax);
 
     // Draw the fitted curve on the canvas for verification
     const scaleX = value => mapValueToPixel(value, scaling.xMin, scaling.xMax, pixelScale.xMin, pixelScale.xMax);
     const scaleY = value => mapValueToPixel(value, scaling.yMin, scaling.yMax, pixelScale.yMax, pixelScale.yMin);
     drawCurveOnCanvas(splineData, canvas, scaleX, scaleY);
 
-    // Create a new chart
-    createFittedChart(points, splineData);
+    // Create a new chart with user-entered axis ranges
+    createFittedChart(points, splineData, 'linear', scaling);
 
     // Generate table data and CSV
     const tableData = generateTableData(splineData, minCurrent, maxCurrent);
@@ -223,9 +232,8 @@ function resetTool() {
     lastMousePos = null;
     isScaling = false;
     scalingStep = 0;
+    calibrationPoints = { min: null, max: null }; // Clear calibration points
     document.getElementById('image-upload').value = '';
-    document.getElementById('current-input').value = '';
-    document.getElementById('efficiency-input').value = '';
     document.getElementById('x-min-input').value = '0';
     document.getElementById('x-max-input').value = '1000';
     document.getElementById('y-min-input').value = '0';
@@ -242,9 +250,9 @@ function resetTool() {
 document.getElementById('image-upload').addEventListener('change', handleImageUpload);
 canvas.addEventListener('mousemove', updateCursorCoords);
 canvas.addEventListener('click', handleCanvasClick);
-document.getElementById('submit-dot-btn').addEventListener('click', addDot);
 document.getElementById('fit-curve-btn').addEventListener('click', handleFitCurve);
 document.getElementById('undo-dot-btn').addEventListener('click', undoLastDot);
+document.getElementById('redo-calibration-btn').addEventListener('click', redoCalibration);
 document.getElementById('reset-btn').addEventListener('click', resetTool);
 document.getElementById('linear-scale-btn').addEventListener('click', () => updateChartScale('linear'));
 document.getElementById('log-scale-btn').addEventListener('click', () => updateChartScale('logarithmic'));
