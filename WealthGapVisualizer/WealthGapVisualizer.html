@@ -6,6 +6,7 @@
     <title>Wealth Gap Visualizer</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
 </head>
 <body>
     <header>
@@ -29,41 +30,49 @@
         </section>
         <section class="input-section">
             <h2>Input Parameters</h2>
-            <div class="input-grid">
-                <div class="input-group">
-                    <label for="start-salary">Starting Income ($):</label>
-                    <input type="number" id="start-salary" value="50000">
-                    <input type="range" id="start-salary-slider" min="0" max="1000000" step="1000" value="50000">
+            <div class="input-columns">
+                <div class="column">
+                    <div class="input-group">
+                        <label for="start-salary">Starting Income ($):</label>
+                        <input type="text" id="start-salary" value="50000">
+                        <input type="range" id="start-salary-slider" min="0" max="1000000" step="1000" value="50000">
+                    </div>
+                    <div class="input-group">
+                        <label for="pay-increase">Annual Pay Increase (%):</label>
+                        <input type="number" id="pay-increase" min="0" max="10" step="0.1" value="3.0">
+                        <input type="range" id="pay-increase-slider" min="0" max="10" step="0.1" value="3">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="start-spending">Starting Spending ($):</label>
-                    <input type="number" id="start-spending" value="40000">
-                    <input type="range" id="start-spending-slider" min="0" max="1000000" step="1000" value="40000">
+                <div class="column">
+                    <div class="input-group">
+                        <label for="start-spending">Starting Spending ($):</label>
+                        <input type="text" id="start-spending" value="40000">
+                        <input type="range" id="start-spending-slider" min="0" max="1000000" step="1000" value="40000">
+                    </div>
+                    <div class="input-group">
+                        <label for="spending-increase">Annual Spending Increase (%):</label>
+                        <input type="number" id="spending-increase" min="0" max="10" step="0.1" value="2.5">
+                        <input type="range" id="spending-increase-slider" min="0" max="10" step="0.1" value="2.5">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="start-savings">Starting Savings ($):</label>
-                    <input type="number" id="start-savings" min="-1000000" value="10000">
-                    <input type="range" id="start-savings-slider" min="0" max="10000000" step="1000" value="10000">
+                <div class="column">
+                    <div class="input-group">
+                        <label for="start-savings">Starting Savings ($):</label>
+                        <input type="text" id="start-savings" min="-1000000" value="10000">
+                        <input type="range" id="start-savings-slider" min="0" max="10000000" step="1000" value="10000">
+                    </div>
+                    <div class="input-group">
+                        <label for="investment-return">Investment Return (%):</label>
+                        <input type="number" id="investment-return" min="0" max="20" step="0.1" value="7.0">
+                        <input type="range" id="investment-return-slider" min="0" max="20" step="0.1" value="7">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="pay-increase">Annual Pay Increase (%):</label>
-                    <input type="number" id="pay-increase" min="0" max="10" step="0.1" value="3.0">
-                    <input type="range" id="pay-increase-slider" min="0" max="10" step="0.1" value="3">
-                </div>
-                <div class="input-group">
-                    <label for="spending-increase">Annual Spending Increase (%):</label>
-                    <input type="number" id="spending-increase" min="0" max="10" step="0.1" value="2.5">
-                    <input type="range" id="spending-increase-slider" min="0" max="10" step="0.1" value="2.5">
-                </div>
-                <div class="input-group">
-                    <label for="investment-return">Investment Return (%):</label>
-                    <input type="number" id="investment-return" min="0" max="20" step="0.1" value="7.0">
-                    <input type="range" id="investment-return-slider" min="0" max="20" step="0.1" value="7">
-                </div>
-                <div class="input-group">
-                    <label for="time-horizon">Time Horizon (Years):</label>
-                    <input type="number" id="time-horizon" min="1" max="100" step="1" value="20">
-                    <input type="range" id="time-horizon-slider" min="1" max="100" step="1" value="20">
+                <div class="column">
+                    <div class="input-group">
+                        <label for="time-horizon">Time Horizon (Years):</label>
+                        <input type="number" id="time-horizon" min="1" max="100" step="1" value="20">
+                        <input type="range" id="time-horizon-slider" min="1" max="100" step="1" value="20">
+                    </div>
                 </div>
             </div>
         </section>
@@ -77,7 +86,7 @@
         <p>6465 South 3000 East, Suite 200, Salt Lake City, UT</p>
         <p><a href="#">Privacy Policy</a></p>
     </footer>
-    <script src="charts.js?v=1.7"></script>
-    <script src="events.js?v=1.7"></script>
+    <script src="charts.js?v=1.8"></script>
+    <script src="events.js?v=1.8"></script>
 </body>
 </html>
