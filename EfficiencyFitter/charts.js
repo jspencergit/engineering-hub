@@ -71,7 +71,9 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
                 x: {
                     type: xScaleType, // 'linear' or 'logarithmic'
                     title: { display: true, text: 'Current (mA)' },
-                    ticks: { callback: value => value.toFixed(1) },
+                    ticks: {
+                        callback: value => `${value.toExponential(1)} mA` // Use scientific notation
+                    },
                     min: scaling.xMin, // Use user-entered min
                     max: scaling.xMax  // Use user-entered max
                 },
@@ -111,10 +113,24 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
 
         // Update the red dot dataset
         chart.data.datasets[2].data = [{ x: nearestPoint.x, y: nearestPoint.y }];
-        chart.update('none'); // Update without animation for smoothness
 
-        // Update coordinates div
-        coordsDiv.textContent = `Current: ${nearestPoint.x.toFixed(1)} mA, Efficiency: ${nearestPoint.y.toFixed(1)}%`;
+        // Determine if the mouse is over the X-axis area (below the chart area)
+        const xAxisAreaHeight = chart.height - chart.chartArea.bottom; // Height of the X-axis area
+        let coordsText;
+        if (mouseY > chart.chartArea.bottom) {
+            // Mouse is over the X-axis area, find the nearest tick value
+            const tickValues = xScale.ticks.map(tick => tick.value);
+            const nearestTickValue = tickValues.reduce((prev, curr) => {
+                return (Math.abs(curr - chartX) < Math.abs(prev - chartX)) ? curr : prev;
+            }, tickValues[0]);
+            coordsText = `Current: ${nearestTickValue.toFixed(3)} mA (tick), Efficiency: -- %`;
+        } else {
+            // Mouse is over the chart area, show the nearest point on the curve
+            coordsText = `Current: ${nearestPoint.x.toFixed(3)} mA, Efficiency: ${nearestPoint.y.toFixed(1)}%`;
+        }
+
+        chart.update('none'); // Update without animation for smoothness
+        coordsDiv.textContent = coordsText;
     });
 
     // Clear the red dot and coordinates when mouse leaves
