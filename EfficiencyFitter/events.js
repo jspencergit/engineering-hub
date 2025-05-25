@@ -168,39 +168,13 @@ function drawZoomView(mouseX, mouseY) {
     srcX = Math.max(0, Math.min(srcX, canvas.width - ZOOM_REGION));
     srcY = Math.max(0, Math.min(srcY, canvas.height - ZOOM_REGION));
 
-    // Draw the zoomed-in region
+    // Draw the zoomed-in region (includes the cursor line from the main canvas)
     zoomCtx.drawImage(
         canvas,
-        srcX, srcY, ZOOM_REGION, ZOOM_REGION, // Source region
-        0, 0, ZOOM_SIZE, ZOOM_SIZE // Destination (zoomed)
+        srcX, srcY, ZOOM_REGION, ZOOM_REGION, // Source: 50x50 pixel region
+        0, 0, ZOOM_SIZE, ZOOM_SIZE // Destination: 200x200 pixel area (3x zoom)
     );
-
-    // Draw a crosshair based on the current stage
-    zoomCtx.strokeStyle = '#ff0000'; // Red crosshair
-    zoomCtx.lineWidth = 1;
-    if (isScaling && scalingStep === 0) {
-        // X-axis calibration: vertical line only
-        zoomCtx.beginPath();
-        zoomCtx.moveTo(ZOOM_SIZE / 2, 0);
-        zoomCtx.lineTo(ZOOM_SIZE / 2, ZOOM_SIZE);
-        zoomCtx.stroke();
-    } else if (isScaling && scalingStep === 1) {
-        // Y-axis calibration: horizontal line only
-        zoomCtx.beginPath();
-        zoomCtx.moveTo(0, ZOOM_SIZE / 2);
-        zoomCtx.lineTo(ZOOM_SIZE, ZOOM_SIZE / 2);
-        zoomCtx.stroke();
-    } else {
-        // Dot placement: full crosshair
-        zoomCtx.beginPath();
-        zoomCtx.moveTo(ZOOM_SIZE / 2, 0);
-        zoomCtx.lineTo(ZOOM_SIZE / 2, ZOOM_SIZE);
-        zoomCtx.stroke();
-        zoomCtx.beginPath();
-        zoomCtx.moveTo(0, ZOOM_SIZE / 2);
-        zoomCtx.lineTo(ZOOM_SIZE, ZOOM_SIZE / 2);
-        zoomCtx.stroke();
-    }
+    // Red crosshair removed; the zoomed cursor line from the main canvas is sufficient
 }
 
 /* Positions the zoom canvas dynamically */
@@ -327,7 +301,7 @@ function redrawCanvas() {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
-        ctx.strokeStyle = '#555';
+        ctx.strokeStyle = '#00FFFF'; // Cyan cursor line
         ctx.lineWidth = 1;
         ctx.stroke();
     }
@@ -338,7 +312,7 @@ function redrawCanvas() {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
-        ctx.strokeStyle = '#555';
+        ctx.strokeStyle = '#00FFFF'; // Cyan cursor line
         ctx.lineWidth = 1;
         ctx.stroke();
     }
@@ -350,13 +324,15 @@ function redrawCanvas() {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
-        ctx.strokeStyle = '#555';
+        ctx.strokeStyle = '#00FFFF'; // Cyan cursor line
         ctx.lineWidth = 1;
         ctx.stroke();
         // Draw Y cursor (horizontal line)
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
+        ctx.strokeStyle = '#00FFFF'; // Cyan cursor line
+        ctx.lineWidth = 1;
         ctx.stroke();
     }
 }
