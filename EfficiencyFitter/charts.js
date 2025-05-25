@@ -12,6 +12,13 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
         return null;
     }
 
+    // Filter out invalid splineData points (e.g., NaN values)
+    const validSplineData = splineData.filter(d => isFinite(d.x) && isFinite(d.y) && !isNaN(d.x) && !isNaN(d.y));
+    if (validSplineData.length === 0) {
+        alert('No valid data points to plot. Please check your calibration and points.');
+        return null;
+    }
+
     // Create a container for the chart and coordinates
     const chartContainer = document.createElement('div');
     const coordsDiv = document.createElement('div');
@@ -28,7 +35,7 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
     const datasets = [
         {
             label: 'Efficiency Curve',
-            data: splineData.map(d => ({ x: d.x, y: d.y })),
+            data: validSplineData.map(d => ({ x: d.x, y: d.y })),
             borderColor: '#1a73e8',
             fill: false,
             pointRadius: 0,
@@ -56,7 +63,7 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
     const chart = new Chart(canvas, {
         type: 'line',
         data: {
-            labels: splineData.map(d => d.x),
+            labels: validSplineData.map(d => d.x),
             datasets: datasets
         },
         options: {
@@ -98,9 +105,9 @@ function createFittedChart(points, splineData, xScaleType = 'linear', scaling) {
         const chartX = xScale.getValueForPixel(mouseX);
 
         // Find the nearest point on the curve
-        let nearestPoint = splineData.reduce((prev, curr) => {
+        let nearestPoint = validSplineData.reduce((prev, curr) => {
             return (Math.abs(curr.x - chartX) < Math.abs(prev.x - chartX)) ? curr : prev;
-        }, splineData[0]);
+        }, validSplineData[0]);
 
         // Update the red dot dataset
         chart.data.datasets[2].data = [{ x: nearestPoint.x, y: nearestPoint.y }];
@@ -137,8 +144,11 @@ function drawCurveOnCanvas(splineData, canvas, scaleX, scaleY) {
     ctx.lineWidth = 2;
     ctx.beginPath();
 
+    // Filter out invalid points (e.g., NaN values)
+    const validSplineData = splineData.filter(d => isFinite(d.x) && isFinite(d.y) && !isNaN(d.x) && !isNaN(d.y));
+
     // Draw the curve using the scaled pixel coordinates
-    splineData.forEach((point, index) => {
+    validSplineData.forEach((point, index) => {
         const pixelX = scaleX(point.x);
         const pixelY = scaleY(point.y);
         if (index === 0) {

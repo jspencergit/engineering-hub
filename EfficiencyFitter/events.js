@@ -36,7 +36,11 @@ function mapPixelToValueX(pixelX) {
     } else {
         // Logarithmic mapping: log(current) = a * pixelX + b, current = 10^logCurrent
         const logCurrent = xCalibrationFit.a * pixelX + xCalibrationFit.b;
-        return Math.pow(10, logCurrent);
+        // Clamp logCurrent to prevent underflow/overflow
+        const minLogCurrent = Math.log10(Math.max(scaling.xMin, 1e-10)); // Avoid log(0)
+        const maxLogCurrent = Math.log10(scaling.xMax);
+        const clampedLogCurrent = Math.max(minLogCurrent, Math.min(maxLogCurrent, logCurrent));
+        return Math.pow(10, clampedLogCurrent);
     }
 }
 
@@ -277,12 +281,19 @@ function redrawCanvas() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Draw the label (current value)
+        // Draw the label (current value, switching between µA and mA)
         ctx.font = '10px Arial';
         ctx.fillStyle = '#00f';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${point.current.toFixed(1)} mA`, point.pixelX + 10, point.pixelY);
+        let labelText;
+        if (point.current < 1) { // Less than 1 mA, convert to µA
+            const microAmps = point.current * 1000; // Convert mA to µA
+            labelText = `${microAmps.toFixed(0)} \u00B5A`;
+        } else {
+            labelText = `${point.current.toFixed(1)} mA`;
+        }
+        ctx.fillText(labelText, point.pixelX + 10, point.pixelY);
     });
 
     // Draw Y-axis calibration points (hollow orange) with labels
