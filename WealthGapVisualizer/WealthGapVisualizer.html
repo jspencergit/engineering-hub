@@ -19,35 +19,35 @@
     <main>
         <section class="chart-section">
             <h2>Financial Growth Over Time</h2>
-            <div id="chart-coords">Hover over the graph to see values.</div>
+            <div class="checkbox-container">
+                <label for="share-y-axis">
+                    <input type="checkbox" id="share-y-axis" onchange="toggleSharedAxis()">
+                    Share Y-Axis Scale
+                </label>
+            </div>
             <canvas id="financial-chart" width="800" height="400"></canvas>
         </section>
         <section class="input-section">
             <h2>Input Parameters</h2>
             <div class="input-grid">
                 <div class="input-group">
-                    <label for="start-salary">Starting Salary ($):</label>
-                    <input type="number" id="start-salary" min="10000" max="1000000" step="1000" value="50000">
-                    <input type="range" id="start-salary-slider" min="10000" max="1000000" step="1000" value="50000">
+                    <label for="start-salary">Starting Income ($):</label>
+                    <input type="number" id="start-salary" value="50000">
+                    <input type="range" id="start-salary-slider" min="0" max="1000000" step="1000" value="50000">
                 </div>
                 <div class="input-group">
-                    <label for="start-age">Starting Age (Years):</label>
-                    <input type="number" id="start-age" min="18" max="65" step="1" value="30">
-                    <input type="range" id="start-age-slider" min="18" max="65" step="1" value="30">
+                    <label for="start-spending">Starting Spending ($):</label>
+                    <input type="number" id="start-spending" value="40000">
+                    <input type="range" id="start-spending-slider" min="0" max="1000000" step="1000" value="40000">
                 </div>
                 <div class="input-group">
                     <label for="start-savings">Starting Savings ($):</label>
-                    <input type="number" id="start-savings" min="0" max="10000000" step="1000" value="10000">
+                    <input type="number" id="start-savings" min="-1000000" value="10000">
                     <input type="range" id="start-savings-slider" min="0" max="10000000" step="1000" value="10000">
                 </div>
                 <div class="input-group">
-                    <label for="annual-spending">Annual Spending ($):</label>
-                    <input type="number" id="annual-spending" min="5000" max="1000000" step="1000" value="40000">
-                    <input type="range" id="annual-spending-slider" min="5000" max="1000000" step="1000" value="40000">
-                </div>
-                <div class="input-group">
                     <label for="pay-increase">Annual Pay Increase (%):</label>
-                    <input type="number" id="pay-increase" min="0" max="10" step="0.1" value="3">
+                    <input type="number" id="pay-increase" min="0" max="10" step="0.1" value="3.0">
                     <input type="range" id="pay-increase-slider" min="0" max="10" step="0.1" value="3">
                 </div>
                 <div class="input-group">
@@ -57,13 +57,13 @@
                 </div>
                 <div class="input-group">
                     <label for="investment-return">Investment Return (%):</label>
-                    <input type="number" id="investment-return" min="0" max="20" step="0.1" value="7">
+                    <input type="number" id="investment-return" min="0" max="20" step="0.1" value="7.0">
                     <input type="range" id="investment-return-slider" min="0" max="20" step="0.1" value="7">
                 </div>
                 <div class="input-group">
                     <label for="time-horizon">Time Horizon (Years):</label>
-                    <input type="number" id="time-horizon" min="1" max="50" step="1" value="20">
-                    <input type="range" id="time-horizon-slider" min="1" max="50" step="1" value="20">
+                    <input type="number" id="time-horizon" min="1" max="100" step="1" value="20">
+                    <input type="range" id="time-horizon-slider" min="1" max="100" step="1" value="20">
                 </div>
             </div>
         </section>
@@ -77,7 +77,7 @@
         <p>6465 South 3000 East, Suite 200, Salt Lake City, UT</p>
         <p><a href="#">Privacy Policy</a></p>
     </footer>
-    <script src="charts.js?v=1.2"></script>
-    <script src="events.js?v=1.2"></script>
+    <script src="charts.js?v=1.7"></script>
+    <script src="events.js?v=1.7"></script>
 </body>
 </html>

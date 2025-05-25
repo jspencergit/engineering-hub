@@ -10,6 +10,8 @@ const spendingGradient = ctx.createLinearGradient(0, 0, 0, 400);
 spendingGradient.addColorStop(0, 'rgba(212, 160, 23, 0.8)'); // #D4A017 at 80% opacity
 spendingGradient.addColorStop(1, 'rgba(253, 246, 227, 0.2)'); // #FDF6E3 at 20% opacity
 
+let sharedAxis = false;
+
 const financialChart = new Chart(financialChartCanvas, {
     type: 'line',
     data: {
@@ -33,7 +35,7 @@ const financialChart = new Chart(financialChartCanvas, {
                 borderWidth: 2,
                 pointRadius: 0,
                 fill: true,
-                borderDash: [5, 3], // Dashed line
+                borderDash: [5, 3],
                 yAxisID: 'y-left'
             },
             {
@@ -43,11 +45,11 @@ const financialChart = new Chart(financialChartCanvas, {
                 backgroundColor: 'rgba(46, 204, 113, 0.5)', // #2ECC71 at 50% opacity
                 borderWidth: 0,
                 pointRadius: 0,
-                fill: '-1', // Fill between this dataset and the previous one (Spending)
+                fill: '-1',
                 yAxisID: 'y-left'
             },
             {
-                label: 'Savings ($)',
+                label: 'Wealth ($)',
                 data: [],
                 borderColor: '#ff4500',
                 borderWidth: 2,
@@ -80,12 +82,12 @@ const financialChart = new Chart(financialChartCanvas, {
                 position: 'right',
                 title: {
                     display: true,
-                    text: 'Savings ($)',
+                    text: 'Wealth ($)',
                     color: '#ff4500',
                     font: { size: 14 }
                 },
                 grid: {
-                    drawOnChartArea: false // Avoid overlapping grid lines
+                    drawOnChartArea: false
                 },
                 ticks: {
                     color: '#ff4500',
@@ -121,27 +123,7 @@ const financialChart = new Chart(financialChartCanvas, {
                 }
             },
             tooltip: {
-                backgroundColor: '#333333',
-                titleColor: '#ffffff',
-                bodyColor: '#ffffff',
-                callbacks: {
-                    label: function(context) {
-                        return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
-                    }
-                }
-            }
-        },
-        onHover: (event, chartElement) => {
-            const coordsDisplay = document.getElementById('chart-coords');
-            if (chartElement.length) {
-                const year = chartElement[0].element.parsed.x;
-                const datasets = financialChart.data.datasets;
-                const income = datasets[0].data[chartElement[0].index];
-                const spending = datasets[1].data[chartElement[0].index];
-                const savings = datasets[3].data[chartElement[0].index];
-                coordsDisplay.textContent = `Year: ${year}, Income: $${income.toFixed(2)}, Spending: $${spending.toFixed(2)}, Savings: $${savings.toFixed(2)}`;
-            } else {
-                coordsDisplay.textContent = 'Hover over the graph to see values.';
+                enabled: false
             }
         },
         animation: {
@@ -150,11 +132,37 @@ const financialChart = new Chart(financialChartCanvas, {
     }
 });
 
-function updateFinancialChart(years, incomeData, spendingData, wealthGapData, savingsData) {
+function updateFinancialChart(years, incomeData, spendingData, wealthGapData, wealthData) {
     financialChart.data.labels = years;
     financialChart.data.datasets[0].data = incomeData;
     financialChart.data.datasets[1].data = spendingData;
     financialChart.data.datasets[2].data = wealthGapData;
-    financialChart.data.datasets[3].data = savingsData;
+    financialChart.data.datasets[3].data = wealthData;
+
+    const maxIncomeSpending = Math.max(
+        Math.max(...incomeData),
+        Math.max(...spendingData)
+    );
+    const maxWealth = Math.max(...wealthData);
+
+    financialChart.options.scales['y-left'].max = maxIncomeSpending * 2;
+
+    if (sharedAxis) {
+        financialChart.options.scales['y-left'].max = Math.max(maxIncomeSpending, maxWealth);
+        financialChart.options.scales['y-left'].title.text = 'Amount ($)';
+        financialChart.options.scales['y-right'].display = false;
+        financialChart.data.datasets[3].yAxisID = 'y-left';
+    } else {
+        financialChart.options.scales['y-left'].max = maxIncomeSpending * 2;
+        financialChart.options.scales['y-left'].title.text = 'Income & Spending ($)';
+        financialChart.options.scales['y-right'].display = true;
+        financialChart.data.datasets[3].yAxisID = 'y-right';
+    }
+
     financialChart.update();
 }
+
+window.toggleSharedAxis = function() {
+    sharedAxis = document.getElementById('share-y-axis').checked;
+    window.calculate();
+};
