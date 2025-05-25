@@ -17,6 +17,11 @@
         </nav>
     </header>
     <main>
+        <section class="chart-section">
+            <h2>Financial Growth Over Time</h2>
+            <div id="chart-coords">Hover over the graph to see values.</div>
+            <canvas id="financial-chart" width="800" height="400"></canvas>
+        </section>
         <section class="input-section">
             <h2>Input Parameters</h2>
             <div class="input-grid">
@@ -66,23 +71,13 @@
             <button onclick="calculate()">Calculate</button>
             <button onclick="reset()">Reset</button>
         </section>
-        <section class="chart-section">
-            <h2>Income vs Spending Over Time</h2>
-            <div id="income-spending-coords">Coordinates: --</div>
-            <canvas id="income-spending-chart" width="800" height="400"></canvas>
-        </section>
-        <section class="chart-section">
-            <h2>Savings Growth Over Time</h2>
-            <div id="savings-coords">Coordinates: --</div>
-            <canvas id="savings-chart" width="800" height="400"></canvas>
-        </section>
     </main>
     <footer>
         <p>Contact Us: (801) 532-8200 | info@imcportfolio.com</p>
         <p>6465 South 3000 East, Suite 200, Salt Lake City, UT</p>
         <p><a href="#">Privacy Policy</a></p>
     </footer>
-    <script src="charts.js?v=1.1"></script>
-    <script src="events.js?v=1.1"></script>
+    <script src="charts.js?v=1.2"></script>
+    <script src="events.js?v=1.2"></script>
 </body>
 </html>

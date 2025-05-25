@@ -55,6 +55,7 @@
 
         const incomeData = [income];
         const spendingData = [spending];
+        const wealthGapData = [income]; // Same as income, will fill between income and spending
         const savingsData = [savings];
 
         for (let i = 0; i < timeHorizon; i++) {
@@ -65,14 +66,14 @@
 
             incomeData.push(income);
             spendingData.push(spending);
+            wealthGapData.push(income); // Wealth gap dataset matches income, fills down to spending
             savingsData.push(savings);
         }
 
-        if (window.updateIncomeSpendingChart && window.updateSavingsChart) {
-            window.updateIncomeSpendingChart(years, incomeData, spendingData);
-            window.updateSavingsChart(years, savingsData);
+        if (window.updateFinancialChart) {
+            window.updateFinancialChart(years, incomeData, spendingData, wealthGapData, savingsData);
         } else {
-            console.error('Chart update functions are not available. Ensure charts.js is loaded correctly.');
+            console.error('Chart update function is not available. Ensure charts.js is loaded correctly.');
         }
     };
 
@@ -94,12 +95,10 @@
         document.getElementById('time-horizon').value = 20;
         document.getElementById('time-horizon-slider').value = 20;
 
-        if (window.updateIncomeSpendingChart && window.updateSavingsChart) {
-            window.updateIncomeSpendingChart([], [], []);
-            window.updateSavingsChart([], []);
+        if (window.updateFinancialChart) {
+            window.updateFinancialChart([], [], [], [], []);
         }
-        document.getElementById('income-spending-coords').textContent = 'Coordinates: --';
-        document.getElementById('savings-coords').textContent = 'Coordinates: --';
+        document.getElementById('chart-coords').textContent = 'Hover over the graph to see values.';
     };
 
     document.addEventListener('DOMContentLoaded', () => {

@@ -40,7 +40,7 @@ main {
     padding: 0 20px;
 }
 
-.input-section, .chart-section, .button-section {
+.chart-section, .input-section, .button-section {
     background-color: #ffffff;
     padding: 20px;
     margin-bottom: 20px;
@@ -48,10 +48,20 @@ main {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.input-section h2, .chart-section h2 {
+.chart-section h2, .input-section h2 {
     font-size: 24px;
     color: #003087;
     margin-top: 0;
+}
+
+#chart-coords {
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#financial-chart {
+    border: 1px solid #cccccc;
 }
 
 .input-grid {
@@ -81,12 +91,6 @@ input[type="number"], input[type="range"] {
 
 input[type="range"] {
     margin-top: 5px;
-}
-
-#income-spending-coords, #savings-coords {
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 10px;
 }
 
 .button-section {
