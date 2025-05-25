@@ -540,10 +540,6 @@ function handleFitCurve() {
         return;
     }
 
-    // Get the user-specified number of points for CSV
-    const csvPoints = parseInt(document.getElementById('csv-points-input').value) || 100;
-    const numCsvPoints = Math.min(Math.max(csvPoints, 1), 1000); // Cap at 1000 points
-
     // Fit the curve for the displayed table and chart (100 points)
     const displayFit = fitCurve(points, scaling.xMax, 100);
     const { splineData, minCurrent, maxCurrent } = displayFit;
@@ -564,12 +560,21 @@ function handleFitCurve() {
         table.innerHTML += `<tr><td>${row.current}</td><td>${row.efficiency}</td></tr>`;
     });
 
-    // Fit the curve for CSV with user-specified number of points
-    const csvFit = fitCurve(points, scaling.xMax, numCsvPoints);
-    const csvTableData = generateTableData(csvFit.splineData, minCurrent, maxCurrent);
-    const csv = generateCSV(csvTableData);
+    // Set up the download button to generate CSV on click
     const downloadBtn = document.getElementById('download-csv-btn');
     downloadBtn.onclick = () => {
+        // Get the latest user-specified number of points
+        const csvPoints = parseInt(document.getElementById('csv-points-input').value) || 100;
+        const numCsvPoints = Math.min(Math.max(csvPoints, 1), 1000); // Cap at 1000 points
+        console.log(`Generating CSV with ${numCsvPoints} points`);
+
+        // Fit the curve for CSV with the latest user-specified number of points
+        const csvFit = fitCurve(points, scaling.xMax, numCsvPoints);
+        const csvTableData = generateTableData(csvFit.splineData, minCurrent, maxCurrent);
+        console.log(`CSV table data has ${csvTableData.length} points`);
+        const csv = generateCSV(csvTableData);
+
+        // Create and trigger the download
         const link = document.createElement('a');
         link.setAttribute('href', `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`);
         link.setAttribute('download', 'efficiency_data.csv');
