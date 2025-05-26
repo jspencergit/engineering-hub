@@ -13,6 +13,7 @@
         { numberId: 'pay-increase', sliderId: 'pay-increase-slider', type: 'percentage' },
         { numberId: 'spending-increase', sliderId: 'spending-increase-slider', type: 'percentage' },
         { numberId: 'investment-return', sliderId: 'investment-return-slider', type: 'percentage' },
+        { numberId: 'return-std-dev', sliderId: 'return-std-dev-slider', type: 'percentage' },
         { numberId: 'time-horizon', sliderId: 'time-horizon-slider', type: 'integer' }
     ];
 
@@ -20,7 +21,6 @@
         const numberInput = document.getElementById(input.numberId);
         const sliderInput = document.getElementById(input.sliderId);
 
-        // Handle manual input
         numberInput.addEventListener('input', () => {
             let value = input.type === 'currency'
                 ? parseFloat(cleaveInstances[input.numberId].getRawValue()) || 0
@@ -40,7 +40,6 @@
             window.calculate();
         });
 
-        // Handle slider input
         sliderInput.addEventListener('input', () => {
             let value = parseFloat(sliderInput.value);
             if (input.type === 'currency') {
@@ -54,7 +53,6 @@
             window.calculate();
         });
 
-        // Handle mouse wheel
         numberInput.addEventListener('wheel', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -94,6 +92,7 @@
         const payIncrease = (parseFloat(document.getElementById('pay-increase').value) || 0) / 100;
         const spendingIncrease = (parseFloat(document.getElementById('spending-increase').value) || 0) / 100;
         const investmentReturn = (parseFloat(document.getElementById('investment-return').value) || 0) / 100;
+        const returnStdDev = (parseFloat(document.getElementById('return-std-dev').value) || 0) / 100;
         const timeHorizon = parseInt(document.getElementById('time-horizon').value) || 20;
 
         const currentYear = new Date().getFullYear();
@@ -105,22 +104,60 @@
 
         const incomeData = [income];
         const spendingData = [spending];
-        const wealthGapData = [income];
+        const positiveWealthGapData = [income];
+        const negativeWealthGapData = [spending];
         const wealthData = [wealth];
+        const wealthUpper1SD = [wealth];
+        const wealthLower1SD = [wealth];
+        const wealthUpper2SD = [wealth];
+        const wealthLower2SD = [wealth];
 
-        for (let i = 0; i < timeHorizon; i++) {
+        for (let t = 0; t < timeHorizon; t++) {
             income *= 1 + payIncrease;
             spending *= 1 + spendingIncrease;
             const contribution = income - spending;
-            wealth = wealth > 0 ? wealth * (1 + investmentReturn) + contribution : wealth + contribution;
+
+            if (wealth > 0) {
+                wealth = wealth * (1 + investmentReturn) + contribution;
+            } else {
+                wealth = wealth + contribution;
+            }
+
+            // Calculate confidence intervals for wealth (only if wealth > 0)
+            let sdWealth = 0;
+            if (returnStdDev > 0 && wealth > 0) {
+                sdWealth = wealth * Math.sqrt(t + 1) * returnStdDev;
+            }
+
             incomeData.push(income);
             spendingData.push(spending);
-            wealthGapData.push(income);
+
+            // Determine positive and negative wealth gaps
+            if (income > spending) {
+                positiveWealthGapData.push(income);
+                negativeWealthGapData.push(spending);
+            } else {
+                positiveWealthGapData.push(spending);
+                negativeWealthGapData.push(income);
+            }
+
             wealthData.push(wealth);
+
+            if (wealth > 0 && returnStdDev > 0) {
+                wealthUpper1SD.push(wealth + sdWealth);
+                wealthLower1SD.push(Math.max(wealth - sdWealth, 0));
+                wealthUpper2SD.push(wealth + 2 * sdWealth);
+                wealthLower2SD.push(Math.max(wealth - 2 * sdWealth, 0));
+            } else {
+                wealthUpper1SD.push(wealth);
+                wealthLower1SD.push(wealth);
+                wealthUpper2SD.push(wealth);
+                wealthLower2SD.push(wealth);
+            }
         }
 
         if (window.updateFinancialChart) {
-            window.updateFinancialChart(years, incomeData, spendingData, wealthGapData, wealthData);
+            window.updateFinancialChart(years, incomeData, spendingData, positiveWealthGapData, negativeWealthGapData, wealthData, wealthUpper1SD, wealthLower1SD, wealthUpper2SD, wealthLower2SD);
         } else {
             console.error('Chart update function not available. Ensure charts.js is loaded.');
         }
@@ -139,6 +176,8 @@
         document.getElementById('spending-increase-slider').value = 2.5;
         document.getElementById('investment-return').value = 7.0;
         document.getElementById('investment-return-slider').value = 7;
+        document.getElementById('return-std-dev').value = 0.0;
+        document.getElementById('return-std-dev-slider').value = 0;
         document.getElementById('time-horizon').value = 20;
         document.getElementById('time-horizon-slider').value = 20;
 
