@@ -26,7 +26,7 @@ const ZOOM_SIZE = 200; // Size of zoom canvas (width/height)
 
 /* Dot settings */
 const CALIBRATION_DOT_RADIUS = 1.25; // Reduced to 1/4 of original 5
-const CURVE_DOT_RADIUS = 1.25; // Reduced to 1/4 of original 5
+const CURVE_DOT_RADIUS = 2.5; // Doubled from 1.25 to 2.5 for user-placed points
 
 /* Helper function to map pixel coordinates to real values (X-axis) */
 function mapPixelToValueX(pixelX) {
