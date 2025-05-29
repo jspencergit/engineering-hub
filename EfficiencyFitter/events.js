@@ -636,14 +636,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create a new chart with all series
         createFittedChart(series, fittedSeries, 'linear', scaling);
 
-        // Generate table data for display (first series only for simplicity)
+        // Generate table data for display, including all series
         if (fittedSeries.length > 0) {
-            const tableData = generateTableData(fittedSeries[0].splineData, fittedSeries[0].minCurrent, fittedSeries[0].maxCurrent);
+            // Generate table data for each series
+            const tableData = fittedSeries.map(series => ({
+                name: series.name,
+                data: generateTableData(series.splineData, series.minCurrent, series.maxCurrent)
+            }));
+
             const table = document.getElementById('data-table');
-            table.innerHTML = '<tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>';
-            tableData.forEach(row => {
-                table.innerHTML += `<tr><td>${row.current}</td><td>${row.efficiency}</td></tr>`;
+            // Create table header with series names
+            let headerRow = '<tr><th>Current (mA)</th>';
+            fittedSeries.forEach(series => {
+                headerRow += `<th>${series.name}<br>Efficiency (%)</th>`;
             });
+            headerRow += '</tr>';
+            table.innerHTML = headerRow;
+
+            // Add data rows
+            const numRows = tableData[0].data.length; // All series have the same number of points
+            for (let i = 0; i < numRows; i++) {
+                let row = `<tr><td>${tableData[0].data[i].current}</td>`; // Current from the first series
+                tableData.forEach(series => {
+                    row += `<td>${series.data[i].efficiency}</td>`;
+                });
+                row += '</tr>';
+                table.innerHTML += row;
+            }
         }
 
         // Set up the download button to generate CSV on click
