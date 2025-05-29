@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let image = null;
     let series = []; // Array of series: [{ name: "Vin = 12V", points: [{ current, efficiency, pixelX, pixelY }, ...], isCalculated: false }, ...]
     let activeSeries = null; // Currently selected series for placing points
+    let fittedSeries = []; // Array to store fitted curve data: [{ name, splineData, minCurrent, maxCurrent, isCalculated }, ...]
     let scaling = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     let isScaling = false;
@@ -312,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             xCalibrationFit = { a: 1, b: 0 };
             yCalibrationFit = { a: 1, b: 0 };
             series = [];
+            fittedSeries = []; // Clear fitted curves
             activeSeries = null;
             updateSeriesDropdown();
 
@@ -384,6 +386,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fill();
             });
         });
+
+        // Draw fitted curves if they exist
+        if (fittedSeries.length > 0) {
+            fittedSeries.forEach((fitted, index) => {
+                const color = SERIES_COLORS[index % SERIES_COLORS.length];
+                const splineData = fitted.splineData;
+                const scaleX = value => mapValueToPixelX(value);
+                const scaleY = value => mapValueToPixelY(value);
+                drawCurveOnCanvas(splineData, canvas, scaleX, scaleY, color);
+            });
+        }
 
         // Draw vertical cursor during X-axis calibration
         if (lastMousePos && isScaling && scalingStep === 0) {
@@ -860,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isScaling = true;
         scalingStep = 0;
         series = [];
+        fittedSeries = []; // Clear fitted curves
         activeSeries = null;
         xCalibrationPoints = [];
         yCalibrationPoints = [];
@@ -878,9 +892,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Fit curves for all series
+        // Fit curves for all series and store in global fittedSeries
         const numPoints = 100; // Number of points for display
-        const fittedSeries = series.map(s => {
+        fittedSeries = series.map(s => {
             if (s.points.length < 2) return null;
             const fit = fitCurve(s.points, scaling.xMax, numPoints);
             return { name: s.name, splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent, isCalculated: s.isCalculated };
@@ -953,6 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Resets the tool to its initial state */
     function resetTool() {
         series = [];
+        fittedSeries = []; // Clear fitted curves
         activeSeries = null;
         lastMousePos = null;
         isScaling = false;
