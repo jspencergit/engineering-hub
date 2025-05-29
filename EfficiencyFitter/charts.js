@@ -131,17 +131,31 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
 
         const chartArea = chart.chartArea;
         const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
         const chartX = xScale.getValueForPixel(mouseX);
+        const chartY = yScale.getValueForPixel(mouseY);
 
-        // Find the nearest point across all fitted series
+        // Find the nearest point across all fitted series, considering both X and Y distances
         let nearestPoint = null;
         let nearestSeriesIndex = 0;
         let minDistance = Infinity;
         fittedSeries.forEach((fitted, index) => {
             const point = fitted.splineData.reduce((prev, curr) => {
-                return (Math.abs(curr.x - chartX) < Math.abs(prev.x - chartX)) ? curr : prev;
+                // Calculate Euclidean distance in chart value space (X and Y)
+                const distancePrev = Math.sqrt(
+                    Math.pow(curr.x - chartX, 2) + 
+                    Math.pow(curr.y - chartY, 2)
+                );
+                const distanceCurr = Math.sqrt(
+                    Math.pow(prev.x - chartX, 2) + 
+                    Math.pow(prev.y - chartY, 2)
+                );
+                return distancePrev < distanceCurr ? curr : prev;
             }, fitted.splineData[0]);
-            const distance = Math.abs(point.x - chartX);
+            const distance = Math.sqrt(
+                Math.pow(point.x - chartX, 2) + 
+                Math.pow(point.y - chartY, 2)
+            );
             if (distance < minDistance) {
                 minDistance = distance;
                 nearestPoint = point;
