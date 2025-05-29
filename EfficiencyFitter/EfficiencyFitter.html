@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Efficiency Fitter - Analog Engineering Hub</title>
-    <!-- External Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Link to CSS file -->
+    <title>Efficiency Fitter</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="calculator.js"></script>
+    <script src="charts.js"></script>
+    <script src="events.js"></script>
 </head>
 <body>
     <header>
         <h1>Analog Engineering Hub</h1>
-        <p><a href="https://jspencergit.github.io/engineering-hub/tools.html">Back to Tools</a></p>
+        <a href="tools.html">Back to Tools</a>
     </header>
-
-    <section id="tools">
+    <section>
         <div class="calculator">
-            <h3>Efficiency Fitter</h3>
-            <input type="file" id="image-upload" accept="image/*">
-            <div id="stage-indicator">Stage: --</div>
-            <canvas id="zoom-canvas"></canvas>
+            <h2>Efficiency Fitter</h2>
+            <div>
+                <label for="stage-indicator">Stage: --</label>
+                <div id="stage-indicator"></div>
+            </div>
             <div class="input-canvas-container">
                 <div class="axis-range">
                     <label for="x-scale-type">X-Axis Scale:</label>
@@ -29,28 +30,38 @@
                         <option value="logarithmic">Logarithmic</option>
                     </select>
                     <label for="x-min-input">X-Axis Min (mA):</label>
-                    <input type="number" id="x-min-input" step="0.1" value="0">
+                    <input type="number" id="x-min-input" value="0">
                     <label for="x-max-input">X-Axis Max (mA):</label>
-                    <input type="number" id="x-max-input" step="0.1" value="1000">
+                    <input type="number" id="x-max-input" value="1000">
                     <label for="y-min-input">Y-Axis Min (%):</label>
-                    <input type="number" id="y-min-input" step="0.1" value="0">
+                    <input type="number" id="y-min-input" value="0">
                     <label for="y-max-input">Y-Axis Max (%):</label>
-                    <input type="number" id="y-max-input" step="0.1" value="100">
+                    <input type="number" id="y-max-input" value="100">
                     <button id="apply-x-calibration-btn">Apply X-Axis Calibration</button>
                     <button id="apply-y-calibration-btn">Apply Y-Axis Calibration</button>
                 </div>
                 <canvas id="image-canvas"></canvas>
             </div>
+            <canvas id="zoom-canvas"></canvas>
             <div class="instructions">
                 <p>1. Upload the graph image.</p>
                 <p>2. Select X-axis scale and enter axis ranges to the left.</p>
                 <p>3. Align the vertical cursor with known X-axis values, click to add points, then click "Apply X-Axis Calibration".</p>
                 <p>4. Align the horizontal cursor with known Y-axis values, click to add points, then click "Apply Y-Axis Calibration".</p>
                 <p>5. Use the stage indicator and magnifying glass above the image to guide calibration and dot placement. For logarithmic X-axis, place more points at low currents for better accuracy.</p>
-                <p>6. Hover to see coordinates, click on the curve to place dots.</p>
+                <p>6. Select a series, hover to see coordinates, click on the curve to place dots.</p>
                 <p>7. Click "Fit Curve" to generate the plot and CSV.</p>
             </div>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
+            <input type="file" id="image-upload" accept="image/*">
+            <div>
+                <label for="series-select">Select Series:</label>
+                <select id="series-select"></select>
+                <label for="series-name">New Series Name:</label>
+                <input type="text" id="series-name" placeholder="e.g., Vin = 12V">
+                <button id="add-series-btn">Add Series</button>
+                <button id="clear-series-btn">Clear Selected Series</button>
+            </div>
             <button id="fit-curve-btn">Fit Curve</button>
             <button id="undo-dot-btn">Undo Last Dot</button>
             <button id="redo-calibration-btn">Redo Image Calibration</button>
@@ -58,25 +69,23 @@
         </div>
         <div class="outputs">
             <h3>Fitted Curves</h3>
-            <div id="fitted-plots"></div>
             <div class="scale-buttons">
                 <button id="linear-scale-btn">Linear</button>
                 <button id="log-scale-btn">Log</button>
             </div>
-            <h3>Data Table
-                <label for="csv-points-input" style="margin-left: 10px;">CSV Points (up to 1000):</label>
-                <input type="number" id="csv-points-input" min="1" max="1000" value="100" style="width: 80px; margin-left: 5px;">
-                <button id="download-csv-btn" style="margin-left: 10px;">Download CSV</button>
-                <button id="clear-plot-btn" style="margin-left: 5px;">Clear Plot</button>
-            </h3>
+            <div id="fitted-plots"></div>
+            <h3>Data Table</h3>
+            <label for="csv-points-input">CSV Points (up to 1000):</label>
+            <input type="number" id="csv-points-input" value="100">
+            <button id="download-csv-btn">Download CSV</button>
+            <button id="clear-plot-btn">Clear Plot</button>
             <table id="data-table">
-                <tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>
+                <tr>
+                    <th>Current (mA)</th>
+                    <th>Efficiency (%)</th>
+                </tr>
             </table>
         </div>
     </section>
-
-    <script src="calculator.js"></script>
-    <script src="charts.js"></script>
-    <script src="events.js"></script>
 </body>
 </html>

@@ -26,7 +26,7 @@ section {
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     display: flex;
-    gap: 20px; /* Space between calculator and outputs */
+    gap: 20px;
 }
 
 /* Calculator section for image upload and dot placement */
@@ -53,7 +53,7 @@ section {
 /* Axis range inputs for setting min/max values */
 .axis-range {
     margin: 10px 0;
-    flex: 1; /* Take available space */
+    flex: 1;
 }
 
 /* Input fields for axis ranges */
@@ -100,24 +100,24 @@ section {
 
 /* Different background colors for each stage */
 #stage-indicator.x-axis {
-    background-color: #e0e0e0; /* Light gray for X-axis calibration */
+    background-color: #e0e0e0;
 }
 
 #stage-indicator.y-axis {
-    background-color: #fffde7; /* Light yellow for Y-axis calibration */
+    background-color: #fffde7;
 }
 
 #stage-indicator.dot-placement {
-    background-color: #e8f5e9; /* Light green for dot placement */
+    background-color: #e8f5e9;
 }
 
 /* Zoom canvas for magnifying glass view */
 #zoom-canvas {
-    display: none; /* Hidden by default */
+    display: none;
     width: 200px;
     height: 200px;
     border: 2px solid #1a73e8;
-    border-radius: 50%; /* Circular shape like a magnifying glass */
+    border-radius: 50%;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
     background-color: #f8f9fa;
     position: absolute;
@@ -142,14 +142,14 @@ label {
 
 /* Canvas for image, dots, and fitted curve */
 canvas {
-    max-width: 450px; /* Constrain display width to fit UI */
-    width: 100%; /* Ensure it scales responsively within max-width */
-    height: auto; /* Maintain aspect ratio */
-    flex: 2; /* Take more space than axis-range */
+    max-width: 450px;
+    width: 100%;
+    height: auto;
+    flex: 2;
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    aspect-ratio: attr(width) / attr(height); /* Preserve canvas aspect ratio */
+    aspect-ratio: attr(width) / attr(height);
 }
 
 /* Fixed div for cursor coordinates */
@@ -228,4 +228,19 @@ button:hover {
 /* Fitted plots container */
 #fitted-plots canvas {
     margin-top: 20px;
+}
+
+/* Series selection inputs */
+#series-select, #series-name {
+    width: 100%;
+    max-width: 150px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+#series-name {
+    max-width: 200px;
 }
