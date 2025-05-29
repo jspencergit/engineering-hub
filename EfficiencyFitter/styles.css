@@ -244,3 +244,27 @@ button:hover {
 #series-name {
     max-width: 200px;
 }
+
+/* Styles for textbook-like equations */
+.fraction {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.fraction .numerator {
+    display: block;
+    border-bottom: 1px solid black;
+    padding-bottom: 2px;
+}
+
+.fraction .denominator {
+    display: block;
+    padding-top: 2px;
+}
+
+.equation {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 10px;
+}

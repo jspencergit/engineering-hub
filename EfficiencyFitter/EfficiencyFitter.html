@@ -53,23 +53,40 @@
                 <button id="add-series-btn">Add Series</button>
                 <button id="clear-series-btn">Clear Selected Series</button>
             </div>
-            <div>
-                <h3>Calculate Interpolated Series</h3>
-                <label for="calc-series-name">Calculated Series Name:</label>
-                <input type="text" id="calc-series-name" placeholder="e.g., 18Vin">
-                <label for="interp-series-1">Series 1 (Lower):</label>
-                <select id="interp-series-1"></select>
-                <label for="interp-series-2">Series 2 (Higher):</label>
-                <select id="interp-series-2"></select>
-                <label for="interp-ratio">Interpolation Ratio (0 to 1):</label>
-                <input type="number" id="interp-ratio" min="0" max="1" step="0.01" value="0.5">
-                <p class="instructions">Ratio determines how far the new series is from Series 1 to Series 2. 0 = Series 1, 1 = Series 2, 0.5 = halfway.</p>
-                <button id="generate-interp-btn">Generate Interpolated Data</button>
-            </div>
             <button id="fit-curve-btn">Fit Curve</button>
             <button id="undo-dot-btn">Undo Last Dot</button>
             <button id="redo-calibration-btn">Redo Image Calibration</button>
             <button id="reset-btn">Reset</button>
+            <div>
+                <h3>Calculate Interpolated Series</h3>
+                <label for="calc-series-name">Calculated Series Name:</label>
+                <input type="text" id="calc-series-name" placeholder="e.g., 18Vin">
+                <label for="interp-series-1">Series 1 (Base):</label>
+                <select id="interp-series-1"></select>
+                <label for="interp-series-2">Series 2 (Target):</label>
+                <select id="interp-series-2"></select>
+                <label for="interp-ratio">Interpolation Ratio (0 to 1):</label>
+                <input type="number" id="interp-ratio" min="0" max="1" step="0.01" value="0.5">
+                <p class="instructions">
+                    <strong>Calculate Interpolated Series</strong><br>
+                    Enter a name for the new series, select two existing series, and specify an interpolation ratio between 0 and 1. The ratio determines how far the new series is from Series 1 (Base) to Series 2 (Target). A ratio of 0 matches Series 1, 1 matches Series 2, and 0.5 is halfway.<br>
+                    <strong>Example</strong>: To estimate 13Vin between Series 1 (Base) = 12Vin and Series 2 (Target) = 24Vin, calculate the ratio as<br>
+                    <span class="equation">
+                        Ratio = <span class="fraction"><span class="numerator">13 - 12</span><span class="denominator">24 - 12</span></span>
+                        = <span class="fraction"><span class="numerator">1</span><span class="denominator">12</span></span>
+                        ≈ 0.167
+                    </span><br>
+                    Enter 0.167 as the ratio. If Series 1 (Base) = 24Vin and Series 2 (Target) = 12Vin, the ratio would be<br>
+                    <span class="equation">
+                        Ratio = <span class="fraction"><span class="numerator">13 - 24</span><span class="denominator">12 - 24</span></span>
+                        = <span class="fraction"><span class="numerator">-11</span><span class="denominator">-12</span></span>
+                        = <span class="fraction"><span class="numerator">11</span><span class="denominator">12</span></span>
+                        ≈ 0.917
+                    </span><br>
+                    Alternatively, use 1 - 0.167 = 0.833.
+                </p>
+                <button id="generate-interp-btn">Generate Interpolated Data</button>
+            </div>
             <div class="instructions">
                 <p>1. Upload the graph image.</p>
                 <p>2. Select X-axis scale and enter axis ranges to the left.</p>
