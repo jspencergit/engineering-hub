@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let zoomCtx = zoomCanvas.getContext('2d');
     let stageIndicator = document.getElementById('stage-indicator');
     let image = null;
-    let series = []; // Array of series: [{ name: "Vin = 12V", points: [{ current, efficiency, pixelX, pixelY }, ...] }, ...]
+    let series = []; // Array of series: [{ name: "Vin = 12V", points: [{ current, efficiency, pixelX, pixelY }, ...], isCalculated: false }, ...]
     let activeSeries = null; // Currently selected series for placing points
     let scaling = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
@@ -232,13 +232,35 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Updates the series dropdown with available series */
     function updateSeriesDropdown() {
         const seriesSelect = document.getElementById('series-select');
+        const interpSelect1 = document.getElementById('interp-series-1');
+        const interpSelect2 = document.getElementById('interp-series-2');
+        
+        // Update main series selection dropdown
         seriesSelect.innerHTML = '';
+        interpSelect1.innerHTML = '';
+        interpSelect2.innerHTML = '';
+
         series.forEach((s, index) => {
+            // Main series dropdown
             const option = document.createElement('option');
             option.value = index;
             option.textContent = s.name;
             seriesSelect.appendChild(option);
+
+            // Interpolation series dropdowns (exclude calculated series)
+            if (!s.isCalculated) {
+                const option1 = document.createElement('option');
+                option1.value = index;
+                option1.textContent = s.name;
+                interpSelect1.appendChild(option1);
+
+                const option2 = document.createElement('option');
+                option2.value = index;
+                option2.textContent = s.name;
+                interpSelect2.appendChild(option2);
+            }
         });
+
         if (series.length > 0) {
             seriesSelect.value = series.indexOf(activeSeries);
         }
@@ -524,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('A series with this name already exists. Please choose a different name.');
             return;
         }
-        const newSeries = { name: seriesName, points: [] };
+        const newSeries = { name: seriesName, points: [], isCalculated: false };
         series.push(newSeries);
         activeSeries = newSeries;
         updateSeriesDropdown();
@@ -585,6 +607,72 @@ document.addEventListener('DOMContentLoaded', () => {
         redrawCanvas();
     }
 
+    /* Generates an interpolated series based on two existing series and a ratio */
+    function generateInterpolatedSeries() {
+        const seriesName = document.getElementById('calc-series-name').value.trim();
+        const series1Index = parseInt(document.getElementById('interp-series-1').value);
+        const series2Index = parseInt(document.getElementById('interp-series-2').value);
+        const ratio = parseFloat(document.getElementById('interp-ratio').value);
+
+        // Validation
+        if (!seriesName) {
+            alert('Please enter a name for the calculated series.');
+            return;
+        }
+        if (series.some(s => s.name === seriesName)) {
+            alert('A series with this name already exists. Please choose a different name.');
+            return;
+        }
+        if (isNaN(series1Index) || isNaN(series2Index) || series1Index < 0 || series2Index < 0 || series1Index >= series.length || series2Index >= series.length) {
+            alert('Please select two series to interpolate between.');
+            return;
+        }
+        if (series1Index === series2Index) {
+            alert('Please select two different series to interpolate between.');
+            return;
+        }
+        if (isNaN(ratio) || ratio < 0 || ratio > 1) {
+            alert('Please enter a valid interpolation ratio between 0 and 1.');
+            return;
+        }
+        if (series.filter(s => !s.isCalculated).length < 2) {
+            alert('You need at least two non-calculated series to perform interpolation.');
+            return;
+        }
+
+        const series1 = series[series1Index];
+        const series2 = series[series2Index];
+
+        // Fit both series to get spline data with the same X-axis points
+        const numPoints = 100;
+        const fit1 = fitCurve(series1.points, scaling.xMax, numPoints);
+        const fit2 = fitCurve(series2.points, scaling.xMax, numPoints);
+
+        // Interpolate between the two series
+        const interpolatedPoints = [];
+        for (let i = 0; i < numPoints; i++) {
+            const current = fit1.splineData[i].x; // X-axis points are the same for both series
+            const eff1 = fit1.splineData[i].y;
+            const eff2 = fit2.splineData[i].y;
+            // Linear interpolation: eff_new = eff1 + ratio * (eff2 - eff1)
+            const interpolatedEff = eff1 + ratio * (eff2 - eff1);
+            // Map back to pixel coordinates for canvas drawing
+            const pixelX = mapValueToPixelX(current);
+            const pixelY = mapValueToPixelY(interpolatedEff);
+            interpolatedPoints.push({ current, efficiency: interpolatedEff, pixelX, pixelY });
+        }
+
+        // Add the new series
+        const newSeries = { name: seriesName, points: interpolatedPoints, isCalculated: true };
+        series.push(newSeries);
+        updateSeriesDropdown();
+
+        // Update chart and table if they exist
+        if (document.getElementById('fitted-plots').innerHTML) {
+            handleFitCurve();
+        }
+    }
+
     /* Removes the last dot placed by the user in the active series */
     function undoLastDot() {
         if (!activeSeries || activeSeries.points.length === 0) return;
@@ -621,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fittedSeries = series.map(s => {
             if (s.points.length < 2) return null;
             const fit = fitCurve(s.points, scaling.xMax, numPoints);
-            return { name: s.name, splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent };
+            return { name: s.name, splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent, isCalculated: s.isCalculated };
         }).filter(s => s !== null);
 
         // Draw fitted curves on the canvas
@@ -641,14 +729,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Generate table data for each series
             const tableData = fittedSeries.map(series => ({
                 name: series.name,
-                data: generateTableData(series.splineData, series.minCurrent, series.maxCurrent)
+                data: generateTableData(series.splineData, series.minCurrent, series.maxCurrent),
+                isCalculated: series.isCalculated
             }));
 
             const table = document.getElementById('data-table');
             // Create table header with series names
             let headerRow = '<tr><th>Current (mA)</th>';
             fittedSeries.forEach(series => {
-                headerRow += `<th>${series.name}<br>Efficiency (%)</th>`;
+                const suffix = series.isCalculated ? ' (Calculated)' : '';
+                headerRow += `<th>${series.name}${suffix}<br>Efficiency (%)</th>`;
             });
             headerRow += '</tr>';
             table.innerHTML = headerRow;
@@ -675,7 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const csvFittedSeries = series.map(s => {
                 if (s.points.length < 2) return null;
                 const fit = fitCurve(s.points, scaling.xMax, numCsvPoints);
-                return { name: s.name, splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent };
+                return { name: s.name + (s.isCalculated ? ' (Calculated)' : ''), splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent };
             }).filter(s => s !== null);
 
             const csv = generateCSVForMultipleSeries(csvFittedSeries);
@@ -732,6 +822,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('clear-plot-btn').addEventListener('click', clearLatestChart);
     document.getElementById('add-series-btn').addEventListener('click', addSeries);
     document.getElementById('clear-series-btn').addEventListener('click', clearSeries);
+    document.getElementById('generate-interp-btn').addEventListener('click', generateInterpolatedSeries);
     document.getElementById('series-select').addEventListener('change', (event) => {
         const index = parseInt(event.target.value);
         activeSeries = series[index] || null;

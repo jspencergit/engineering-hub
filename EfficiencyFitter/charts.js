@@ -31,26 +31,29 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
 
         // Fitted curve dataset
         datasets.push({
-            label: `${fitted.name} Efficiency`,
+            label: `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''} Efficiency`,
             data: validSplineData.map(d => ({ x: d.x, y: d.y })),
             borderColor: color,
             fill: false,
             pointRadius: 0,
-            tension: 0.4
+            tension: 0.4,
+            borderDash: fitted.isCalculated ? [5, 5] : [] // Dashed line for calculated series
         });
 
-        // User points dataset
-        const seriesPoints = series.find(s => s.name === fitted.name).points;
-        datasets.push({
-            label: `${fitted.name} Points`,
-            data: seriesPoints.map(p => ({ x: p.current, y: p.efficiency })),
-            pointRadius: 5,
-            pointStyle: 'circle',
-            borderColor: color,
-            backgroundColor: 'grey', // Grey interior for points
-            borderWidth: 2,
-            showLine: false
-        });
+        // User points dataset (only for non-calculated series)
+        if (!fitted.isCalculated) {
+            const seriesPoints = series.find(s => s.name === fitted.name).points;
+            datasets.push({
+                label: `${fitted.name} Points`,
+                data: seriesPoints.map(p => ({ x: p.current, y: p.efficiency })),
+                pointRadius: 5,
+                pointStyle: 'circle',
+                borderColor: color,
+                backgroundColor: 'grey', // Grey interior for points
+                borderWidth: 2,
+                showLine: false
+            });
+        }
     });
 
     // Snap point dataset (for mouse interaction)
@@ -99,7 +102,7 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
                             labels.forEach((label, index) => {
                                 const dataset = chart.data.datasets[index];
                                 if (dataset.label.includes('Efficiency')) {
-                                    // Efficiency curves: solid line
+                                    // Efficiency curves: solid line (or dashed for calculated)
                                     label.pointStyle = 'line';
                                     label.lineWidth = 2;
                                     label.fillStyle = dataset.borderColor;
