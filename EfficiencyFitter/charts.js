@@ -47,6 +47,8 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
             pointRadius: 5,
             pointStyle: 'circle',
             borderColor: color,
+            backgroundColor: 'grey', // Grey interior for points
+            borderWidth: 2,
             showLine: false
         });
     });
@@ -58,6 +60,8 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
         pointRadius: 5,
         pointStyle: 'circle',
         borderColor: 'black',
+        backgroundColor: 'grey', // Grey interior for snap points
+        borderWidth: 2,
         showLine: false
     });
 
@@ -87,6 +91,30 @@ function createFittedChart(series, fittedSeries, xScaleType = 'linear', scaling)
             plugins: {
                 tooltip: {
                     enabled: false
+                },
+                legend: {
+                    labels: {
+                        generateLabels: function(chart) {
+                            const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                            labels.forEach((label, index) => {
+                                const dataset = chart.data.datasets[index];
+                                if (dataset.label.includes('Efficiency')) {
+                                    // Efficiency curves: solid line
+                                    label.pointStyle = 'line';
+                                    label.lineWidth = 2;
+                                    label.fillStyle = dataset.borderColor;
+                                    label.strokeStyle = dataset.borderColor;
+                                } else if (dataset.label.includes('Points') || dataset.label === 'Snap Point') {
+                                    // Points and Snap Points: circle with grey interior
+                                    label.pointStyle = 'circle';
+                                    label.fillStyle = 'grey';
+                                    label.strokeStyle = dataset.borderColor;
+                                    label.borderWidth = 2;
+                                }
+                            });
+                            return labels;
+                        }
+                    }
                 }
             },
             interaction: {

@@ -43,15 +43,6 @@
                 <canvas id="image-canvas"></canvas>
             </div>
             <canvas id="zoom-canvas"></canvas>
-            <div class="instructions">
-                <p>1. Upload the graph image.</p>
-                <p>2. Select X-axis scale and enter axis ranges to the left.</p>
-                <p>3. Align the vertical cursor with known X-axis values, click to add points, then click "Apply X-Axis Calibration".</p>
-                <p>4. Align the horizontal cursor with known Y-axis values, click to add points, then click "Apply Y-Axis Calibration".</p>
-                <p>5. Use the stage indicator and magnifying glass above the image to guide calibration and dot placement. For logarithmic X-axis, place more points at low currents for better accuracy.</p>
-                <p>6. Select a series, hover to see coordinates, click on the curve to place dots.</p>
-                <p>7. Click "Fit Curve" to generate the plot and CSV.</p>
-            </div>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
             <input type="file" id="image-upload" accept="image/*">
             <div>
@@ -66,6 +57,15 @@
             <button id="undo-dot-btn">Undo Last Dot</button>
             <button id="redo-calibration-btn">Redo Image Calibration</button>
             <button id="reset-btn">Reset</button>
+            <div class="instructions">
+                <p>1. Upload the graph image.</p>
+                <p>2. Select X-axis scale and enter axis ranges to the left.</p>
+                <p>3. Align the vertical cursor with known X-axis values, click to add points, then click "Apply X-Axis Calibration".</p>
+                <p>4. Align the horizontal cursor with known Y-axis values, click to add points, then click "Apply Y-Axis Calibration".</p>
+                <p>5. Use the stage indicator and magnifying glass above the image to guide calibration and dot placement. For logarithmic X-axis, place more points at low currents for better accuracy.</p>
+                <p>6. Select a series, hover to see coordinates, click on the curve to place dots.</p>
+                <p>7. Click "Fit Curve" to generate the plot and CSV.</p>
+            </div>
         </div>
         <div class="outputs">
             <h3>Fitted Curves</h3>
