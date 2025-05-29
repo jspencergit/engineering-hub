@@ -18,11 +18,14 @@ let yCalibrationPoints = []; // Y-axis calibration points (pixelY, efficiency)
 let xScaleType = 'linear'; // Default to linear
 let xCalibrationFit = { a: 1, b: 0 }; // Linear fit: current = a * pixelX + b
 let yCalibrationFit = { a: 1, b: 0 }; // Linear fit: efficiency = a * pixelY + b
+let canvasScaleFactor = 1; // To handle scaling between internal canvas size and displayed size
 
 /* Zoom settings */
-const ZOOM_FACTOR = 3; // 3x zoom
-const ZOOM_REGION = 50; // 50x50 pixel region to zoom
+let ZOOM_FACTOR = 3; // 3x zoom
+let ZOOM_REGION = 50; // Default 50x50 pixel region to zoom
 const ZOOM_SIZE = 200; // Size of zoom canvas (width/height)
+const MAX_CANVAS_WIDTH = 1000; // Maximum internal canvas width for high-res images
+const MAX_DISPLAY_WIDTH = 450; // Matches CSS max-width for display
 
 /* Dot settings */
 const CALIBRATION_DOT_RADIUS = 1.25; // Reduced to 1/4 of original 5
@@ -73,7 +76,8 @@ function mapValueToPixelY(value) {
 /* Helper function to get canvas coordinates from mouse event */
 function getCanvasCoordinates(event) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width; // Adjust for CSS scaling
+    // Adjust for CSS scaling (display size vs internal canvas size)
+    const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
@@ -159,7 +163,7 @@ function drawZoomView(mouseX, mouseY) {
     // Clear the zoom canvas
     zoomCtx.clearRect(0, 0, ZOOM_SIZE, ZOOM_SIZE);
 
-    // Calculate the region to zoom (50x50 pixels around mouse)
+    // Calculate the region to zoom (dynamic ZOOM_REGION pixels around mouse)
     const halfRegion = ZOOM_REGION / 2;
     let srcX = mouseX - halfRegion;
     let srcY = mouseY - halfRegion;
@@ -171,7 +175,7 @@ function drawZoomView(mouseX, mouseY) {
     // Draw the zoomed-in region (includes the cursor line from the main canvas)
     zoomCtx.drawImage(
         canvas,
-        srcX, srcY, ZOOM_REGION, ZOOM_REGION, // Source: 50x50 pixel region
+        srcX, srcY, ZOOM_REGION, ZOOM_REGION, // Source: dynamic ZOOM_REGION pixel region
         0, 0, ZOOM_SIZE, ZOOM_SIZE // Destination: 200x200 pixel area (3x zoom)
     );
     // Red crosshair removed; the zoomed cursor line from the main canvas is sufficient
@@ -182,14 +186,17 @@ function positionZoomCanvas(event) {
     const rect = canvas.getBoundingClientRect();
     const mouseY = event.clientY - rect.top;
 
-    // Position the zoom canvas above the main canvas
+    // Position the zoom canvas to overlap the "Fitted Curves" section
+    // Keep X centered, but lower Y to align with the bottom of the main canvas
     const zoomCanvasHeight = ZOOM_SIZE;
-    zoomCanvas.style.top = `${rect.top - zoomCanvasHeight - 10}px`; // 10px gap above canvas
-    zoomCanvas.style.left = '50%';
+    // Position it so the top of the zoom canvas is at 50% of the main canvas height
+    const newTop = rect.top + (rect.height * 0.5); // 50% down the main canvas
+    zoomCanvas.style.top = `${newTop}px`;
+    zoomCanvas.style.left = '60%';
     zoomCanvas.style.transform = 'translateX(-50%)';
 
-    // Adjust position if mouse is too close to the top
-    if (mouseY < zoomCanvasHeight + 20) {
+    // Adjust position if mouse is too close to the top (fallback to right side)
+    if (mouseY < zoomCanvasHeight / 2) {
         // Move to the right of the mouse
         const mouseX = event.clientX - rect.left;
         zoomCanvas.style.left = `${event.clientX + ZOOM_SIZE / 2 + 10}px`;
@@ -212,7 +219,7 @@ function updateStageIndicator() {
             document.getElementById('apply-y-calibration-btn').style.display = 'block';
         }
     } else {
-        stageIndicator.textContent = 'Stage: Placing Efficiency Curve Points';
+        stageIndicator.textContent = 'Stage: Placing Efficiency Curve Traversals';
         stageIndicator.className = 'dot-placement';
         document.getElementById('apply-x-calibration-btn').style.display = 'none';
         document.getElementById('apply-y-calibration-btn').style.display = 'none';
@@ -225,16 +232,51 @@ function handleImageUpload(event) {
     if (!file) return;
     image = new Image();
     image.onload = () => {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        ctx.drawImage(image, 0, 0);
-        isScaling = true; // Start scaling process
+        // Determine canvas dimensions with a max display width of 450px
+        let displayWidth = Math.min(image.width, MAX_DISPLAY_WIDTH);
+        let displayHeight = image.height * (displayWidth / image.width);
+
+        // Scale internal canvas dimensions to match display aspect ratio, but allow higher resolution up to MAX_CANVAS_WIDTH
+        let internalWidth = image.width;
+        let internalHeight = image.height;
+        let wasScaled = false;
+
+        if (image.width > MAX_CANVAS_WIDTH) {
+            internalWidth = MAX_CANVAS_WIDTH;
+            internalHeight = image.height * (MAX_CANVAS_WIDTH / image.width);
+            wasScaled = true;
+        }
+
+        // Set canvas internal dimensions
+        canvas.width = internalWidth;
+        canvas.height = internalHeight;
+
+        // Calculate the dimensions to draw the image while preserving aspect ratio
+        let drawWidth = internalWidth;
+        let drawHeight = internalHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Draw the image centered on the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+        // Adjust zoom region for large images
+        ZOOM_REGION = image.width > 1000 ? 100 : 50; // Increase zoom region for high-res images
+
+        // Reset state
+        isScaling = true;
         scalingStep = 0;
-        xCalibrationPoints = []; // Clear X-axis calibration points
-        yCalibrationPoints = []; // Clear Y-axis calibration points
-        xCalibrationFit = { a: 1, b: 0 }; // Reset X-axis fit
-        yCalibrationFit = { a: 1, b: 0 }; // Reset Y-axis fit
-        document.getElementById('cursor-coords').textContent = 'Pixel X: --';
+        xCalibrationPoints = [];
+        yCalibrationPoints = [];
+        xCalibrationFit = { a: 1, b: 0 };
+        yCalibrationFit = { a: 1, b: 0 };
+
+        // Provide feedback if the image was scaled
+        document.getElementById('cursor-coords').textContent = wasScaled 
+            ? 'Pixel X: -- (Image scaled to fit canvas)' 
+            : 'Pixel X: --';
+        
         updateStageIndicator();
     };
     image.src = URL.createObjectURL(file);
@@ -244,7 +286,13 @@ function handleImageUpload(event) {
 function redrawCanvas() {
     // Clear canvas and redraw image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (image) ctx.drawImage(image, 0, 0);
+    if (image) {
+        let drawWidth = canvas.width;
+        let drawHeight = canvas.height;
+        let offsetX = 0;
+        let offsetY = 0;
+        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+    }
 
     // Draw X-axis calibration points (hollow blue) with labels
     xCalibrationPoints.forEach(point => {
@@ -593,6 +641,7 @@ function resetTool() {
     charts = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     image = null;
+    ZOOM_REGION = 50; // Reset zoom region
     updateStageIndicator();
 }
 

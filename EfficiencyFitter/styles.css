@@ -142,11 +142,14 @@ label {
 
 /* Canvas for image, dots, and fitted curve */
 canvas {
-    max-width: 100%;
+    max-width: 450px; /* Constrain display width to fit UI */
+    width: 100%; /* Ensure it scales responsively within max-width */
+    height: auto; /* Maintain aspect ratio */
     flex: 2; /* Take more space than axis-range */
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    aspect-ratio: attr(width) / attr(height); /* Preserve canvas aspect ratio */
 }
 
 /* Fixed div for cursor coordinates */
