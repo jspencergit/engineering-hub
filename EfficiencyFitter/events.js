@@ -673,6 +673,180 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /* Saves the current configuration to a JSON file */
+    function saveConfiguration() {
+        // Create a temporary canvas to convert the image to Base64
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        let imageBase64 = null;
+        if (image) {
+            tempCanvas.width = image.width;
+            tempCanvas.height = image.height;
+            tempCtx.drawImage(image, 0, 0);
+            imageBase64 = tempCanvas.toDataURL('image/png');
+        }
+
+        // Collect all configuration data
+        const config = {
+            image: imageBase64,
+            axisRanges: {
+                xMin: scaling.xMin,
+                xMax: scaling.xMax,
+                yMin: scaling.yMin,
+                yMax: scaling.yMax,
+                xScaleType: xScaleType
+            },
+            calibrationPoints: {
+                xCalibrationPoints: xCalibrationPoints,
+                yCalibrationPoints: yCalibrationPoints
+            },
+            series: series,
+            state: {
+                isScaling: isScaling,
+                scalingStep: scalingStep,
+                lastMousePos: lastMousePos,
+                xCalibrationFit: xCalibrationFit,
+                yCalibrationFit: yCalibrationFit,
+                ZOOM_REGION: ZOOM_REGION
+            }
+        };
+
+        // Convert to JSON and create a downloadable file
+        const json = JSON.stringify(config, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'efficiency_fitter_config.json';
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    /* Loads a configuration from a JSON file */
+    function loadConfiguration(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const config = JSON.parse(e.target.result);
+
+                // Validate configuration
+                if (!config || typeof config !== 'object') {
+                    alert('Invalid configuration file.');
+                    return;
+                }
+
+                // Load image
+                if (config.image) {
+                    image = new Image();
+                    image.onload = () => {
+                        // Set canvas dimensions based on the loaded image
+                        let displayWidth = Math.min(image.width, MAX_DISPLAY_WIDTH);
+                        let displayHeight = image.height * (displayWidth / image.width);
+                        let internalWidth = image.width;
+                        let internalHeight = image.height;
+                        let wasScaled = false;
+
+                        if (image.width > MAX_CANVAS_WIDTH) {
+                            internalWidth = MAX_CANVAS_WIDTH;
+                            internalHeight = image.height * (MAX_CANVAS_WIDTH / image.width);
+                            wasScaled = true;
+                        }
+
+                        canvas.width = internalWidth;
+                        canvas.height = internalHeight;
+                        let drawWidth = internalWidth;
+                        let drawHeight = internalHeight;
+                        let offsetX = 0;
+                        let offsetY = 0;
+
+                        // Draw the image
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+                        // Provide feedback if the image was scaled
+                        document.getElementById('cursor-coords').textContent = wasScaled 
+                            ? 'Pixel X: -- (Image scaled to fit canvas)' 
+                            : 'Pixel X: --';
+
+                        // Continue loading other configuration data after image is loaded
+                        loadConfigurationData(config);
+                    };
+                    image.src = config.image;
+                } else {
+                    image = null;
+                    loadConfigurationData(config);
+                }
+            } catch (error) {
+                alert('Error loading configuration: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    /* Helper function to load configuration data after image is loaded */
+    function loadConfigurationData(config) {
+        // Load axis ranges
+        if (config.axisRanges) {
+            scaling.xMin = config.axisRanges.xMin || 0;
+            scaling.xMax = config.axisRanges.xMax || 1000;
+            scaling.yMin = config.axisRanges.yMin || 0;
+            scaling.yMax = config.axisRanges.yMax || 100;
+            xScaleType = config.axisRanges.xScaleType || 'linear';
+
+            document.getElementById('x-min-input').value = scaling.xMin;
+            document.getElementById('x-max-input').value = scaling.xMax;
+            document.getElementById('y-min-input').value = scaling.yMin;
+            document.getElementById('y-max-input').value = scaling.yMax;
+            document.getElementById('x-scale-type').value = xScaleType;
+        }
+
+        // Load calibration points
+        if (config.calibrationPoints) {
+            xCalibrationPoints = config.calibrationPoints.xCalibrationPoints || [];
+            yCalibrationPoints = config.calibrationPoints.yCalibrationPoints || [];
+        }
+
+        // Load series
+        if (config.series) {
+            series = config.series.map(s => ({
+                name: s.name,
+                points: s.points.map(p => ({
+                    current: p.current,
+                    efficiency: p.efficiency,
+                    pixelX: p.pixelX,
+                    pixelY: p.pixelY
+                })),
+                isCalculated: s.isCalculated || false
+            }));
+            activeSeries = series.length > 0 ? series[0] : null;
+            updateSeriesDropdown();
+        }
+
+        // Load other state
+        if (config.state) {
+            isScaling = config.state.isScaling || false;
+            scalingStep = config.state.scalingStep || 0;
+            lastMousePos = config.state.lastMousePos || null;
+            xCalibrationFit = config.state.xCalibrationFit || { a: 1, b: 0 };
+            yCalibrationFit = config.state.yCalibrationFit || { a: 1, b: 0 };
+            ZOOM_REGION = config.state.ZOOM_REGION || 50;
+        }
+
+        // Fit calibration points if they exist
+        if (xCalibrationPoints.length >= 2) fitXCalibrationPoints();
+        if (yCalibrationPoints.length >= 2) fitYCalibrationPoints();
+
+        // Update UI
+        updateStageIndicator();
+        redrawCanvas();
+
+        // Clear the file input
+        document.getElementById('load-config-input').value = '';
+    }
+
     /* Removes the last dot placed by the user in the active series */
     function undoLastDot() {
         if (!activeSeries || activeSeries.points.length === 0) return;
@@ -788,6 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
         xCalibrationFit = { a: 1, b: 0 };
         yCalibrationFit = { a: 1, b: 0 };
         document.getElementById('image-upload').value = '';
+        document.getElementById('load-config-input').value = ''; // Clear load config input
         document.getElementById('x-min-input').value = '0';
         document.getElementById('x-max-input').value = '1000';
         document.getElementById('y-min-input').value = '0';
@@ -827,4 +1002,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = parseInt(event.target.value);
         activeSeries = series[index] || null;
     });
+    document.getElementById('save-config-btn').addEventListener('click', saveConfiguration);
+    document.getElementById('load-config-btn').addEventListener('click', () => {
+        document.getElementById('load-config-input').click();
+    });
+    document.getElementById('load-config-input').addEventListener('change', loadConfiguration);
 });
