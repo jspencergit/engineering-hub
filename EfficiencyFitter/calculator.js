@@ -33,9 +33,11 @@ function fitCurve(points, maxCurrent, numPoints = 100) {
         m[i] = (r[i] - c[i] * m[i + 1]) / b[i];
     }
 
-    const minCurrent = Math.min(...points.map(p => p.current));
+    // Use the min/max of the actual data points for interpolation range
+    const minCurrent = points[0].current; // Lowest data point
+    const dataMaxCurrent = points[points.length - 1].current; // Highest data point
     const logMin = Math.log10(minCurrent);
-    const logMax = Math.log10(maxCurrent);
+    const logMax = Math.log10(dataMaxCurrent);
     const splineData = [];
     const step = (logMax - logMin) / (numPoints - 1);
     for (let i = 0; i < numPoints; i++) {
@@ -53,7 +55,7 @@ function fitCurve(points, maxCurrent, numPoints = 100) {
         splineData.push({ x: current, y: clampedEfficiency });
     }
 
-    return { splineData, minCurrent, maxCurrent };
+    return { splineData, minCurrent, maxCurrent: dataMaxCurrent };
 }
 
 /* Generates table data by sampling the spline at 100 points */
@@ -67,7 +69,7 @@ function generateTableData(splineData, minCurrent, maxCurrent) {
 
 /* Generates CSV content for multiple series */
 function generateCSVForMultipleSeries(fittedSeries) {
-    if (fittedSeries.length === 0) return "Series Name,Current (mA),Efficiency (%)\n";
+    if (fittedSeries.length === 0) return "Series Name,Current (mA),Efficiency (%),Power Loss (W)\n";
 
     // Use the first series to define the common X-axis points
     const xValues = fittedSeries[0].splineData.map(point => point.x);
@@ -76,7 +78,7 @@ function generateCSVForMultipleSeries(fittedSeries) {
     // Create CSV header
     let csv = "Current (mA)";
     fittedSeries.forEach(s => {
-        csv += `,${s.name} Efficiency (%)`;
+        csv += `,${s.name} Efficiency (%),${s.name} Power Loss (W)`;
     });
     csv += "\n";
 
@@ -86,10 +88,31 @@ function generateCSVForMultipleSeries(fittedSeries) {
         csv += current;
         fittedSeries.forEach(s => {
             const efficiency = s.splineData[i].y.toFixed(1);
-            csv += `,${efficiency}`;
+            const powerLoss = s.powerLossData[i].toFixed(3); // Power loss in Watts, 3 decimal places
+            csv += `,${efficiency},${powerLoss}`;
         });
         csv += "\n";
     }
 
     return csv;
+}
+
+/* Calculates power loss for a series based on efficiency, current, and Vout */
+function calculatePowerLoss(splineData, vout) {
+    const powerLossData = [];
+    const absVout = Math.abs(vout); // Use absolute value of Vout
+
+    splineData.forEach(point => {
+        const currentA = point.x / 1000; // Convert mA to A
+        let efficiency = point.y; // Efficiency in %
+
+        // Clamp efficiency to avoid division by zero or extreme values
+        efficiency = Math.max(0.1, Math.min(99.9, efficiency));
+
+        // Calculate power loss: P_loss = I_out * |V_out| * (100 / η - 1)
+        const powerLossW = currentA * absVout * (100 / efficiency - 1);
+        powerLossData.push(powerLossW);
+    });
+
+    return powerLossData;
 }

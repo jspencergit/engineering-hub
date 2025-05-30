@@ -33,13 +33,13 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
     // Define colors for series
     const SERIES_COLORS = ['#1a73e8', '#ff0000', '#00ff00', '#800080', '#ffa500']; // Blue, Red, Green, Purple, Orange
 
-    // Create datasets for each series (only fitted curves)
+    // Create datasets for each series (efficiency and power loss)
     const datasets = [];
     fittedSeries.forEach((fitted, index) => {
         const validSplineData = fitted.splineData.filter(d => isFinite(d.x) && isFinite(d.y) && !isNaN(d.x) && !isNaN(d.y));
         const color = SERIES_COLORS[index % SERIES_COLORS.length];
 
-        // Fitted curve dataset
+        // Efficiency dataset (left Y-axis)
         datasets.push({
             label: `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''} Efficiency`,
             data: validSplineData.map(d => ({ x: d.x, y: d.y })),
@@ -47,8 +47,27 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
             fill: false,
             pointRadius: 0,
             tension: 0.4,
-            borderDash: fitted.isCalculated ? [5, 5] : [] // Dashed line for calculated series
+            borderDash: fitted.isCalculated ? [5, 5] : [], // Dashed line for calculated series
+            yAxisID: 'y-efficiency'
         });
+
+        // Power loss dataset (right Y-axis)
+        if (fitted.powerLossData) {
+            const powerLossData = validSplineData.map((d, i) => ({
+                x: d.x,
+                y: fitted.powerLossData[i]
+            }));
+            datasets.push({
+                label: `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''} Power Loss`,
+                data: powerLossData,
+                borderColor: color,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.4,
+                borderDash: [5, 5], // Dashed line for power loss
+                yAxisID: 'y-power-loss'
+            });
+        }
     });
 
     // Snap point dataset (for mouse interaction)
@@ -60,8 +79,32 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         borderColor: 'black',
         backgroundColor: 'black',
         borderWidth: 1,
-        showLine: false
+        showLine: false,
+        yAxisID: 'y-efficiency' // Default to efficiency axis; will be updated dynamically
     });
+
+    // Calculate min/max power loss for secondary Y-axis scaling
+    let minPowerLoss = Infinity;
+    let maxPowerLoss = -Infinity;
+    fittedSeries.forEach(fitted => {
+        if (fitted.powerLossData) {
+            const seriesMin = Math.min(...fitted.powerLossData);
+            const seriesMax = Math.max(...fitted.powerLossData);
+            minPowerLoss = Math.min(minPowerLoss, seriesMin);
+            maxPowerLoss = Math.max(maxPowerLoss, seriesMax);
+        }
+    });
+
+    // Handle edge cases for power loss range
+    if (!isFinite(minPowerLoss) || !isFinite(maxPowerLoss)) {
+        minPowerLoss = 0;
+        maxPowerLoss = 1;
+    }
+    if (minPowerLoss === maxPowerLoss) {
+        minPowerLoss = maxPowerLoss - 1;
+        if (minPowerLoss < 0) minPowerLoss = 0;
+        maxPowerLoss += 1;
+    }
 
     // Generate power-of-ten ticks for logarithmic scale
     const generatePowerOfTenTicks = (min, max) => {
@@ -126,10 +169,27 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
                     min: scaling.xMin,
                     max: scaling.xMax
                 },
-                y: {
+                'y-efficiency': {
+                    type: 'linear',
+                    position: 'left',
                     title: { display: true, text: 'Efficiency (%)' },
                     min: scaling.yMin,
                     max: scaling.yMax
+                },
+                'y-power-loss': {
+                    type: 'linear',
+                    position: 'right',
+                    title: { display: true, text: 'Power Loss (W)' },
+                    min: minPowerLoss,
+                    max: maxPowerLoss,
+                    ticks: {
+                        callback: function(value) {
+                            return `${value.toFixed(2)} W`;
+                        }
+                    },
+                    grid: {
+                        display: false // Avoid overlapping grid lines with efficiency axis
+                    }
                 }
             },
             plugins: {
@@ -147,21 +207,22 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         const mouseY = event.clientY - rect.top;
 
         const xScale = chart.scales.x;
-        const yScale = chart.scales.y;
+        const yEfficiencyScale = chart.scales['y-efficiency'];
+        const yPowerLossScale = chart.scales['y-power-loss'];
 
-        // Find the nearest point across all fitted series, using pixel distance
+        // Find the nearest point across all fitted series, considering both efficiency and power loss curves
         let nearestPoint = null;
         let nearestSeriesIndex = 0;
         let nearestSeriesLabel = '';
+        let nearestCurveType = ''; // 'efficiency' or 'powerLoss'
+        let nearestYValue = 0;
         let minDistance = Infinity;
 
         fittedSeries.forEach((fitted, index) => {
+            // Check efficiency curve
             fitted.splineData.forEach(point => {
-                // Convert the curve point to pixel coordinates
                 const pixelX = xScale.getPixelForValue(point.x);
-                const pixelY = yScale.getPixelForValue(point.y);
-
-                // Calculate Euclidean distance in pixel space
+                const pixelY = yEfficiencyScale.getPixelForValue(point.y);
                 const distance = Math.sqrt(
                     Math.pow(pixelX - mouseX, 2) + 
                     Math.pow(pixelY - mouseY, 2)
@@ -172,14 +233,38 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
                     nearestPoint = point;
                     nearestSeriesIndex = index;
                     nearestSeriesLabel = `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''}`;
+                    nearestCurveType = 'efficiency';
+                    nearestYValue = point.y;
                 }
             });
+
+            // Check power loss curve
+            if (fitted.powerLossData) {
+                fitted.splineData.forEach((point, i) => {
+                    const pixelX = xScale.getPixelForValue(point.x);
+                    const pixelY = yPowerLossScale.getPixelForValue(fitted.powerLossData[i]);
+                    const distance = Math.sqrt(
+                        Math.pow(pixelX - mouseX, 2) + 
+                        Math.pow(pixelY - mouseY, 2)
+                    );
+
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestPoint = point;
+                        nearestSeriesIndex = index;
+                        nearestSeriesLabel = `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''}`;
+                        nearestCurveType = 'powerLoss';
+                        nearestYValue = fitted.powerLossData[i];
+                    }
+                });
+            }
         });
 
         // Update snap point dataset
-        chart.data.datasets[datasets.length - 1].data = nearestPoint ? [{ x: nearestPoint.x, y: nearestPoint.y }] : [];
+        chart.data.datasets[datasets.length - 1].data = nearestPoint ? [{ x: nearestPoint.x, y: nearestYValue }] : [];
         chart.data.datasets[datasets.length - 1].borderColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
         chart.data.datasets[datasets.length - 1].backgroundColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
+        chart.data.datasets[datasets.length - 1].yAxisID = nearestCurveType === 'efficiency' ? 'y-efficiency' : 'y-power-loss';
 
         // Format coordinates and update coordsDiv
         let currentText;
@@ -189,8 +274,12 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         } else {
             currentText = `${nearestPoint.x.toFixed(1)} mA`;
         }
-        const efficiencyText = `${nearestPoint.y.toFixed(1)}%`;
-        coordsDiv.textContent = `Series: ${nearestSeriesLabel}, Current: ${currentText}, Efficiency: ${efficiencyText}`;
+
+        const yText = nearestCurveType === 'efficiency' 
+            ? `Efficiency: ${nearestYValue.toFixed(1)}%`
+            : `Power Loss: ${nearestYValue.toFixed(2)} W`;
+
+        coordsDiv.textContent = `Series: ${nearestSeriesLabel}, Current: ${currentText}, ${yText}`;
 
         chart.update('none');
     });

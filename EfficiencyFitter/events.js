@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let zoomCtx = zoomCanvas.getContext('2d');
     let stageIndicator = document.getElementById('stage-indicator');
     let image = null;
-    let series = []; // Array of series: [{ name: "Vin = 12V", points: [{ current, efficiency, pixelX, pixelY }, ...], isCalculated: false }, ...]
+    let series = []; // Array of series: [{ name, points, isCalculated, vout }, ...]
     let activeSeries = null; // Currently selected series for placing points
-    let fittedSeries = []; // Array to store fitted curve data: [{ name, splineData, minCurrent, maxCurrent, isCalculated }, ...]
+    let fittedSeries = []; // Array to store fitted curve data: [{ name, splineData, minCurrent, maxCurrent, isCalculated, vout, powerLossData }, ...]
     let scaling = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     let pixelScale = { xMin: 0, xMax: 0, yMin: 0, yMax: 0 };
     let isScaling = false;
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         image.src = URL.createObjectURL(file);
     }
 
-    /* Draws the image, points, cursors, and fitted curve on the canvas */
+    /* Draws the image, points, cursors, efficiency, and power loss curves on the canvas */
     function redrawCanvas() {
         // Clear canvas and redraw image
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -391,8 +391,40 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Draw fitted curves if they exist
+        // Draw fitted efficiency and power loss curves if they exist
         if (fittedSeries.length > 0) {
+            // Calculate min/max power loss across all series for secondary Y-axis scaling
+            let minPowerLoss = Infinity;
+            let maxPowerLoss = -Infinity;
+            fittedSeries.forEach(fitted => {
+                if (fitted.powerLossData) {
+                    const seriesMin = Math.min(...fitted.powerLossData);
+                    const seriesMax = Math.max(...fitted.powerLossData);
+                    minPowerLoss = Math.min(minPowerLoss, seriesMin);
+                    maxPowerLoss = Math.max(maxPowerLoss, seriesMax);
+                }
+            });
+
+            // Handle edge cases for power loss range
+            if (!isFinite(minPowerLoss) || !isFinite(maxPowerLoss)) {
+                minPowerLoss = 0;
+                maxPowerLoss = 1;
+            }
+            if (minPowerLoss === maxPowerLoss) {
+                minPowerLoss = maxPowerLoss - 1;
+                if (minPowerLoss < 0) minPowerLoss = 0;
+                maxPowerLoss += 1;
+            }
+
+            // Map power loss to pixel Y-coordinates (same Y-range as efficiency)
+            const mapPowerLossToPixelY = (powerLoss) => {
+                const range = maxPowerLoss - minPowerLoss;
+                if (range === 0) return pixelScale.yMin;
+                const fraction = (powerLoss - minPowerLoss) / range;
+                return pixelScale.yMax + fraction * (pixelScale.yMin - pixelScale.yMax); // Inverted Y-axis
+            };
+
+            // Draw efficiency curves
             fittedSeries.forEach((fitted, index) => {
                 const color = SERIES_COLORS[index % SERIES_COLORS.length];
                 const splineData = fitted.splineData;
@@ -400,6 +432,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 const scaleY = value => mapValueToPixelY(value);
                 drawCurveOnCanvas(splineData, canvas, scaleX, scaleY, color);
             });
+
+            // Draw power loss curves (dashed lines)
+            fittedSeries.forEach((fitted, index) => {
+                if (!fitted.powerLossData) return;
+                const color = SERIES_COLORS[index % SERIES_COLORS.length];
+                const scaleX = value => mapValueToPixelX(value);
+                const scaleY = mapPowerLossToPixelY;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]); // Dashed line for power loss
+                ctx.beginPath();
+
+                fitted.splineData.forEach((point, i) => {
+                    const pixelX = scaleX(point.x);
+                    const pixelY = scaleY(fitted.powerLossData[i]);
+                    if (i === 0) {
+                        ctx.moveTo(pixelX, pixelY);
+                    } else {
+                        ctx.lineTo(pixelX, pixelY);
+                    }
+                });
+
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid line
+            });
+
+            // Draw secondary Y-axis for power loss (right side)
+            if (isFinite(minPowerLoss) && isFinite(maxPowerLoss)) {
+                const xPos = mapValueToPixelX(scaling.xMax); // Right side (max current)
+                const yMin = pixelScale.yMax; // Bottom (min efficiency)
+                const yMax = pixelScale.yMin; // Top (max efficiency)
+
+                // Draw axis line
+                ctx.beginPath();
+                ctx.moveTo(xPos, yMin);
+                ctx.lineTo(xPos, yMax);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Calculate and draw ticks (5 ticks for simplicity)
+                const numTicks = 5;
+                const powerLossStep = (maxPowerLoss - minPowerLoss) / (numTicks - 1);
+                for (let i = 0; i < numTicks; i++) {
+                    const powerLoss = minPowerLoss + i * powerLossStep;
+                    const yPos = mapPowerLossToPixelY(powerLoss);
+                    // Draw tick
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, yPos);
+                    ctx.lineTo(xPos + 5, yPos);
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    // Draw label
+                    ctx.font = '10px Arial';
+                    ctx.fillStyle = '#000';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${powerLoss.toFixed(2)} W`, xPos + 10, yPos);
+                }
+
+                // Draw axis label
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#000';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('Power Loss (W)', xPos + 30, yMax - 10);
+            }
         }
 
         // Draw vertical cursor during X-axis calibration
@@ -555,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Adds a new series */
     function addSeries() {
         const seriesName = document.getElementById('series-name').value.trim();
+        const vout = parseFloat(document.getElementById('series-vout').value);
         if (!seriesName) {
             alert('Please enter a name for the new series.');
             return;
@@ -563,11 +664,16 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('A series with this name already exists. Please choose a different name.');
             return;
         }
-        const newSeries = { name: seriesName, points: [], isCalculated: false };
+        if (isNaN(vout)) {
+            alert('Please enter a valid output voltage for the series.');
+            return;
+        }
+        const newSeries = { name: seriesName, points: [], isCalculated: false, vout };
         series.push(newSeries);
         activeSeries = newSeries;
         updateSeriesDropdown();
         document.getElementById('series-name').value = ''; // Clear the input
+        document.getElementById('series-vout').value = '3.3'; // Reset to default
     }
 
     /* Clears the selected series */
@@ -679,8 +785,11 @@ document.addEventListener('DOMContentLoaded', () => {
             interpolatedPoints.push({ current, efficiency: interpolatedEff, pixelX, pixelY });
         }
 
+        // Interpolate Vout
+        const vout = series1.vout + ratio * (series2.vout - series1.vout);
+
         // Add the new series
-        const newSeries = { name: seriesName, points: interpolatedPoints, isCalculated: true };
+        const newSeries = { name: seriesName, points: interpolatedPoints, isCalculated: true, vout };
         series.push(newSeries);
         updateSeriesDropdown();
 
@@ -830,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
             yCalibrationPoints = config.calibrationPoints.yCalibrationPoints || [];
         }
 
-        // Load series
+        // Load series (including Vout)
         if (config.series) {
             series = config.series.map(s => ({
                 name: s.name,
@@ -840,7 +949,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     pixelX: p.pixelX,
                     pixelY: p.pixelY
                 })),
-                isCalculated: s.isCalculated || false
+                isCalculated: s.isCalculated || false,
+                vout: s.vout !== undefined ? s.vout : 3.3 // Default to 3.3V if not specified
             }));
             activeSeries = series.length > 0 ? series[0] : null;
             updateSeriesDropdown();
@@ -908,10 +1018,20 @@ document.addEventListener('DOMContentLoaded', () => {
         fittedSeries = series.map(s => {
             if (s.points.length < 2) return null;
             const fit = fitCurve(s.points, scaling.xMax, numPoints);
-            return { name: s.name, splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent, isCalculated: s.isCalculated };
+            // Calculate power loss for this series
+            const powerLossData = calculatePowerLoss(fit.splineData, s.vout);
+            return { 
+                name: s.name, 
+                splineData: fit.splineData, 
+                minCurrent: fit.minCurrent, 
+                maxCurrent: fit.maxCurrent, 
+                isCalculated: s.isCalculated,
+                vout: s.vout,
+                powerLossData 
+            };
         }).filter(s => s !== null);
 
-        // Draw fitted curves on the canvas
+        // Draw fitted efficiency and power loss curves on the canvas
         fittedSeries.forEach((fitted, index) => {
             const color = SERIES_COLORS[index % SERIES_COLORS.length];
             const splineData = fitted.splineData;
@@ -929,15 +1049,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableData = fittedSeries.map(series => ({
                 name: series.name,
                 data: generateTableData(series.splineData, series.minCurrent, series.maxCurrent),
-                isCalculated: series.isCalculated
+                isCalculated: series.isCalculated,
+                powerLossData: series.powerLossData
             }));
 
             const table = document.getElementById('data-table');
-            // Create table header with series names
+            // Create table header with series names, including power loss
             let headerRow = '<tr><th>Current (mA)</th>';
             fittedSeries.forEach(series => {
                 const suffix = series.isCalculated ? ' (Calculated)' : '';
                 headerRow += `<th>${series.name}${suffix}<br>Efficiency (%)</th>`;
+                headerRow += `<th>${series.name}${suffix}<br>Power Loss (W)</th>`;
             });
             headerRow += '</tr>';
             table.innerHTML = headerRow;
@@ -948,6 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let row = `<tr><td>${tableData[0].data[i].current}</td>`; // Current from the first series
                 tableData.forEach(series => {
                     row += `<td>${series.data[i].efficiency}</td>`;
+                    row += `<td>${series.powerLossData[i].toFixed(3)}</td>`; // Power loss in Watts
                 });
                 row += '</tr>';
                 table.innerHTML += row;
@@ -964,7 +1087,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const csvFittedSeries = series.map(s => {
                 if (s.points.length < 2) return null;
                 const fit = fitCurve(s.points, scaling.xMax, numCsvPoints);
-                return { name: s.name + (s.isCalculated ? ' (Calculated)' : ''), splineData: fit.splineData, minCurrent: fit.minCurrent, maxCurrent: fit.maxCurrent };
+                const powerLossData = calculatePowerLoss(fit.splineData, s.vout);
+                return { 
+                    name: s.name + (s.isCalculated ? ' (Calculated)' : ''), 
+                    splineData: fit.splineData, 
+                    minCurrent: fit.minCurrent, 
+                    maxCurrent: fit.maxCurrent,
+                    powerLossData 
+                };
             }).filter(s => s !== null);
 
             const csv = generateCSVForMultipleSeries(csvFittedSeries);
