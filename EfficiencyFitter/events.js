@@ -302,6 +302,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 
+            // Store the display width of the canvas for use in chart sizing
+            const imageCanvasWidth = canvas.getBoundingClientRect().width;
+            document.getElementById('image-canvas-width').value = imageCanvasWidth;
+
             // Adjust zoom region for large images
             ZOOM_REGION = image.width > 1000 ? 100 : 50; // Increase zoom region for high-res images
 
@@ -779,6 +783,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
 
+                        // Store the display width of the canvas for use in chart sizing
+                        const imageCanvasWidth = canvas.getBoundingClientRect().width;
+                        document.getElementById('image-canvas-width').value = imageCanvasWidth;
+
                         // Provide feedback if the image was scaled
                         document.getElementById('cursor-coords').textContent = wasScaled 
                             ? 'Pixel X: -- (Image scaled to fit canvas)' 
@@ -892,6 +900,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Clear existing charts before creating a new one
+        clearLatestChart();
+
         // Fit curves for all series and store in global fittedSeries
         const numPoints = 100; // Number of points for display
         fittedSeries = series.map(s => {
@@ -910,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Create a new chart with all series
-        createFittedChart(series, fittedSeries, 'linear', scaling);
+        createFittedChart(series, fittedSeries, 'logarithmic', scaling);
 
         // Generate table data for display, including all series
         if (fittedSeries.length > 0) {

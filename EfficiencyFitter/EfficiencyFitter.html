@@ -45,6 +45,7 @@
             </div>
             <canvas id="zoom-canvas"></canvas>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
+            <input type="hidden" id="image-canvas-width" value="450">
             <div>
                 <label for="series-select">Select Series:</label>
                 <select id="series-select"></select>
@@ -96,7 +97,7 @@
                 <p>6. Select a series, hover to see coordinates, click on the curve to place dots.</p>
                 <p>7. Click "Fit Curve" to generate the plot and CSV.</p>
             </div>
-            <div>
+            <div class="config-buttons">
                 <button id="save-config-btn">Save Configuration</button>
                 <button id="load-config-btn">Load Configuration</button>
                 <input type="file" id="load-config-input" accept=".json" style="display: none;">
