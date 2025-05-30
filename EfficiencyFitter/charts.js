@@ -146,40 +146,34 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
 
-        const chartArea = chart.chartArea;
         const xScale = chart.scales.x;
         const yScale = chart.scales.y;
-        const chartX = xScale.getValueForPixel(mouseX);
-        const chartY = yScale.getValueForPixel(mouseY);
 
-        // Find the nearest point across all fitted series, considering both X and Y distances
+        // Find the nearest point across all fitted series, using pixel distance
         let nearestPoint = null;
         let nearestSeriesIndex = 0;
         let nearestSeriesLabel = '';
         let minDistance = Infinity;
+
         fittedSeries.forEach((fitted, index) => {
-            const point = fitted.splineData.reduce((prev, curr) => {
-                // Calculate Euclidean distance in chart value space (X and Y)
-                const distancePrev = Math.sqrt(
-                    Math.pow(curr.x - chartX, 2) + 
-                    Math.pow(curr.y - chartY, 2)
+            fitted.splineData.forEach(point => {
+                // Convert the curve point to pixel coordinates
+                const pixelX = xScale.getPixelForValue(point.x);
+                const pixelY = yScale.getPixelForValue(point.y);
+
+                // Calculate Euclidean distance in pixel space
+                const distance = Math.sqrt(
+                    Math.pow(pixelX - mouseX, 2) + 
+                    Math.pow(pixelY - mouseY, 2)
                 );
-                const distanceCurr = Math.sqrt(
-                    Math.pow(prev.x - chartX, 2) + 
-                    Math.pow(prev.y - chartY, 2)
-                );
-                return distancePrev < distanceCurr ? curr : prev;
-            }, fitted.splineData[0]);
-            const distance = Math.sqrt(
-                Math.pow(point.x - chartX, 2) + 
-                Math.pow(point.y - chartY, 2)
-            );
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestPoint = point;
-                nearestSeriesIndex = index;
-                nearestSeriesLabel = `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''}`;
-            }
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestPoint = point;
+                    nearestSeriesIndex = index;
+                    nearestSeriesLabel = `${fitted.name}${fitted.isCalculated ? ' (Calculated)' : ''}`;
+                }
+            });
         });
 
         // Update snap point dataset
