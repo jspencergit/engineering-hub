@@ -16,7 +16,11 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
 
     // Set the chart dimensions to match the image canvas display dimensions
     const imageCanvas = document.getElementById('image-canvas');
-    const imageCanvasWidth = parseFloat(document.getElementById('image-canvas-width').value) || 450;
+    if (!imageCanvas) {
+        console.error('Image canvas element not found. Ensure DOM is fully loaded.');
+        return null;
+    }
+    const imageCanvasWidth = parseFloat(document.getElementById('image-canvas-width')?.value) || 450;
     const imageCanvasHeight = imageCanvas.getBoundingClientRect().height || 300; // Fallback to 300px if not available
     canvas.style.width = `${imageCanvasWidth}px`;
     canvas.style.height = `${imageCanvasHeight}px`;
@@ -218,6 +222,15 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         let nearestYValue = 0;
         let minDistance = Infinity;
 
+        // Skip if fittedSeries is empty or not populated
+        if (!fittedSeries || fittedSeries.length === 0) {
+            console.warn('fittedSeries is empty or not populated.');
+            coordsDiv.textContent = 'Series: --, Current: --, Efficiency: --';
+            chart.data.datasets[datasets.length - 1].data = [];
+            chart.update('none');
+            return;
+        }
+
         fittedSeries.forEach((fitted, index) => {
             // Check efficiency curve
             fitted.splineData.forEach(point => {
@@ -260,26 +273,32 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
             }
         });
 
-        // Update snap point dataset
-        chart.data.datasets[datasets.length - 1].data = nearestPoint ? [{ x: nearestPoint.x, y: nearestYValue }] : [];
-        chart.data.datasets[datasets.length - 1].borderColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
-        chart.data.datasets[datasets.length - 1].backgroundColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
-        chart.data.datasets[datasets.length - 1].yAxisID = nearestCurveType === 'efficiency' ? 'y-efficiency' : 'y-power-loss';
+        // Update snap point dataset only if a nearest point is found
+        if (nearestPoint) {
+            chart.data.datasets[datasets.length - 1].data = [{ x: nearestPoint.x, y: nearestYValue }];
+            chart.data.datasets[datasets.length - 1].borderColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
+            chart.data.datasets[datasets.length - 1].backgroundColor = SERIES_COLORS[nearestSeriesIndex % SERIES_COLORS.length];
+            chart.data.datasets[datasets.length - 1].yAxisID = nearestCurveType === 'efficiency' ? 'y-efficiency' : 'y-power-loss';
 
-        // Format coordinates and update coordsDiv
-        let currentText;
-        if (nearestPoint.x < 1) {
-            const microAmps = nearestPoint.x * 1000;
-            currentText = `${microAmps.toFixed(0)} µA`;
+            // Format coordinates and update coordsDiv
+            let currentText;
+            if (nearestPoint.x < 1) {
+                const microAmps = nearestPoint.x * 1000;
+                currentText = `${microAmps.toFixed(0)} µA`;
+            } else {
+                currentText = `${nearestPoint.x.toFixed(1)} mA`;
+            }
+
+            const yText = nearestCurveType === 'efficiency' 
+                ? `Efficiency: ${nearestYValue.toFixed(1)}%`
+                : `Power Loss: ${nearestYValue.toFixed(2)} W`;
+
+            coordsDiv.textContent = `Series: ${nearestSeriesLabel}, Current: ${currentText}, ${yText}`;
         } else {
-            currentText = `${nearestPoint.x.toFixed(1)} mA`;
+            // If no nearest point is found, clear the snap point and reset coordinates
+            coordsDiv.textContent = 'Series: --, Current: --, Efficiency: --';
+            chart.data.datasets[datasets.length - 1].data = [];
         }
-
-        const yText = nearestCurveType === 'efficiency' 
-            ? `Efficiency: ${nearestYValue.toFixed(1)}%`
-            : `Power Loss: ${nearestYValue.toFixed(2)} W`;
-
-        coordsDiv.textContent = `Series: ${nearestSeriesLabel}, Current: ${currentText}, ${yText}`;
 
         chart.update('none');
     });
