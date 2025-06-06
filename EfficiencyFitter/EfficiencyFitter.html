@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Efficiency Fitter</title>
+    <title>Analog Engineering Hub</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="calculator.js"></script>
@@ -13,16 +13,14 @@
 <body>
     <header>
         <h1>Analog Engineering Hub</h1>
-        <a href="tools.html">Back to Tools</a>
+        <a href="../tools.html">Back to Tools</a>
     </header>
     <section>
         <div class="calculator">
             <h2>Efficiency Fitter</h2>
+            <div id="stage-indicator">Stage: --</div>
             <input type="file" id="image-upload" accept="image/*">
-            <div>
-                <label for="stage-indicator">Stage: --</label>
-                <div id="stage-indicator"></div>
-            </div>
+            <input type="hidden" id="image-canvas-width">
             <div class="input-canvas-container">
                 <div class="axis-range">
                     <label for="x-scale-type">X-Axis Scale:</label>
@@ -31,28 +29,27 @@
                         <option value="logarithmic">Logarithmic</option>
                     </select>
                     <label for="x-min-input">X-Axis Min (mA):</label>
-                    <input type="number" id="x-min-input" value="0">
+                    <input type="number" id="x-min-input" value="0" step="any">
                     <label for="x-max-input">X-Axis Max (mA):</label>
-                    <input type="number" id="x-max-input" value="1000">
+                    <input type="number" id="x-max-input" value="1000" step="any">
                     <label for="y-min-input">Y-Axis Min (%):</label>
-                    <input type="number" id="y-min-input" value="0">
+                    <input type="number" id="y-min-input" value="0" step="any">
                     <label for="y-max-input">Y-Axis Max (%):</label>
-                    <input type="number" id="y-max-input" value="100">
+                    <input type="number" id="y-max-input" value="100" step="any">
                     <button id="apply-x-calibration-btn">Apply X-Axis Calibration</button>
                     <button id="apply-y-calibration-btn">Apply Y-Axis Calibration</button>
                 </div>
                 <canvas id="image-canvas"></canvas>
+                <canvas id="zoom-canvas"></canvas>
             </div>
-            <canvas id="zoom-canvas"></canvas>
             <div id="cursor-coords">Current: -- mA, Efficiency: -- %</div>
-            <input type="hidden" id="image-canvas-width" value="450">
             <div>
                 <label for="series-select">Select Series:</label>
                 <select id="series-select"></select>
                 <label for="series-name">New Series Name:</label>
-                <input type="text" id="series-name" placeholder="e.g., Vin = 12V">
+                <input type="text" id="series-name">
                 <label for="series-vout">Output Voltage (V):</label>
-                <input type="number" id="series-vout" step="0.1" value="3.3">
+                <input type="number" id="series-vout" value="3.3" step="any">
                 <button id="add-series-btn">Add Series</button>
                 <button id="clear-series-btn">Clear Selected Series</button>
             </div>
@@ -63,41 +60,42 @@
             <div>
                 <h3>Calculate Interpolated Series</h3>
                 <label for="calc-series-name">Calculated Series Name:</label>
-                <input type="text" id="calc-series-name" placeholder="e.g., 18Vin">
+                <input type="text" id="calc-series-name">
                 <label for="interp-series-1">Series 1 (Base):</label>
                 <select id="interp-series-1"></select>
                 <label for="interp-series-2">Series 2 (Target):</label>
                 <select id="interp-series-2"></select>
                 <label for="interp-ratio">Interpolation Ratio (0 to 1):</label>
-                <input type="number" id="interp-ratio" min="0" max="1" step="0.01" value="0.5">
-                <p class="instructions">
-                    <strong>Calculate Interpolated Series</strong><br>
-                    Enter a name for the new series, select two existing series, and specify an interpolation ratio between 0 and 1. The ratio determines how far the new series is from Series 1 (Base) to Series 2 (Target). A ratio of 0 matches Series 1, 1 matches Series 2, and 0.5 is halfway.<br>
-                    <strong>Example</strong>: To estimate 13Vin between Series 1 (Base) = 12Vin and Series 2 (Target) = 24Vin, calculate the ratio as<br>
-                    <span class="equation">
+                <input type="number" id="interp-ratio" min="0" max="1" step="0.01">
+                <div>
+                    <button id="generate-interp-btn">Generate Interpolated Data</button>
+                    <p>Enter a name for the new series, select two existing series, and specify an interpolation ratio between 0 and 1. The ratio determines how far the new series is from Series 1 (Base) to Series 2 (Target). A ratio of 0 matches Series 1, 1 matches Series 2, and 0.5 is halfway.</p>
+                    <p>Example: To estimate 13Vin between Series 1 (Base) = 12Vin and Series 2 (Target) = 24Vin, calculate the ratio as</p>
+                    <div class="equation">
                         Ratio = <span class="fraction"><span class="numerator">13 - 12</span><span class="denominator">24 - 12</span></span>
                         = <span class="fraction"><span class="numerator">1</span><span class="denominator">12</span></span>
                         ≈ 0.167
-                    </span><br>
-                    Enter 0.167 as the ratio. If Series 1 (Base) = 24Vin and Series 2 (Target) = 12Vin, the ratio would be<br>
-                    <span class="equation">
+                    </div>
+                    <p>Enter 0.167 as the ratio. If Series 1 (Base) = 24Vin and Series 2 (Target) = 12Vin, the ratio would be</p>
+                    <div class="equation">
                         Ratio = <span class="fraction"><span class="numerator">13 - 24</span><span class="denominator">12 - 24</span></span>
                         = <span class="fraction"><span class="numerator">-11</span><span class="denominator">-12</span></span>
                         = <span class="fraction"><span class="numerator">11</span><span class="denominator">12</span></span>
                         ≈ 0.917
-                    </span><br>
-                    Alternatively, use 1 - 0.167 = 0.833.
-                </p>
-                <button id="generate-interp-btn">Generate Interpolated Data</button>
+                    </div>
+                    <p>Alternatively, use 1 - 0.167 = 0.833.</p>
+                </div>
             </div>
             <div class="instructions">
-                <p>1. Upload the graph image.</p>
-                <p>2. Select X-axis scale and enter axis ranges to the left.</p>
-                <p>3. Align the vertical cursor with known X-axis values, click to add points, then click "Apply X-Axis Calibration".</p>
-                <p>4. Align the horizontal cursor with known Y-axis values, click to add points, then click "Apply Y-Axis Calibration".</p>
-                <p>5. Use the stage indicator and magnifying glass above the image to guide calibration and dot placement. For logarithmic X-axis, place more points at low currents for better accuracy.</p>
-                <p>6. Select a series, hover to see coordinates, click on the curve to place dots.</p>
-                <p>7. Click "Fit Curve" to generate the plot and CSV.</p>
+                <ol>
+                    <li>Upload the graph image.</li>
+                    <li>Select X-axis scale and enter axis ranges to the left.</li>
+                    <li>Align the vertical cursor with known X-axis values, click to add points, then click "Apply X-Axis Calibration".</li>
+                    <li>Align the horizontal cursor with known Y-axis values, click to add points, then click "Apply Y-Axis Calibration".</li>
+                    <li>Use the stage indicator and magnifying glass above the image to guide calibration and dot placement. For logarithmic X-axis, place more points at low currents for better accuracy.</li>
+                    <li>Select a series, hover to see coordinates, click on the curve to place dots.</li>
+                    <li>Click "Fit Curve" to generate the plot and CSV.</li>
+                </ol>
             </div>
             <div class="config-buttons">
                 <button id="save-config-btn">Save Configuration</button>
@@ -106,24 +104,24 @@
             </div>
         </div>
         <div class="outputs">
-            <h3>Fitted Curves</h3>
+            <h2>Fitted Curves</h2>
             <div class="scale-buttons">
                 <button id="linear-scale-btn">Linear</button>
                 <button id="log-scale-btn">Log</button>
             </div>
             <div id="fitted-plots"></div>
-            <h3>Data Table</h3>
+            <h2>Data Table</h2>
             <label for="csv-points-input">CSV Points (up to 1000):</label>
-            <input type="number" id="csv-points-input" value="100">
+            <input type="number" id="csv-points-input" value="100" min="1" max="1000">
             <button id="download-csv-btn">Download CSV</button>
             <button id="clear-plot-btn">Clear Plot</button>
             <table id="data-table">
-                <tr>
-                    <th>Current (mA)</th>
-                    <th>Efficiency (%)</th>
-                </tr>
+                <tr><th>Current (mA)</th><th>Efficiency (%)</th></tr>
             </table>
         </div>
     </section>
+    <footer>
+        <p style="text-align: center; font-size: 12px; color: #555;">Efficiency Fitter Version 0.1.0-beta.2</p>
+    </footer>
 </body>
 </html>

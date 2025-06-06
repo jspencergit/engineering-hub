@@ -10,6 +10,18 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         return null;
     }
 
+    // Additional validation for logarithmic scale
+    if (xScaleType === 'logarithmic') {
+        if (scaling.xMin <= 0) {
+            alert('Minimum X-axis value must be greater than 0 for logarithmic scale. Please adjust the X-axis range.');
+            return null;
+        }
+        if (scaling.xMax <= scaling.xMin) {
+            alert('Maximum X-axis value must be greater than the minimum X-axis value. Please adjust the X-axis range.');
+            return null;
+        }
+    }
+
     const chartContainer = document.createElement('div');
     chartContainer.style.position = 'relative'; // For positioning the coords div
     const canvas = document.createElement('canvas');
@@ -113,8 +125,16 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
     // Generate power-of-ten ticks for logarithmic scale
     const generatePowerOfTenTicks = (min, max) => {
         const ticks = [];
+        // Safety check for invalid inputs
+        if (!isFinite(min) || !isFinite(max) || min <= 0 || max <= 0 || max <= min) {
+            return ticks; // Return empty array to prevent errors
+        }
         const startPower = Math.floor(Math.log10(min));
         const endPower = Math.ceil(Math.log10(max));
+        // Ensure the loop range is reasonable
+        if (!isFinite(startPower) || !isFinite(endPower) || endPower - startPower > 1000) {
+            return ticks; // Prevent excessive loop iterations
+        }
         for (let power = startPower; power <= endPower; power++) {
             const value = Math.pow(10, power);
             if (value >= min && value <= max) {
@@ -124,88 +144,101 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
         return ticks;
     };
 
-    const chart = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: fittedSeries[0]?.splineData.map(d => d.x) || [],
-            datasets: datasets
-        },
-        options: {
-            layout: {
-                padding: {
-                    bottom: 30 // Add padding to create space below the X-axis for the coords div
-                }
+    let chart;
+    try {
+        chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: fittedSeries[0]?.splineData.map(d => d.x) || [],
+                datasets: datasets
             },
-            scales: {
-                x: {
-                    type: xScaleType,
-                    title: { display: true, text: 'Current' },
-                    ticks: {
-                        source: 'auto',
-                        callback: function(value) {
-                            if (xScaleType === 'logarithmic') {
-                                // For log scale, only show ticks at powers of ten
-                                const powerOfTenTicks = generatePowerOfTenTicks(scaling.xMin, scaling.xMax);
-                                if (!powerOfTenTicks.includes(value)) return null; // Skip non-power-of-ten ticks
-                                if (value < 1) {
-                                    const microAmps = value * 1000;
-                                    return `${microAmps.toFixed(0)} µA`;
+            options: {
+                layout: {
+                    padding: {
+                        bottom: 30 // Add padding to create space below the X-axis for the coords div
+                    }
+                },
+                scales: {
+                    x: {
+                        type: xScaleType,
+                        title: { display: true, text: 'Current' },
+                        ticks: {
+                            source: 'auto',
+                            callback: function(value) {
+                                if (xScaleType === 'logarithmic') {
+                                    // For log scale, only show ticks at powers of ten
+                                    const powerOfTenTicks = generatePowerOfTenTicks(scaling.xMin, scaling.xMax);
+                                    if (!powerOfTenTicks.includes(value)) return null; // Skip non-power-of-ten ticks
+                                    if (value < 1) {
+                                        const microAmps = value * 1000;
+                                        return `${microAmps.toFixed(0)} µA`;
+                                    }
+                                    return `${value.toFixed(0)} mA`;
                                 }
-                                return `${value.toFixed(0)} mA`;
+                                // For linear scale, use existing formatting
+                                return `${value.toFixed(1)} mA`;
                             }
-                            // For linear scale, use existing formatting
-                            return `${value.toFixed(1)} mA`;
-                        }
-                    },
-                    grid: {
-                        display: true,
-                        drawTicks: true,
-                        tickLength: 8,
-                        color: function(context) {
-                            if (xScaleType === 'logarithmic') {
-                                // Only draw grid lines at power-of-ten ticks
-                                const powerOfTenTicks = generatePowerOfTenTicks(scaling.xMin, scaling.xMax);
-                                return powerOfTenTicks.includes(context.tick.value) ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0)';
+                        },
+                        grid: {
+                            display: true,
+                            drawTicks: true,
+                            tickLength: 8,
+                            color: function(context) {
+                                if (xScaleType === 'logarithmic') {
+                                    // Only draw grid lines at power-of-ten ticks
+                                    const powerOfTenTicks = generatePowerOfTenTicks(scaling.xMin, scaling.xMax);
+                                    return powerOfTenTicks.includes(context.tick.value) ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0)';
+                                }
+                                return 'rgba(0, 0, 0, 0.1)';
                             }
-                            return 'rgba(0, 0, 0, 0.1)';
-                        }
+                        },
+                        min: scaling.xMin,
+                        max: scaling.xMax
                     },
-                    min: scaling.xMin,
-                    max: scaling.xMax
-                },
-                'y-efficiency': {
-                    type: 'linear',
-                    position: 'left',
-                    title: { display: true, text: 'Efficiency (%)' },
-                    min: scaling.yMin,
-                    max: scaling.yMax
-                },
-                'y-power-loss': {
-                    type: 'linear',
-                    position: 'right',
-                    title: { display: true, text: 'Power Loss (W)' },
-                    min: minPowerLoss,
-                    max: maxPowerLoss,
-                    ticks: {
-                        callback: function(value) {
-                            return `${value.toFixed(2)} W`;
-                        }
+                    'y-efficiency': {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: 'Efficiency (%)' },
+                        min: scaling.yMin,
+                        max: scaling.yMax
                     },
-                    grid: {
-                        display: false // Avoid overlapping grid lines with efficiency axis
+                    'y-power-loss': {
+                        type: 'linear',
+                        position: 'right',
+                        title: { display: true, text: 'Power Loss (W)' },
+                        min: minPowerLoss,
+                        max: maxPowerLoss,
+                        ticks: {
+                            callback: function(value) {
+                                return `${value.toFixed(2)} W`;
+                            }
+                        },
+                        grid: {
+                            display: false // Avoid overlapping grid lines with efficiency axis
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        enabled: false // Disable tooltips since we're using a custom coords div
                     }
                 }
-            },
-            plugins: {
-                tooltip: {
-                    enabled: false // Disable tooltips since we're using a custom coords div
-                }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Failed to initialize Chart.js chart:', error);
+        return null;
+    }
 
     // Add mousemove event to snap a dot to the nearest point and display coordinates
     canvas.addEventListener('mousemove', (event) => {
+        // Ensure chart and scales are initialized
+        if (!chart || !chart.scales || !chart.scales.x || !chart.scales['y-efficiency'] || !chart.scales['y-power-loss']) {
+            console.warn('Chart or scales not initialized. Skipping mousemove handling.');
+            coordsDiv.textContent = 'Series: --, Current: --, Efficiency: --';
+            return;
+        }
+
         const rect = canvas.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
@@ -304,6 +337,7 @@ function createFittedChart(series, fittedSeries, xScaleType = 'logarithmic', sca
     });
 
     canvas.addEventListener('mouseleave', () => {
+        if (!chart) return;
         chart.data.datasets[datasets.length - 1].data = [];
         chart.update('none');
         coordsDiv.textContent = 'Series: --, Current: --, Efficiency: --';
