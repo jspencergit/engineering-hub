@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     r4: document.getElementById('r4'),
     r4Slider: document.getElementById('r4-slider'),
     ir3: document.getElementById('ir3'),
-    ir3Slider: document.getElementById('ir3-slider')
+    ir3Slider: document.getElementById('ir3-slider'),
+    r4Group: document.getElementById('r4-group')
   };
   const outputs = {
     r1: document.getElementById('r1'),
@@ -68,76 +69,134 @@ document.addEventListener('DOMContentLoaded', () => {
     outputs.vthf.textContent = result.vthf.toFixed(3);
     outputs.hysteresis.textContent = result.hysteresis.toFixed(2);
 
-    // Update image placeholder
-    outputs.image.textContent = params.type === 'push-pull' ? 'Push-Pull Circuit Diagram Placeholder' : 'Open-Drain Circuit Diagram Placeholder';
+    // Update image
+    outputs.image.src = params.type === 'push-pull' ? 'images/Comparator_PushPull.jpg' : 'images/Comparator_OpenDrain.jpg';
+    outputs.image.alt = params.type === 'push-pull' ? 'Push-Pull Circuit Diagram' : 'Open-Drain Circuit Diagram';
 
-    // Draw hysteresis loop
+    // Draw new chart (Figure 10 style)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const yScale = 200 / params.vcc;
-    const vthrY = 250 - result.vthrCalc * yScale;
-    const vthfY = 250 - result.vthf * yScale;
-    const vrefY = 250 - params.vref * yScale;
 
-    // Draw axes
+    // Define margins and sections
+    const leftMargin = 80;
+    const rightMargin = 80;
+    const topSectionHeight = 250; // Height for input waveforms
+    const bottomSectionHeight = 150; // Height for output waveform
+    const sectionGap = 20; // Gap between sections
+
+    // Top Section: Input Waveforms (IN-, IN+, Hysteresis Band)
+    const topYStart = 20;
+    const topYEnd = topYStart + topSectionHeight;
+    const vhbV = params.vhb / 1000; // Convert mV to V
+    const yScaleInput = 100 / vhbV; // Scale to focus on hysteresis band (±Vhb around Vref)
+    const vrefY = topYStart + topSectionHeight / 2; // Center Vref
+    const vthrY = vrefY - (vhbV / 2) * yScaleInput; // Vthr above Vref
+    const vthfY = vrefY + (vhbV / 2) * yScaleInput; // Vthf below Vref
+
+    // Draw X-axis (Time) for top section
     ctx.beginPath();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1;
-    ctx.moveTo(50, 250);
-    ctx.lineTo(550, 250); // X-axis (time)
-    ctx.moveTo(50, 250);
-    ctx.lineTo(50, 50);   // Y-axis (voltage)
+    ctx.moveTo(leftMargin, vrefY);
+    ctx.lineTo(canvas.width - rightMargin, vrefY);
     ctx.stroke();
 
-    // Y-axis labels
+    // Y-axis labels for top section
     ctx.font = '12px Arial';
     ctx.fillStyle = '#000';
     ctx.textAlign = 'right';
-    ctx.fillText('Voltage (V)', 40, 40);
-    ctx.fillText(params.vcc.toFixed(1), 40, 50);
-    ctx.fillText('0', 40, 255);
-    ctx.fillText(params.vref.toFixed(1), 40, 150);
+    ctx.fillText('IN-, IN+ (V)', leftMargin - 10, topYStart + 20);
+    ctx.fillText(params.vref.toFixed(2), leftMargin - 10, vrefY + 5);
+    ctx.fillText(result.vthrCalc.toFixed(2), leftMargin - 10, vthrY + 5);
+    ctx.fillText(result.vthf.toFixed(2), leftMargin - 10, vthfY + 5);
 
-    // Draw threshold lines
+    // Draw hysteresis band
+    ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+    ctx.fillRect(leftMargin, vthrY, canvas.width - leftMargin - rightMargin, vthfY - vthrY);
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.fillText('Hysteresis Band', (leftMargin + (canvas.width - rightMargin)) / 2, (vthrY + vthfY) / 2);
+
+    // Draw Vthr and Vthf as dashed lines
     ctx.beginPath();
-    ctx.strokeStyle = '#007bff';
-    ctx.lineWidth = 2;
-    ctx.moveTo(50, vthrY);
-    ctx.lineTo(550, vthrY);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.moveTo(leftMargin, vthrY);
+    ctx.lineTo(canvas.width - rightMargin, vthrY);
+    ctx.moveTo(leftMargin, vthfY);
+    ctx.lineTo(canvas.width - rightMargin, vthfY);
     ctx.stroke();
-    ctx.fillStyle = '#007bff';
-    ctx.textAlign = 'left';
-    ctx.fillText('Vthr = ' + result.vthrCalc.toFixed(2) + 'V', 560, vthrY);
+    ctx.setLineDash([]);
 
+    // Generate IN+ triangular waveform
+    const timeSteps = 600;
+    const amplitude = vhbV * 2; // Enough to cross the hysteresis band
+    const period = timeSteps / 2; // One full cycle
+    const inPlusData = [];
+    let outData = [];
+    let lastOut = 0; // Initial output state (low)
+    for (let x = 0; x < timeSteps; x++) {
+      const t = (x / period) * 2 * Math.PI;
+      const inPlus = params.vref + amplitude * (Math.sin(t) > 0 ? 1 - (x % period) / (period / 2) : (x % period) / (period / 2) - 1);
+      inPlusData.push({ x: leftMargin + x, y: vrefY - (inPlus - params.vref) * yScaleInput });
+
+      // Determine OUT based on IN+ crossings
+      if (inPlus > result.vthrCalc && lastOut === 0) {
+        lastOut = params.vcc;
+      } else if (inPlus < result.vthf && lastOut === params.vcc) {
+        lastOut = 0;
+      }
+      outData.push(lastOut);
+    }
+
+    // Draw IN+ waveform
     ctx.beginPath();
     ctx.strokeStyle = '#ff5733';
     ctx.lineWidth = 2;
-    ctx.moveTo(50, vthfY);
-    ctx.lineTo(550, vthfY);
+    inPlusData.forEach((point, i) => {
+      if (i === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
     ctx.stroke();
-    ctx.fillStyle = '#ff5733';
-    ctx.textAlign = 'left';
-    ctx.fillText('Vthf = ' + result.vthf.toFixed(2) + 'V', 560, vthfY);
 
-    ctx.beginPath();
-    ctx.strokeStyle = '#28a745';
-    ctx.lineWidth = 2;
-    ctx.moveTo(50, vrefY);
-    ctx.lineTo(550, vrefY);
-    ctx.stroke();
-    ctx.fillStyle = '#28a745';
-    ctx.textAlign = 'left';
-    ctx.fillText('Vref = ' + params.vref.toFixed(2) + 'V', 560, vrefY);
+    // Bottom Section: Output Waveform (OUT)
+    const bottomYStart = topYEnd + sectionGap;
+    const bottomYEnd = bottomYStart + bottomSectionHeight;
+    const yScaleOutput = bottomSectionHeight / params.vcc;
+    const outYZero = bottomYEnd;
+    const outYVcc = bottomYStart;
 
-    // Draw hysteresis loop
+    // Draw X-axis (Time) for bottom section
     ctx.beginPath();
     ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.moveTo(leftMargin, outYZero);
+    ctx.lineTo(canvas.width - rightMargin, outYZero);
+    ctx.stroke();
+
+    // Y-axis labels for bottom section
+    ctx.textAlign = 'right';
+    ctx.fillText('OUT (V)', leftMargin - 10, bottomYStart + 20);
+    ctx.fillText(params.vcc.toFixed(1), leftMargin - 10, outYVcc + 5);
+    ctx.fillText('0', leftMargin - 10, outYZero - 5);
+
+    // Draw OUT waveform
+    ctx.beginPath();
+    ctx.strokeStyle = '#007bff';
     ctx.lineWidth = 2;
-    ctx.moveTo(200, 250);
-    ctx.lineTo(200, vthrY);
-    ctx.lineTo(400, vthrY);
-    ctx.lineTo(400, vthfY);
-    ctx.lineTo(200, vthfY);
-    ctx.lineTo(200, 250);
+    let lastY = outYZero;
+    for (let x = 0; x < timeSteps; x++) {
+      const outY = outData[x] === 0 ? outYZero : outYVcc;
+      if (x === 0) {
+        ctx.moveTo(leftMargin + x, outY);
+      } else if (lastY !== outY) {
+        ctx.lineTo(leftMargin + x, lastY);
+        ctx.lineTo(leftMargin + x, outY);
+      } else {
+        ctx.lineTo(leftMargin + x, outY);
+      }
+      lastY = outY;
+    }
     ctx.stroke();
   }
 
@@ -158,6 +217,63 @@ document.addEventListener('DOMContentLoaded', () => {
     inputs.ir3.value = 0.2;
     inputs.r4Group.style.display = 'none';
     updateHysteresis();
+  }
+
+  function saveConfiguration() {
+    const config = {
+      type: inputs.type.value,
+      vcc: parseFloat(inputs.vcc.value),
+      vref: parseFloat(inputs.vref.value),
+      vhb: parseFloat(inputs.vhb.value),
+      vthr: parseFloat(inputs.vthr.value),
+      r4: parseFloat(inputs.r4.value),
+      ir3: parseFloat(inputs.ir3.value)
+    };
+
+    const json = JSON.stringify(config, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'hysteresis_config.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function loadConfiguration(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const config = JSON.parse(e.target.result);
+
+        // Validate configuration
+        if (!config || typeof config !== 'object') {
+          outputs.error.textContent = 'Invalid configuration file.';
+          return;
+        }
+
+        // Load values
+        inputs.type.value = config.type || 'push-pull';
+        inputs.vcc.value = config.vcc || 5;
+        inputs.vref.value = config.vref || 1.24;
+        inputs.vhb.value = config.vhb || 50;
+        inputs.vthr.value = config.vthr || 3;
+        inputs.r4.value = config.r4 || 1;
+        inputs.ir3.value = config.ir3 || 0.2;
+        inputs.r4Group.style.display = inputs.type.value === 'open-drain' ? 'block' : 'none';
+
+        updateHysteresis();
+      } catch (error) {
+        outputs.error.textContent = 'Error loading configuration: ' + error.message;
+      }
+
+      // Clear the file input
+      document.getElementById('load-config-input').value = '';
+    };
+    reader.readAsText(file);
   }
 
   // Event listeners
@@ -192,12 +308,20 @@ document.addEventListener('DOMContentLoaded', () => {
       ir3: parseFloat(inputs.ir3.value)
     };
     const result = calculateHysteresis(params);
-    const csv = `Parameter,Value,Unit\nR1,${result.r1.toFixed(2)},kΩ\nR2,${result.r2.toFixed(2)},kΩ\nR3,${result.r3.toFixed(2)},MΩ\nVthr,${result.vthrCalc.toFixed(3)},V\nVthf,${result.vthf.toFixed(3)},V\nHysteresis,${result.hysteresis.toFixed(2)},mV`;
+    const csvContent = `Parameter,Value,Unit\nR1,${result.r1.toFixed(2)},kΩ\nR2,${result.r2.toFixed(2)},kΩ\nR3,${result.r3.toFixed(2)},MΩ\nVthr,${result.vthrCalc.toFixed(3)},V\nVthf,${result.vthf.toFixed(3)},V\nHysteresis,${result.hysteresis.toFixed(2)},mV`;
+    const bom = '\uFEFF';
+    const csv = bom + csvContent;
     const link = document.createElement('a');
     link.setAttribute('href', `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`);
     link.setAttribute('download', 'hysteresis_data.csv');
     link.click();
   });
+
+  document.getElementById('save-config-btn').addEventListener('click', saveConfiguration);
+  document.getElementById('load-config-btn').addEventListener('click', () => {
+    document.getElementById('load-config-input').click();
+  });
+  document.getElementById('load-config-input').addEventListener('change', loadConfiguration);
 
   // Initial calculation
   resetTool();

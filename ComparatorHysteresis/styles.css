@@ -12,6 +12,7 @@ body {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: auto;
 }
 
 h1 {
@@ -21,6 +22,7 @@ h1 {
   color: white;
   padding: 10px;
   border-radius: 5px;
+  margin-bottom: 20px;
 }
 
 section {
@@ -34,10 +36,14 @@ section {
   padding: 20px;
   border-radius: 8px;
   border: 1px solid #ddd;
+  overflow: auto;
 }
 
 .outputs {
   width: 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .input-group {
@@ -86,6 +92,7 @@ section {
   display: flex;
   gap: 10px;
   margin-top: 20px;
+  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
 }
 
 button {
@@ -103,7 +110,6 @@ button:hover {
 }
 
 .results {
-  margin-bottom: 20px;
   padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
@@ -116,22 +122,23 @@ button:hover {
 
 canvas {
   max-width: 100%;
+  width: 700px;
+  height: 300px;
   border: 1px solid #ddd;
   border-radius: 5px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
+  display: block;
 }
 
-.image-placeholder {
+#circuit-image {
   width: 150px;
   height: 150px;
-  border: 2px dashed #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #666;
+  display: block;
   margin: 20px auto;
-  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .error {
@@ -140,11 +147,30 @@ canvas {
   margin-top: 10px;
 }
 
+footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #666;
+}
+
+.config-buttons {
+  justify-content: center; /* Center the config buttons */
+}
+
 @media (max-width: 768px) {
   section {
     flex-direction: column;
   }
   .calculator, .outputs {
     width: 100%;
+  }
+  canvas {
+    width: 100%;
+    height: auto;
+  }
+  #circuit-image {
+    width: 100px;
+    height: 100px;
   }
 }

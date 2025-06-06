@@ -53,6 +53,11 @@
           <button id="reset-btn">Reset</button>
           <button id="download-csv-btn">Download CSV</button>
         </div>
+        <div class="button-group config-buttons">
+          <button id="save-config-btn">Save Configuration</button>
+          <button id="load-config-btn">Load Configuration</button>
+          <input type="file" id="load-config-input" accept=".json" style="display: none;">
+        </div>
         <div id="error-message" class="error"></div>
       </div>
       <div class="outputs">
@@ -64,13 +69,14 @@
           <p>Vthf (Falling): <span id="vthf">...</span> V</p>
           <p>Hysteresis: <span id="hysteresis">...</span> mV</p>
         </div>
-        <canvas id="hysteresisChart" width="600" height="300"></canvas>
-        <div class="image-placeholder" id="circuit-image">
-          Circuit Diagram Placeholder
-        </div>
+        <canvas id="hysteresisChart" width="700" height="400"></canvas>
+        <img id="circuit-image" src="images/Comparator_PushPull.jpg" alt="Circuit Diagram">
       </div>
     </section>
   </div>
+  <footer>
+    <p>Comparator Hysteresis Calculator Version Alpha 1.0</p>
+  </footer>
   <script src="calculator.js"></script>
   <script src="events.js"></script>
 </body>

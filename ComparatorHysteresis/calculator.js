@@ -25,17 +25,19 @@ function calculateHysteresis(params) {
 
   // Step 4: Rising trip point (already provided as vthr)
 
-  // Step 5: Calculate R2
-  const parallelTerm = (1 / (r1 * 1e3)) + (1 / (r3 * 1e6)) + (1 / (vthr / vref - (1 / (r1 * 1e3)) - (1 / (r3 * 1e6))));
+  // Step 5: Calculate R2 (Corrected)
+  const r1Ohms = r1 * 1e3; // Convert R1 to ohms
+  const r3Ohms = r3 * 1e6; // Convert R3 to ohms
+  const parallelTerm = (vthr / (vref * r1Ohms)) - (1 / r1Ohms) - (1 / r3Ohms);
   r2 = (1 / parallelTerm) / 1e3; // Convert to kΩ
 
   // Step 6: Verify trip voltages
-  const parallelRes = 1 / ((1 / (r1 * 1e3)) + (1 / (r2 * 1e3)) + (1 / (r3 * 1e6)));
-  vthrCalc = vref * (parallelRes / (r1 * 1e3));
+  const parallelRes = 1 / ((1 / r1Ohms) + (1 / (r2 * 1e3)) + (1 / r3Ohms));
+  vthrCalc = vref * (parallelRes / r1Ohms);
   if (type === 'push-pull') {
-    vthf = vthrCalc - ((r1 * 1e3) * vcc / (r3 * 1e6));
+    vthf = vthrCalc - (r1Ohms * vcc / r3Ohms);
   } else {
-    vthf = vref * (parallelRes / (r1 * 1e3)) - ((r1 * 1e3) / ((r3 * 1e6) + (r4 * 1e6))) * vcc;
+    vthf = vref * (parallelRes / r1Ohms) - (r1Ohms / (r3Ohms + (r4 * 1e6))) * vcc;
   }
   hysteresis = (vthrCalc - vthf) * 1000; // Convert to mV
 
