@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparator Hysteresis Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Comparator Hysteresis Calculator</h1>
+    <section>
+      <div class="calculator">
+        <div class="input-group">
+          <label>Comparator Type:</label>
+          <select id="comparator-type">
+            <option value="push-pull">Push-Pull Output</option>
+            <option value="open-drain">Open-Drain Output</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="vcc">Supply Voltage (Vcc, V):</label>
+          <input type="number" id="vcc" value="5" step="0.1" min="0">
+          <input type="range" id="vcc-slider" min="0" max="50" step="0.1" value="5">
+        </div>
+        <div class="input-group">
+          <label for="vref">Reference Voltage (Vref, V):</label>
+          <input type="number" id="vref" value="1.24" step="0.01" min="0">
+          <input type="range" id="vref-slider" min="0" max="5" step="0.01" value="1.24">
+        </div>
+        <div class="input-group">
+          <label for="vhb">Hysteresis Band (Vhb, mV):</label>
+          <input type="number" id="vhb" value="50" step="1" min="0">
+          <input type="range" id="vhb-slider" min="0" max="1000" step="1" value="50">
+        </div>
+        <div class="input-group">
+          <label for="vthr">Rising Trip Point (Vthr, V):</label>
+          <input type="number" id="vthr" value="3" step="0.01" min="0">
+          <input type="range" id="vthr-slider" min="0" max="5" step="0.01" value="3">
+        </div>
+        <div class="input-group" id="r4-group" style="display: none;">
+          <label for="r4">Pull-Up Resistor (R4, MΩ):</label>
+          <input type="number" id="r4" value="1" step="0.1" min="0.1">
+          <input type="range" id="r4-slider" min="0.1" max="10" step="0.1" value="1">
+        </div>
+        <div class="input-group">
+          <label for="ir3">Bias Current (IR3, µA):</label>
+          <input type="number" id="ir3" value="0.2" step="0.01" min="0.01">
+          <input type="range" id="ir3-slider" min="0.01" max="1" step="0.01" value="0.2">
+        </div>
+        <div class="button-group">
+          <button id="calculate-btn">Calculate</button>
+          <button id="reset-btn">Reset</button>
+          <button id="download-csv-btn">Download CSV</button>
+        </div>
+        <div id="error-message" class="error"></div>
+      </div>
+      <div class="outputs">
+        <div class="results">
+          <p>R1: <span id="r1">...</span></p>
+          <p>R2: <span id="r2">...</span></p>
+          <p>R3: <span id="r3">...</span></p>
+          <p>Vthr (Rising): <span id="vthr-result">...</span> V</p>
+          <p>Vthf (Falling): <span id="vthf">...</span> V</p>
+          <p>Hysteresis: <span id="hysteresis">...</span> mV</p>
+        </div>
+        <canvas id="hysteresisChart" width="600" height="300"></canvas>
+        <div class="image-placeholder" id="circuit-image">
+          Circuit Diagram Placeholder
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="calculator.js"></script>
+  <script src="events.js"></script>
+</body>
+</html>
