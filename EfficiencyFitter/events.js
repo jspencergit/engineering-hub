@@ -1040,8 +1040,8 @@ document.addEventListener('DOMContentLoaded', () => {
             drawCurveOnCanvas(splineData, canvas, scaleX, scaleY, color);
         });
 
-        // Create a new chart with all series
-        createFittedChart(series, fittedSeries, 'logarithmic', scaling);
+        // Create a new chart with all series, using the user-selected scale type
+        createFittedChart(series, fittedSeries, xScaleType, scaling);
 
         // Generate table data for display, including all series
         if (fittedSeries.length > 0) {
